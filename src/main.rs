@@ -3,10 +3,16 @@ mod serve;
 
 use clap::Parser;
 
+#[derive(Debug, Parser)]
+struct ServeArgs {
+    #[arg(long)]
+    production: bool,
+}
+
 #[derive(Debug, clap::Subcommand)]
 enum Task {
     /// Start the server.
-    Serve,
+    Serve(ServeArgs),
     /// Print the project's license.
     License,
 }
@@ -27,8 +33,8 @@ async fn main() {
     let args = Args::parse();
 
     match args.task {
-        Task::Serve => {
-            serve::run(args.production);
+        Task::Serve(args) => {
+            serve::run(args.production).await;
         }
         Task::License => {
             let license_content = include_str!("../LICENSE");
