@@ -11,6 +11,24 @@ jobs:
     concurrency: deploy-group
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - run: cargo build --release
+      - run: |
+          cat > Dockerfile << EOF
+          FROM debian:bookworm-slim
+          WORKDIR /app
+          COPY target/release/fedx /usr/local/bin
+          ENTRYPOINT ["/usr/local/bin/fedx"]
+          EOF
+          
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - run: flyctl deploy --remote-only
         if: github.event_name == 'push'
