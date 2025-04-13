@@ -20,8 +20,6 @@ enum Task {
 #[derive(Debug, Parser)]
 #[command(author, version, about)]
 struct Args {
-    #[arg(long)]
-    production: bool,
     #[command(subcommand)]
     task: Task,
 }
