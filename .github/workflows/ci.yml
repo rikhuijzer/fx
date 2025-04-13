@@ -28,7 +28,7 @@ jobs:
           COPY target/release/fedx /usr/local/bin
           ENTRYPOINT ["/usr/local/bin/fedx"]
           EOF
-          
+      - run: cat Dockerfile
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - run: flyctl deploy --remote-only
         if: github.event_name == 'push'
