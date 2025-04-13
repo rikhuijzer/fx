@@ -1,9 +1,6 @@
 app = 'fedx'
 primary_region = 'ams'
 
-[experimental]
-  cmd = ['serve']
-
 [build]
   dockerfile = 'Dockerfile'
 
