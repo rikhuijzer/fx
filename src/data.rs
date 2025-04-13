@@ -9,6 +9,7 @@ pub struct Database {
 }
 
 pub struct Post {
+    #[allow(dead_code)]
     pub id: i64,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub content: String,
@@ -16,6 +17,7 @@ pub struct Post {
 
 pub trait SqliteDateTime {
     const FORMAT: &str = "%Y-%m-%d %H:%M:%S";
+    #[allow(dead_code)]
     fn from_sqlite(s: &str) -> Self;
     fn to_sqlite(&self) -> String;
 }
@@ -65,7 +67,7 @@ impl Post {
 
 pub fn init(production: bool) -> Result<Database> {
     let conn = if production {
-        let path = "/data/db.sqlite";
+        let path = "/db/db.sqlite";
         Connection::open(path)?
     } else {
         Connection::open_in_memory()?
