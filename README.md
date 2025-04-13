@@ -1,3 +1,3 @@
 # fedx
 
-Serverless (Micro)blogging platform.
+(Micro)blogging.
