@@ -1,0 +1,27 @@
+name = "fedx"
+main = "build/worker/shim.mjs"
+compatibility_date = "2023-03-22"
+
+# Disable publishing to workers.dev.
+workers_dev = false
+
+routes = [
+    { pattern = "fedx.huijzer.xyz", custom_domain = true }
+]
+
+[vars]
+WORKER_ENV = "production"
+
+[build]
+command = "worker-build --release"
+
+[observability]
+enabled = true
+# 1 means sample 100% of logs. 0.1 means sample 10% of logs.
+head_sampling_rate = 1
+
+[[d1_databases]]
+binding = "DB"
+# Created with `npx wrangler d1 create <NAME>`.
+database_name = "fedx"
+database_id = "ebaefd5d-bbc0-4d97-abb1-c4ac0ccb8cda"
