@@ -36,3 +36,7 @@ primary_region = 'ams'
   memory = '256mb'
   cpu_kind = 'shared'
   cpus = 1
+
+[mounts]
+source = "database_storage"
+destination = "/db"

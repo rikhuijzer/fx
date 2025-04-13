@@ -26,7 +26,7 @@ jobs:
           FROM debian:bookworm-slim
           WORKDIR /app
           COPY target/release/fedx /usr/local/bin
-          ENTRYPOINT ["/usr/local/bin/fedx"]
+          ENTRYPOINT ["/usr/local/bin/fedx", "serve", "--production"]
           EOF
       - run: cat Dockerfile
       - uses: superfly/flyctl-actions/setup-flyctl@master

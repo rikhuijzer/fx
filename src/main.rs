@@ -1,5 +1,7 @@
-use axum::Router;
-use axum::routing::get;
+mod data;
+mod serve;
+
+use clap::Parser;
 
 #[derive(Debug, clap::Subcommand)]
 enum Task {
@@ -9,24 +11,28 @@ enum Task {
     License,
 }
 
-#[derive(Debug, clap::Parser)]
+#[derive(Debug, Parser)]
 #[command(author, version, about)]
 struct Args {
+    #[arg(long)]
+    production: bool,
     #[command(subcommand)]
     task: Task,
-}
-
-async fn home() -> &'static str {
-    "Hello, World!"
 }
 
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
 
-    let app = Router::new().route("/", get(home));
+    let args = Args::parse();
 
-    // run our app with hyper, listening globally on port 3000
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    match args.task {
+        Task::Serve => {
+            serve::run(args.production);
+        }
+        Task::License => {
+            let license_content = include_str!("../LICENSE");
+            println!("{}", license_content);
+        }
+    }
 }

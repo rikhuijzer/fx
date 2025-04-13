@@ -4,3 +4,4 @@
 .wrangler/
 build/
 dist/
+**/*.sqlite
