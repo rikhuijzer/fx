@@ -1,9 +1,6 @@
 app = 'fedx'
 primary_region = 'ams'
 
-[build]
-  dockerfile = 'Dockerfile'
-
 [env]
   PRODUCTION = "true"
 
