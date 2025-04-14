@@ -20,7 +20,12 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
-      - run: sudo apt install -y just
+      - run: cargo install --debug jas@0.3.0
+      - run: >
+          jas install
+          --gh casey/just@1.40.0
+          --sha 181b91d0ceebe8a57723fb648ed2ce1a44d849438ce2e658339df4f8db5f1263
+          --gh-token ${{ secrets.GITHUB_TOKEN }}
       - run: just release
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - run: flyctl deploy public/ --config="../fly.toml" --remote-only

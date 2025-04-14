@@ -9,9 +9,6 @@ use axum::http::Response;
 use axum::http::StatusCode;
 use axum::routing::get;
 use data::Post;
-use rusqlite::Connection;
-use std::sync::Arc;
-use std::sync::RwLock;
 
 #[derive(Clone)]
 struct ServerContext {

@@ -93,5 +93,5 @@ pub fn connect(args: &ServeArgs) -> Result<Connection> {
 }
 
 pub fn init(conn: &Connection) {
-    Post::create_table(&conn).expect("Failed to create table");
+    Post::create_table(conn).expect("Failed to create table");
 }
