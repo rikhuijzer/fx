@@ -54,13 +54,14 @@ impl Post {
         ";
         conn.execute(stmt, [])
     }
-    pub fn insert(conn: &Connection, post: &Post) -> Result<usize> {
+    pub fn insert(conn: &Connection, created_at: DateTime<Utc>, content: &str) -> Result<usize> {
         let stmt = "
             INSERT INTO posts (created_at, content)
             VALUES (?, ?);
         ";
-        let created_at = post.created_at.to_sqlite();
-        conn.execute(stmt, [created_at, post.content.clone()])
+        let created_at = created_at.to_sqlite();
+        let content = content.to_string();
+        conn.execute(stmt, [created_at, content])
     }
     pub fn list(conn: &Connection) -> Result<Vec<Post>> {
         let stmt = "

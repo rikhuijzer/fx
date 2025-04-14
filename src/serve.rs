@@ -46,10 +46,10 @@ async fn list_posts(State(ctx): State<ServerContext>) -> Response<Body> {
     };
     let posts = posts
         .iter()
-        .map(|p| format!("{}: {}", p.created_at, p.content))
+        .map(|p| format!("<li>{}: {}</li>", p.created_at, p.content))
         .collect::<Vec<String>>()
         .join("\n");
-    let body = page(&posts);
+    let body = page(&format!("<ul>{}</ul>", posts));
     response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
 }
 
@@ -57,12 +57,9 @@ pub async fn run(args: &ServeArgs) {
     let conn = data::connect(args).unwrap();
     data::init(&conn);
 
-    let post = Post {
-        id: 1,
-        created_at: chrono::Utc::now(),
-        content: "Hello, World!".to_string(),
-    };
-    Post::insert(&conn, &post).unwrap();
+    let now = chrono::Utc::now();
+    Post::insert(&conn, now, "Hello, World!").unwrap();
+    Post::insert(&conn, now, "Hello, again!").unwrap();
 
     let conn = Arc::new(Mutex::new(conn));
 
