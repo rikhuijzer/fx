@@ -4,6 +4,7 @@ shebang := '''
 '''
 
 alias r := release
+alias s := serve
 
 default:
     just --list
@@ -30,3 +31,8 @@ release:
 
     # To avoid accidentally editing the files in public manually.
     chmod 444 public/Dockerfile
+
+serve:
+    #!{{shebang}}
+
+    cargo watch -x "run -- serve"

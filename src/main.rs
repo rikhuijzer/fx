@@ -1,4 +1,5 @@
 mod data;
+mod html;
 mod serve;
 
 use clap::Parser;

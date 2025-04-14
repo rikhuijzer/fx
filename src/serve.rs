@@ -1,5 +1,6 @@
 use crate::ServeArgs;
 use crate::data;
+use crate::html::page;
 use axum::Router;
 use axum::body::Body;
 use axum::extract::State;
@@ -9,18 +10,14 @@ use axum::http::Response;
 use axum::http::StatusCode;
 use axum::routing::get;
 use data::Post;
+use rusqlite::Connection;
 use std::sync::Arc;
 use std::sync::Mutex;
-use rusqlite::Connection;
 
 #[derive(Clone)]
 struct ServerContext {
     args: ServeArgs,
     conn: Arc<Mutex<Connection>>,
-}
-
-async fn home() -> &'static str {
-    "Hello, World!"
 }
 
 fn response(
@@ -52,7 +49,8 @@ async fn list_posts(State(ctx): State<ServerContext>) -> Response<Body> {
         .map(|p| format!("{}: {}", p.created_at, p.content))
         .collect::<Vec<String>>()
         .join("\n");
-    response(StatusCode::OK, HeaderMap::new(), &posts, &ctx)
+    let body = page(&posts);
+    response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
 }
 
 pub async fn run(args: &ServeArgs) {
@@ -68,12 +66,11 @@ pub async fn run(args: &ServeArgs) {
 
     let conn = Arc::new(Mutex::new(conn));
 
-    let ctx = ServerContext { args: args.clone(), conn };
-    let admin_path = format!("/{}", args.admin_username);
-    let app = Router::new()
-        .route("/", get(home))
-        .route(&admin_path, get(list_posts))
-        .with_state(ctx);
+    let ctx = ServerContext {
+        args: args.clone(),
+        conn,
+    };
+    let app = Router::new().route("/", get(list_posts)).with_state(ctx);
 
     let addr = format!("0.0.0.0:{}", args.port);
     tracing::info!("Listening on {addr}");
