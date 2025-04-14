@@ -30,4 +30,3 @@ release:
 
     # To avoid accidentally editing the files in public manually.
     chmod 444 public/Dockerfile
-    chmod 444 public/fedx
