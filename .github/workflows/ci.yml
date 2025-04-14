@@ -26,8 +26,12 @@ jobs:
           --gh casey/just@1.40.0
           --sha 181b91d0ceebe8a57723fb648ed2ce1a44d849438ce2e658339df4f8db5f1263
           --gh-token ${{ secrets.GITHUB_TOKEN }}
+      - run: >
+          jas install
+          --gh superfly/flyctl@0.3.102
+          --sha 2894ca44760b47544aa9e07e3bf403f1d77fb7c0f5b62985e7b36805528b03d4
+          --gh-token ${{ secrets.GITHUB_TOKEN }}
       - run: just release
-      - uses: superfly/flyctl-actions/setup-flyctl@master
       - run: flyctl deploy public/ --config="../fly.toml" --remote-only
         if: github.event_name == 'push'
         env:
