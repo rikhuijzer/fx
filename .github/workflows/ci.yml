@@ -27,7 +27,7 @@ jobs:
           --gh-token ${{ secrets.GITHUB_TOKEN }}
       - run: >
           jas install
-          --gh superfly/flyctl@0.3.102
+          --gh superfly/flyctl@v0.3.102
           --sha 2894ca44760b47544aa9e07e3bf403f1d77fb7c0f5b62985e7b36805528b03d4
           --gh-token ${{ secrets.GITHUB_TOKEN }}
       - run: just release
