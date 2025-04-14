@@ -19,7 +19,10 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
-      - run: cargo install jas@0.3.0
+      - run: rustup update stable
+      - run: rustup default stable
+      - run: cargo test
+      - run: cargo install --debug jas@0.3.0
       - run: >
           jas install
           --gh casey/just@1.40.0

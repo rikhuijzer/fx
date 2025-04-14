@@ -9,10 +9,14 @@ use axum::http::Response;
 use axum::http::StatusCode;
 use axum::routing::get;
 use data::Post;
+use std::sync::Arc;
+use std::sync::Mutex;
+use rusqlite::Connection;
 
 #[derive(Clone)]
 struct ServerContext {
     args: ServeArgs,
+    conn: Arc<Mutex<Connection>>,
 }
 
 async fn home() -> &'static str {
@@ -39,8 +43,10 @@ fn response(
 }
 
 async fn list_posts(State(ctx): State<ServerContext>) -> Response<Body> {
-    let conn = data::connect(&ctx.args).unwrap();
-    let posts = Post::list(&conn).unwrap();
+    let posts = {
+        let conn = ctx.conn.lock().unwrap();
+        Post::list(&conn).unwrap()
+    };
     let posts = posts
         .iter()
         .map(|p| format!("{}: {}", p.created_at, p.content))
@@ -53,13 +59,6 @@ pub async fn run(args: &ServeArgs) {
     let conn = data::connect(args).unwrap();
     data::init(&conn);
 
-    let ctx = ServerContext { args: args.clone() };
-    let admin_path = format!("/{}", args.admin_username);
-    let app = Router::new()
-        .route("/", get(home))
-        .route(&admin_path, get(list_posts))
-        .with_state(ctx);
-
     let post = Post {
         id: 1,
         created_at: chrono::Utc::now(),
@@ -67,7 +66,17 @@ pub async fn run(args: &ServeArgs) {
     };
     Post::insert(&conn, &post).unwrap();
 
+    let conn = Arc::new(Mutex::new(conn));
+
+    let ctx = ServerContext { args: args.clone(), conn };
+    let admin_path = format!("/{}", args.admin_username);
+    let app = Router::new()
+        .route("/", get(home))
+        .route(&admin_path, get(list_posts))
+        .with_state(ctx);
+
     let addr = format!("0.0.0.0:{}", args.port);
+    tracing::info!("Listening on {addr}");
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }
