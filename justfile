@@ -18,7 +18,6 @@ release:
 
     mkdir -p public
     cp --verbose target/release/fedx public/
-    cp --verbose fly.toml public/
 
     cat > public/Dockerfile << EOF
     FROM debian:bookworm-slim
@@ -32,4 +31,3 @@ release:
     # To avoid accidentally editing the files in public manually.
     chmod 444 public/Dockerfile
     chmod 444 public/fedx
-    chmod 444 public/fly.toml

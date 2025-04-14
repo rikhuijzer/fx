@@ -23,7 +23,7 @@ jobs:
       - run: sudo apt install -y just
       - run: just release
       - uses: superfly/flyctl-actions/setup-flyctl@master
-      - run: flyctl deploy public/ --remote-only
+      - run: flyctl deploy public/ --config="../fly.toml" --remote-only
         if: github.event_name == 'push'
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
