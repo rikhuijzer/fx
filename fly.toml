@@ -4,6 +4,9 @@ primary_region = 'ams'
 [build]
   dockerfile = 'Dockerfile'
 
+[env]
+  PRODUCTION = "true"
+
 [http_service]
   internal_port = 3000
   force_https = true
@@ -36,4 +39,4 @@ primary_region = 'ams'
 
 [mounts]
 source = "database_storage"
-destination = "/db"
+destination = "/data"

@@ -1,3 +1,4 @@
+use crate::ServeArgs;
 use chrono::NaiveDateTime;
 use chrono::TimeZone;
 use chrono::Utc;
@@ -65,9 +66,9 @@ impl Post {
     }
 }
 
-pub fn init(production: bool) -> Result<Database> {
-    let conn = if production {
-        let path = "/db/db.sqlite";
+pub fn init(args: &ServeArgs) -> Result<Database> {
+    let conn = if args.production {
+        let path = &args.database_path;
         Connection::open(path)?
     } else {
         Connection::open_in_memory()?

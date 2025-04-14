@@ -4,9 +4,13 @@ mod serve;
 use clap::Parser;
 
 #[derive(Debug, Parser)]
-struct ServeArgs {
-    #[arg(long)]
+pub struct ServeArgs {
+    #[arg(long, env = "PRODUCTION")]
     production: bool,
+    #[arg(long, env = "PORT", default_value = "3000")]
+    port: u16,
+    #[arg(long, env = "DATABASE_PATH", default_value = "/data/db.sqlite")]
+    database_path: String,
 }
 
 #[derive(Debug, clap::Subcommand)]
@@ -30,9 +34,9 @@ async fn main() {
 
     let args = Args::parse();
 
-    match args.task {
+    match &args.task {
         Task::Serve(args) => {
-            serve::run(args.production).await;
+            serve::run(args).await;
         }
         Task::License => {
             let license_content = include_str!("../LICENSE");
