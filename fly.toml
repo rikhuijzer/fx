@@ -3,6 +3,7 @@ primary_region = 'ams'
 
 [env]
   PRODUCTION = "true"
+  ADMIN_USERNAME = "rik"
 
 [http_service]
   internal_port = 3000

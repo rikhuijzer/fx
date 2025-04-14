@@ -3,7 +3,7 @@ mod serve;
 
 use clap::Parser;
 
-#[derive(Debug, Parser)]
+#[derive(Clone, Debug, Parser)]
 pub struct ServeArgs {
     #[arg(long, env = "PRODUCTION")]
     production: bool,
@@ -11,6 +11,10 @@ pub struct ServeArgs {
     port: u16,
     #[arg(long, env = "DATABASE_PATH", default_value = "/data/db.sqlite")]
     database_path: String,
+    #[arg(long, env = "ADMIN_USERNAME", default_value = "admin")]
+    admin_username: String,
+    #[arg(long, env = "ADMIN_PASSWORD")]
+    admin_password: Option<String>,
 }
 
 #[derive(Debug, clap::Subcommand)]
