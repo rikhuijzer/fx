@@ -20,7 +20,7 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
-      - run: cargo install --debug jas@0.3.0
+      - run: cargo install jas@0.3.0
       - run: >
           jas install
           --gh casey/just@1.40.0
