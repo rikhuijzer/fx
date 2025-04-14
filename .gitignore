@@ -1,7 +1,6 @@
 /target
-**/node_modules/
 **/Cargo.lock
-.wrangler/
 build/
 dist/
+public/
 **/*.sqlite
