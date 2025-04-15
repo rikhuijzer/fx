@@ -24,3 +24,4 @@ tracing-subscriber = "0.3"
 
 [dev-dependencies]
 pretty_assertions = "1"
+serde_urlencoded = "0.6"

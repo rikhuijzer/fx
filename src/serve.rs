@@ -19,6 +19,7 @@ use axum_extra::extract::CookieJar;
 use data::Post;
 use rusqlite::Connection;
 use serde::Deserialize;
+use serde::Serialize;
 use std::sync::Arc;
 use std::sync::Mutex;
 
@@ -120,7 +121,7 @@ async fn get_login(State(ctx): State<ServerContext>) -> Response<Body> {
     response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct LoginForm {
     pub username: String,
     pub password: String,

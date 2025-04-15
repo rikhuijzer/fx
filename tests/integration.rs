@@ -3,6 +3,7 @@ use axum::extract::Request;
 use axum::http::StatusCode;
 use fx::ServeArgs;
 use fx::data;
+use fx::serve::LoginForm;
 use fx::serve::ServerContext;
 use fx::serve::app;
 use http_body_util::BodyExt;
@@ -69,4 +70,49 @@ async fn test_post() {
 async fn test_style() {
     let body = request_body("/static/style.css").await;
     assert!(body.contains("body {"));
+}
+
+#[tokio::test]
+async fn test_login_page() {
+    let body = request_body("/login").await;
+    assert!(body.contains("<!DOCTYPE html>"));
+    assert!(body.contains("username"));
+}
+
+#[tokio::test]
+async fn test_login_wrong_password() {
+    let args = ServeArgs::test_default();
+    let conn = Connection::test_default();
+    let ctx = ServerContext::new(args, conn);
+
+    let form = LoginForm {
+        username: "test-admin".to_string(),
+        password: "test-password".to_string(),
+    };
+    let form_data = serde_urlencoded::to_string(&form).unwrap();
+    let req = Request::builder()
+        .method("POST")
+        .uri("/login")
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .body(Body::from(form_data))
+        .unwrap();
+    let response = app(ctx.clone()).oneshot(req).await.unwrap();
+    assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    assert_eq!(response.headers().get("Location").unwrap(), "/");
+
+    let form = LoginForm {
+        username: "test-admin".to_string(),
+        password: "wrong-password".to_string(),
+    };
+    let form_data = serde_urlencoded::to_string(&form).unwrap();
+    let req = Request::builder()
+        .method("POST")
+        .uri("/login")
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .body(Body::from(form_data))
+        .unwrap();
+    let app = app(ctx);
+    let response = app.oneshot(req).await.unwrap();
+    assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    assert_eq!(response.headers().get("Location").unwrap(), "/login");
 }
