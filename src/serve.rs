@@ -1,10 +1,8 @@
 use crate::ServeArgs;
 use crate::data;
-use axum_extra::extract::CookieJar;
 use crate::html::ToHtml;
 use crate::html::page;
 use axum::Form;
-use serde::Deserialize;
 use axum::Router;
 use axum::body::Body;
 use axum::extract::Path;
@@ -14,8 +12,10 @@ use axum::http::HeaderValue;
 use axum::http::Response;
 use axum::http::StatusCode;
 use axum::routing::get;
+use axum_extra::extract::CookieJar;
 use data::Post;
 use rusqlite::Connection;
+use serde::Deserialize;
 use std::sync::Arc;
 use std::sync::Mutex;
 
@@ -119,7 +119,11 @@ pub struct LoginForm {
     pub password: String,
 }
 
-async fn post_login(State(ctx): State<ServerContext>, Form(form): Form<LoginForm>, jar: CookieJar) -> Response<Body> {
+async fn post_login(
+    State(ctx): State<ServerContext>,
+    Form(form): Form<LoginForm>,
+    jar: CookieJar,
+) -> Response<Body> {
     let body = crate::html::login(&ctx);
     response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
 }

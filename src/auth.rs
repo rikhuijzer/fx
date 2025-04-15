@@ -1,17 +1,22 @@
-use crate::serve::ServerContext;
-use base64::prelude::*;
-use axum_extra::extract::CookieJar;
-use base64::prelude::BASE64_STANDARD;
 use crate::serve::LoginForm;
+use crate::serve::ServerContext;
 use aes_gcm_siv::AeadCore;
-use aes_gcm_siv::aead::Aead;
-use aes_gcm_siv::aead::Nonce;
-use axum_extra::extract::cookie::Cookie;
 use aes_gcm_siv::Aes256GcmSiv;
 use aes_gcm_siv::KeyInit;
+use aes_gcm_siv::aead::Aead;
+use aes_gcm_siv::aead::Nonce;
 use aes_gcm_siv::aead::rand_core::OsRng;
-use subtle::ConstantTimeEq;
+use argon2::Argon2;
+use argon2::password_hash::PasswordHasher;
+use argon2::password_hash::SaltString;
+use axum_extra::extract::CookieJar;
+use axum_extra::extract::cookie::Cookie;
+use base64::prelude::BASE64_STANDARD;
+use base64::prelude::*;
 use chrono::Utc;
+use serde::Deserialize;
+use serde::Serialize;
+use subtle::ConstantTimeEq;
 
 fn constant_time_str_eq(a: &str, b: &str) -> bool {
     a.as_bytes().ct_eq(b.as_bytes()).into()
@@ -22,7 +27,7 @@ fn verify_login(ctx: &ServerContext, form: &LoginForm) -> bool {
         Some(admin_password) => admin_password,
         None => {
             tracing::warn!("admin password not set");
-            return false
+            return false;
         }
     };
     let username_eq = constant_time_str_eq(&form.username, &ctx.args.admin_username);
@@ -39,24 +44,51 @@ fn base64_decode(data: &str) -> String {
     String::from_utf8(decoded).expect("invalid utf-8")
 }
 
-fn encrypt_login(password: &str) -> String {
-    let plaintext = Utc::now().to_rfc3339();
-    let key = Aes256GcmSiv::new_from_slice(password.as_bytes()).unwrap();
-    // Nonce should be unique per message.
-    let nonce = Aes256GcmSiv::generate_nonce(&mut OsRng);
-    let ciphertext = key.encrypt(&nonce, plaintext.as_bytes()).unwrap();
-    let ciphertext = base64_encode(&ciphertext);
-    let nonce = base64_encode(&nonce);
-    format!("{nonce}{ciphertext}")
+struct Key {
+    salt: [u8; 22],
+    key: Aes256GcmSiv,
 }
 
-fn decrypt_login(password: &str, auth: &str) -> Option<String> {
-    let key = Aes256GcmSiv::new_from_slice(password.as_bytes()).unwrap();
-    let nonce = base64_decode(&auth[..24]);
-    let nonce = nonce.as_bytes();
-    let nonce = Nonce::<Aes256GcmSiv>::from_slice(nonce);
-    let ciphertext = base64_decode(&auth[24..]);
-    let plaintext = key.decrypt(&nonce, ciphertext.as_bytes()).unwrap();
+impl Key {
+    fn new(password: &str) -> Self {
+        let salt = SaltString::generate(&mut OsRng);
+        let salt = salt.as_str().as_bytes();
+        let argon2 = Argon2::default();
+        let mut key = [0u8; 32];
+        argon2
+            .hash_password_into(password.as_bytes(), salt, &mut key)
+            .unwrap();
+        Key {
+            salt: salt.try_into().unwrap(),
+            key: Aes256GcmSiv::new_from_slice(&key).unwrap(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Ciphertext {
+    nonce: [u8; 12],
+    ciphertext: Vec<u8>,
+}
+
+fn encrypt_login(password: &str) -> Ciphertext {
+    let plaintext = Utc::now().to_rfc3339();
+    let key = Key::new(password);
+    // Nonce should be unique per message.
+    let nonce = Aes256GcmSiv::generate_nonce(&mut OsRng);
+    let ciphertext = key.key.encrypt(&nonce, plaintext.as_bytes()).unwrap();
+    let nonce = nonce.as_slice();
+    Ciphertext {
+        nonce: nonce.try_into().unwrap(),
+        ciphertext: ciphertext,
+    }
+}
+
+fn decrypt_login(password: &str, auth: &Ciphertext) -> Option<String> {
+    let key = Key::new(password);
+    let nonce = Nonce::<Aes256GcmSiv>::from_slice(&auth.nonce);
+    let ciphertext = auth.ciphertext.as_slice();
+    let plaintext = key.key.decrypt(&nonce, ciphertext).unwrap();
     String::from_utf8(plaintext).ok()
 }
 
@@ -71,6 +103,7 @@ fn encryption_roundtrip() {
 pub fn handle_login(ctx: &ServerContext, form: &LoginForm, jar: CookieJar) -> Option<CookieJar> {
     if verify_login(ctx, form) {
         let ciphertext = encrypt_login(&form.password);
+        let ciphertext = serde_json::to_string(&ciphertext).unwrap();
         // Secure ensures only HTTPS scheme (except on localhost).
         // Without this, a man-in-the-middle could steal the cookie.
         let age_sec = 2 * 60 * 60 * 24 * 7; // 2 weeks.
