@@ -3,6 +3,7 @@ use axum::extract::Request;
 use axum::http::StatusCode;
 use fedx::ServeArgs;
 use fedx::data;
+use fedx::data::Post;
 use fedx::serve::ServerContext;
 use fedx::serve::app;
 use http_body_util::BodyExt;
@@ -30,6 +31,11 @@ impl TestDefault for Connection {
         let args = ServeArgs::test_default();
         let conn = data::connect(&args).unwrap();
         data::init(&conn);
+
+        let now = chrono::Utc::now();
+        Post::insert(&conn, now, "lorem ipsum").unwrap();
+        Post::insert(&conn, now, "dolor sit amet").unwrap();
+
         conn
     }
 }
@@ -51,6 +57,17 @@ async fn request_body(uri: &str) -> String {
 async fn test_home() {
     let body = request_body("/").await;
     assert!(body.contains("<!DOCTYPE html>"));
+    assert!(body.contains("lorem ipsum"));
+    assert!(body.contains("dolor sit amet"));
+}
+
+#[tokio::test]
+async fn test_post() {
+    let body = request_body("/p/1").await;
+    assert!(body.contains("lorem ipsum"));
+
+    let body = request_body("/p/2").await;
+    assert!(body.contains("dolor sit amet"));
 }
 
 #[tokio::test]

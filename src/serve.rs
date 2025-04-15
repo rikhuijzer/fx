@@ -53,7 +53,7 @@ fn format_post(p: &Post) -> String {
     indoc::formatdoc! {"
         <div class='post'>
             <div class='created_at'>{}</div>
-            <a style='text-decoration: none; color: inherit;' href='/{}'>
+            <a style='text-decoration: none; color: inherit;' href='/p/{}'>
                 <div class='content'>{}</div>
             </a>
         </div>
@@ -104,7 +104,8 @@ pub fn app(ctx: ServerContext) -> Router {
     Router::new()
         .route("/", get(list_posts))
         .route("/static/style.css", get(style))
-        .route("/{id}", get(show_post))
+        // Need to put behind /p/<ID> otherwise /<WRONG LINK> will not be a 404.
+        .route("/p/{id}", get(show_post))
         .fallback(not_found)
         .with_state(ctx)
 }
@@ -112,10 +113,6 @@ pub fn app(ctx: ServerContext) -> Router {
 pub async fn run(args: &ServeArgs) {
     let conn = data::connect(args).unwrap();
     data::init(&conn);
-
-    let now = chrono::Utc::now();
-    Post::insert(&conn, now, "Hello, World!").unwrap();
-    Post::insert(&conn, now, "Hello, again!").unwrap();
 
     let ctx = ServerContext::new(args.clone(), conn);
     let app = app(ctx);
