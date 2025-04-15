@@ -38,13 +38,17 @@ body {
 .container {
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: stretch;
+    min-height: 98vh;
 }
 
 .middle {
     width: 100%;
-    max-width: 800px;
-    padding: 20px;
+    max-width: 640px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
 }
 
 .post {
@@ -57,4 +61,21 @@ body {
 .created_at {
     font-size: 12px;
     color: var(--gray);
+}
+
+.top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.bottom {
+    text-align: center;
+    margin-top: auto;
+}
+
+.unstyled-link {
+    text-decoration: none;
+    color: inherit;
 }

@@ -9,7 +9,7 @@ impl ToHtml for Post {
         indoc::formatdoc! {"
         <div class='post' hx-boost='true'>
             <div class='created_at'>{}</div>
-            <a style='text-decoration: none; color: inherit;' href='/p/{}'>
+            <a class='unstyled-link' href='/p/{}'>
                 <div class='content'>{}</div>
             </a>
         </div>
@@ -27,8 +27,13 @@ fn htmx() -> &'static str {
     crossorigin="anonymous" defer></script>"#
 }
 
-pub fn page(body: &str) -> String {
+pub fn page(title: &str, body: &str) -> String {
     let htmx = htmx();
+    let title = if title.is_empty() {
+        "fx".to_string()
+    } else {
+        format!("{title} - fx")
+    };
     let html = indoc::formatdoc! {
         r#"
         <!DOCTYPE html>
@@ -37,17 +42,40 @@ pub fn page(body: &str) -> String {
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <link rel="stylesheet" href="/static/style.css">
-            <title>fx</title>
+            <title>{title}</title>
             {htmx}
         </head>
         <body>
             <div class="container">
                 <div class="middle">
+                    <div class="top">
+                        <a class="unstyled-link" href="/">fx</a>
+                    </div>
                     {body}
+                    <div class="bottom">
+                        <a class="unstyled-link" href="https://github.com/rikhuijzer/fx">source</a>
+                    </div>
                 </div>
             </div>
         </body>
         "#
     };
     html
+}
+
+pub fn login() -> String {
+    page(
+        "login",
+        r#"
+    <form style="text-align: center;" method="post" action="/login">
+        <label for="username">username</label><br>
+        <input id="username" name="username" type="text" required/><br>
+        <br>
+        <label for="password">password</label><br>
+        <input id="password" name="password" type="password" required/><br>
+        <br>
+        <input type="submit" value="login"/>
+    </form>
+    "#,
+    )
 }

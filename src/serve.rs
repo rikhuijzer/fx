@@ -60,7 +60,7 @@ async fn list_posts(State(ctx): State<ServerContext>) -> Response<Body> {
         .map(|p| p.to_html())
         .collect::<Vec<String>>()
         .join("\n");
-    let body = page(&format!("<ul>{}</ul>", posts));
+    let body = page("", &posts);
     response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
 }
 
@@ -69,13 +69,28 @@ async fn style(State(ctx): State<ServerContext>) -> Response<Body> {
     response(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
+fn truncate(text: &str) -> String {
+    let max_length = 40;
+    let mut text = text.to_string();
+    if text.len() > max_length {
+        let mut pos = max_length;
+        while pos > 0 && !text.is_char_boundary(pos) {
+            pos -= 1;
+        }
+        text.truncate(pos);
+        text.push_str("...");
+    }
+    text.to_string()
+}
+
 async fn show_post(State(ctx): State<ServerContext>, Path(id): Path<i64>) -> Response<Body> {
     let post = Post::get(&ctx.conn.lock().unwrap(), id);
     let post = match post {
         Ok(post) => post,
         Err(_) => return not_found(State(ctx)).await,
     };
-    let body = page(&post.to_html());
+    let title = truncate(&post.content);
+    let body = page(&title, &post.to_html());
     response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
 }
 
@@ -86,16 +101,22 @@ async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
             <p>The page you are looking for does not exist.</p>
         </div>
     "};
-    let body = page(body);
+    let body = page("not found", body);
     response(StatusCode::NOT_FOUND, HeaderMap::new(), &body, &ctx)
+}
+
+async fn login(State(ctx): State<ServerContext>) -> Response<Body> {
+    let body = crate::html::login();
+    response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
 }
 
 pub fn app(ctx: ServerContext) -> Router {
     Router::new()
         .route("/", get(list_posts))
-        .route("/static/style.css", get(style))
+        .route("/login", get(login))
         // Need to put behind /p/<ID> otherwise /<WRONG LINK> will not be a 404.
         .route("/p/{id}", get(show_post))
+        .route("/static/style.css", get(style))
         .fallback(not_found)
         .with_state(ctx)
 }
