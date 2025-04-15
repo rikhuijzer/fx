@@ -9,6 +9,7 @@ use aes_gcm_siv::aead::rand_core::OsRng;
 use argon2::Argon2;
 use axum_extra::extract::CookieJar;
 use axum_extra::extract::cookie::Cookie;
+use chrono::NaiveDate;
 use chrono::Utc;
 use serde::Deserialize;
 use serde::Serialize;
@@ -57,8 +58,8 @@ struct Ciphertext {
     ciphertext: Vec<u8>,
 }
 
-fn today() -> String {
-    Utc::now().date_naive().to_string()
+fn today() -> NaiveDate {
+    Utc::now().date_naive()
 }
 
 fn encrypt_login(password: &str) -> Ciphertext {
@@ -66,6 +67,7 @@ fn encrypt_login(password: &str) -> Ciphertext {
     let key = Key::new(password);
     // Nonce should be unique per message.
     let nonce = Aes256GcmSiv::generate_nonce(&mut OsRng);
+    let plaintext = plaintext.to_string();
     let ciphertext = key.key.encrypt(&nonce, plaintext.as_bytes()).unwrap();
     let nonce = nonce.as_slice();
     Ciphertext {
@@ -93,7 +95,8 @@ fn encryption_roundtrip() {
     let password = "password";
     let auth = encrypt_login(password);
     let plaintext = decrypt_login(password, &auth).unwrap();
-    assert_eq!(plaintext, today());
+    let today = today().to_string();
+    assert_eq!(plaintext, today);
 }
 
 pub fn handle_logout(jar: CookieJar) -> CookieJar {
@@ -101,6 +104,8 @@ pub fn handle_logout(jar: CookieJar) -> CookieJar {
     // Somehow, `jar.remove` throws an error, so we just override the cookie.
     jar.add(cookie)
 }
+
+const MAX_AGE_SEC: i64 = 2 * 60 * 60 * 24 * 7; // 2 weeks.
 
 pub fn is_logged_in(ctx: &ServerContext, jar: &CookieJar) -> bool {
     let cookie = jar.get("auth");
@@ -115,7 +120,8 @@ pub fn is_logged_in(ctx: &ServerContext, jar: &CookieJar) -> bool {
                 }
             };
             let plaintext = decrypt_login(key, &ciphertext).unwrap();
-            plaintext == today()
+            let date = NaiveDate::parse_from_str(&plaintext, "%Y-%m-%d").unwrap();
+            today() <= date + chrono::Duration::days(MAX_AGE_SEC)
         }
         None => false,
     }
@@ -125,10 +131,9 @@ pub fn handle_login(ctx: &ServerContext, form: &LoginForm, jar: CookieJar) -> Op
     if verify_login(ctx, form) {
         let ciphertext = encrypt_login(&form.password);
         let ciphertext = serde_json::to_string(&ciphertext).unwrap();
-        let age_sec = 2 * 60 * 60 * 24 * 7; // 2 weeks.
         // Secure ensures only HTTPS scheme (except on localhost).
         // Without secure, a man-in-the-middle could steal the cookie.
-        let cookie = format!("auth={ciphertext}; Max-Age={age_sec}; Secure;");
+        let cookie = format!("auth={ciphertext}; Max-Age={MAX_AGE_SEC}; Secure;");
         let cookie = Cookie::parse(cookie).unwrap();
         let updated_jar = jar.add(cookie);
         Some(updated_jar)
