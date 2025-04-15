@@ -18,13 +18,13 @@ release:
     cargo build --release
 
     mkdir -p public
-    cp --verbose target/release/fedx public/
+    cp --verbose target/release/fx public/
 
     cat > public/Dockerfile << EOF
     FROM debian:bookworm-slim
     WORKDIR /app
-    COPY fedx /usr/local/bin
-    ENTRYPOINT ["/usr/local/bin/fedx", "serve"]
+    COPY fx /usr/local/bin
+    ENTRYPOINT ["/usr/local/bin/fx", "serve"]
     EOF
 
     cat public/Dockerfile
