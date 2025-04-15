@@ -1,6 +1,7 @@
 use crate::ServeArgs;
 use crate::data;
 use crate::html::PageSettings;
+use serde::Serialize;
 use crate::html::ToHtml;
 use crate::html::page;
 use axum::Form;
@@ -19,7 +20,6 @@ use axum_extra::extract::CookieJar;
 use data::Post;
 use rusqlite::Connection;
 use serde::Deserialize;
-use serde::Serialize;
 use std::sync::Arc;
 use std::sync::Mutex;
 
@@ -135,7 +135,7 @@ async fn post_login(
     let new_jar = crate::auth::handle_login(&ctx, &form, jar.clone());
     match new_jar {
         Some(jar) => Ok((jar, Redirect::to("/"))),
-        None => Ok((jar, Redirect::to("/login"))),
+        None => Err(StatusCode::UNAUTHORIZED),
     }
 }
 

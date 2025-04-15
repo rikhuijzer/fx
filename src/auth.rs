@@ -100,9 +100,7 @@ fn encryption_roundtrip() {
 }
 
 pub fn handle_logout(jar: CookieJar) -> CookieJar {
-    let cookie = Cookie::parse("auth=; Max-Age=0").unwrap();
-    // Somehow, `jar.remove` throws an error, so we just override the cookie.
-    jar.add(cookie)
+    jar.remove(Cookie::from("auth"))
 }
 
 const MAX_AGE_SEC: i64 = 2 * 60 * 60 * 24 * 7; // 2 weeks.
