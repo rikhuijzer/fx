@@ -112,7 +112,7 @@ pub fn app(ctx: ServerContext) -> Router {
 
 pub async fn run(args: &ServeArgs) {
     let conn = data::connect(args).unwrap();
-    data::init(&conn);
+    data::init(args, &conn);
 
     let ctx = ServerContext::new(args.clone(), conn);
     let app = app(ctx);

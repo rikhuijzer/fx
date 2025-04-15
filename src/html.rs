@@ -7,7 +7,7 @@ pub fn page(body: &str) -> String {
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <link rel="stylesheet" href="/static/style.css">
-            <title>fedx</title>
+            <title>fx</title>
         </head>
         <body>
             <div class="container">

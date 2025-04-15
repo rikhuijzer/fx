@@ -3,7 +3,6 @@ use axum::extract::Request;
 use axum::http::StatusCode;
 use fedx::ServeArgs;
 use fedx::data;
-use fedx::data::Post;
 use fedx::serve::ServerContext;
 use fedx::serve::app;
 use http_body_util::BodyExt;
@@ -30,12 +29,7 @@ impl TestDefault for Connection {
     fn test_default() -> Self {
         let args = ServeArgs::test_default();
         let conn = data::connect(&args).unwrap();
-        data::init(&conn);
-
-        let now = chrono::Utc::now();
-        Post::insert(&conn, now, "lorem ipsum").unwrap();
-        Post::insert(&conn, now, "dolor sit amet").unwrap();
-
+        data::init(&args, &conn);
         conn
     }
 }

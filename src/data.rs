@@ -107,6 +107,13 @@ pub fn connect(args: &ServeArgs) -> Result<Connection> {
     Ok(conn)
 }
 
-pub fn init(conn: &Connection) {
+pub fn init(args: &ServeArgs, conn: &Connection) {
     Post::create_table(conn).expect("Failed to create table");
+
+    if !args.production {
+        let now = chrono::Utc::now();
+        Post::insert(&conn, now, "lorem ipsum").unwrap();
+        Post::insert(&conn, now, "dolor sit amet").unwrap();
+    }
+
 }
