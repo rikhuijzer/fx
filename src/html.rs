@@ -28,14 +28,30 @@ fn htmx() -> &'static str {
     crossorigin="anonymous" defer></script>"#
 }
 
-pub fn page(ctx: &ServerContext, title: &str, show_about: bool, body: &str) -> String {
+pub struct PageSettings {
+    title: String,
+    is_logged_in: bool,
+    show_about: bool,
+}
+
+impl PageSettings {
+    pub fn new(title: &str, is_logged_in: bool, show_about: bool) -> Self {
+        Self {
+            title: title.to_string(),
+            is_logged_in,
+            show_about,
+        }
+    }
+}
+
+pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String {
     let htmx = htmx();
-    let title = if title.is_empty() {
+    let title = if settings.title.is_empty() {
         "fx".to_string()
     } else {
-        format!("{title} - fx")
+        format!("{} - fx", settings.title)
     };
-    let about = if show_about {
+    let about = if settings.show_about {
         indoc::formatdoc! {r#"
         <div class="about">
      {}
@@ -43,6 +59,11 @@ pub fn page(ctx: &ServerContext, title: &str, show_about: bool, body: &str) -> S
         "#, ctx.args.admin_name }
     } else {
         "".to_string()
+    };
+    let loginout = if settings.is_logged_in {
+        r#"<a class="unstyled-link menu-space" href="/logout">logout</a>"#
+    } else {
+        r#"<a class="unstyled-link menu-space" href="/login">login</a>"#
     };
     indoc::formatdoc! {
         r#"
@@ -65,7 +86,7 @@ pub fn page(ctx: &ServerContext, title: &str, show_about: bool, body: &str) -> S
                     {body}
                     <div class="bottom">
                         <a class="unstyled-link menu-space" href="https://github.com/rikhuijzer/fx">source</a>
-                        <a class="unstyled-link menu-space" href="/login">login</a>
+                        {loginout}
                     </div>
                 </div>
             </div>
@@ -75,19 +96,16 @@ pub fn page(ctx: &ServerContext, title: &str, show_about: bool, body: &str) -> S
 }
 
 pub fn login(ctx: &ServerContext) -> String {
-    page(
-        ctx,
-        "login",
-        false,
-        r#"
-    <form style="text-align: center;" method="post" action="/login">
-        <label for="username">username</label><br>
-        <input id="username" name="username" type="text" required/><br>
-        <label for="password">password</label><br>
-        <input id="password" name="password" type="password" required/><br>
-        <br>
-        <input type="submit" value="login"/>
-    </form>
-    "#,
-    )
+    let settings = PageSettings::new("login", false, false);
+    let body = indoc::formatdoc! {r#"
+        <form style="text-align: center;" method="post" action="/login">
+            <label for="username">username</label><br>
+            <input id="username" name="username" type="text" required/><br>
+            <label for="password">password</label><br>
+            <input id="password" name="password" type="password" required/><br>
+            <br>
+            <input type="submit" value="login"/>
+        </form>
+    "#};
+    page(ctx, &settings, &body)
 }

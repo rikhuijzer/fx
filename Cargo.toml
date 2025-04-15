@@ -9,7 +9,6 @@ aes-gcm-siv = "0.11"
 argon2 = "0.5.3"
 axum = { version = "0.8", features = ["form"] }
 axum-extra = { version = "0.10", features = ["cookie"] }
-base64 = "0.22.1"
 chrono = { version = "0.4.40", features = ["serde"] }
 clap = { version = "4.5", features = ["derive", "env"] }
 http-body-util = "0.1.3"

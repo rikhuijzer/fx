@@ -9,8 +9,6 @@ use aes_gcm_siv::aead::rand_core::OsRng;
 use argon2::Argon2;
 use axum_extra::extract::CookieJar;
 use axum_extra::extract::cookie::Cookie;
-use base64::prelude::BASE64_STANDARD;
-use base64::prelude::*;
 use chrono::Utc;
 use serde::Deserialize;
 use serde::Serialize;
@@ -29,17 +27,8 @@ fn verify_login(ctx: &ServerContext, form: &LoginForm) -> bool {
         }
     };
     let username_eq = constant_time_str_eq(&form.username, &ctx.args.admin_username);
-    let password_eq = constant_time_str_eq(&form.password, &admin_password);
+    let password_eq = constant_time_str_eq(&form.password, admin_password);
     username_eq && password_eq
-}
-
-fn base64_encode(data: &[u8]) -> String {
-    BASE64_STANDARD.encode(data)
-}
-
-fn base64_decode(data: &str) -> String {
-    let decoded = BASE64_STANDARD.decode(data).expect("invalid base64");
-    String::from_utf8(decoded).expect("invalid utf-8")
 }
 
 struct Key {
@@ -89,9 +78,7 @@ fn decrypt_login(password: &str, auth: &Ciphertext) -> Option<String> {
     let key = Key::new(password);
     let nonce = Nonce::<Aes256GcmSiv>::from_slice(&auth.nonce);
     let ciphertext = auth.ciphertext.as_slice();
-    println!("nonce len: {}", nonce.len());
-    println!("ciphertext len: {}", ciphertext.len());
-    let plaintext = match key.key.decrypt(&nonce, ciphertext) {
+    let plaintext = match key.key.decrypt(nonce, ciphertext) {
         Ok(plaintext) => plaintext,
         Err(e) => {
             println!("failed to decrypt login: {}", e);
@@ -107,6 +94,31 @@ fn encryption_roundtrip() {
     let auth = encrypt_login(password);
     let plaintext = decrypt_login(password, &auth).unwrap();
     assert_eq!(plaintext, today());
+}
+
+pub fn handle_logout(jar: CookieJar) -> CookieJar {
+    let cookie = Cookie::parse("auth=; Max-Age=0").unwrap();
+    // Somehow, `jar.remove` throws an error, so we just override the cookie.
+    jar.add(cookie)
+}
+
+pub fn is_logged_in(ctx: &ServerContext, jar: &CookieJar) -> bool {
+    let cookie = jar.get("auth");
+    match cookie {
+        Some(cookie) => {
+            let ciphertext = serde_json::from_str(cookie.value()).unwrap();
+            let key = match &ctx.args.admin_password {
+                Some(key) => key,
+                None => {
+                    tracing::warn!("admin password not set");
+                    return false;
+                }
+            };
+            let plaintext = decrypt_login(key, &ciphertext).unwrap();
+            plaintext == today()
+        }
+        None => false,
+    }
 }
 
 pub fn handle_login(ctx: &ServerContext, form: &LoginForm, jar: CookieJar) -> Option<CookieJar> {

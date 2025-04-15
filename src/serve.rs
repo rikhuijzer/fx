@@ -1,5 +1,6 @@
 use crate::ServeArgs;
 use crate::data;
+use crate::html::PageSettings;
 use crate::html::ToHtml;
 use crate::html::page;
 use axum::Form;
@@ -55,7 +56,8 @@ fn response(
     response
 }
 
-async fn list_posts(State(ctx): State<ServerContext>) -> Response<Body> {
+async fn list_posts(State(ctx): State<ServerContext>, jar: CookieJar) -> Response<Body> {
+    let is_logged_in = crate::auth::is_logged_in(&ctx, &jar);
     let posts = {
         let conn = ctx.conn.lock().unwrap();
         Post::list(&conn).unwrap()
@@ -65,7 +67,8 @@ async fn list_posts(State(ctx): State<ServerContext>) -> Response<Body> {
         .map(|p| p.to_html())
         .collect::<Vec<String>>()
         .join("\n");
-    let body = page(&ctx, "", true, &posts);
+    let settings = PageSettings::new("", is_logged_in, true);
+    let body = page(&ctx, &settings, &posts);
     response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
 }
 
@@ -95,7 +98,8 @@ async fn show_post(State(ctx): State<ServerContext>, Path(id): Path<i64>) -> Res
         Err(_) => return not_found(State(ctx)).await,
     };
     let title = truncate(&post.content);
-    let body = page(&ctx, &title, false, &post.to_html());
+    let settings = PageSettings::new(&title, false, false);
+    let body = page(&ctx, &settings, &post.to_html());
     response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
 }
 
@@ -106,7 +110,8 @@ async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
             <p>The page you are looking for does not exist.</p>
         </div>
     "};
-    let body = page(&ctx, "not found", false, body);
+    let settings = PageSettings::new("not found", false, false);
+    let body = page(&ctx, &settings, body);
     response(StatusCode::NOT_FOUND, HeaderMap::new(), &body, &ctx)
 }
 
@@ -133,11 +138,20 @@ async fn post_login(
     }
 }
 
+async fn get_logout(
+    State(_secrets): State<ServerContext>,
+    jar: CookieJar,
+) -> (CookieJar, Redirect) {
+    let updated_jar = crate::auth::handle_logout(jar.clone());
+    (updated_jar, Redirect::to("/"))
+}
+
 pub fn app(ctx: ServerContext) -> Router {
     Router::new()
         .route("/", get(list_posts))
         .route("/login", get(get_login))
         .route("/login", post(post_login))
+        .route("/logout", get(get_logout))
         // Need to put behind /p/<ID> otherwise /<WRONG LINK> will not be a 404.
         .route("/p/{id}", get(show_post))
         .route("/static/style.css", get(style))
