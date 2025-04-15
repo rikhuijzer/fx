@@ -1,5 +1,5 @@
 use clap::Parser;
-use fedx::ServeArgs;
+use fx::ServeArgs;
 
 #[derive(Debug, clap::Subcommand)]
 enum Task {
@@ -24,7 +24,7 @@ async fn main() {
 
     match &args.task {
         Task::Serve(args) => {
-            fedx::serve::run(args).await;
+            fx::serve::run(args).await;
         }
         Task::License => {
             let license_content = include_str!("../LICENSE");

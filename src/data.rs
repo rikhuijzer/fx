@@ -115,5 +115,4 @@ pub fn init(args: &ServeArgs, conn: &Connection) {
         Post::insert(&conn, now, "lorem ipsum").unwrap();
         Post::insert(&conn, now, "dolor sit amet").unwrap();
     }
-
 }

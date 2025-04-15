@@ -1,10 +1,10 @@
 use axum::body::Body;
 use axum::extract::Request;
 use axum::http::StatusCode;
-use fedx::ServeArgs;
-use fedx::data;
-use fedx::serve::ServerContext;
-use fedx::serve::app;
+use fx::ServeArgs;
+use fx::data;
+use fx::serve::ServerContext;
+use fx::serve::app;
 use http_body_util::BodyExt;
 use rusqlite::Connection;
 use tower::util::ServiceExt;
