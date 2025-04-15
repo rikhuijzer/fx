@@ -11,7 +11,9 @@ use axum::http::HeaderMap;
 use axum::http::HeaderValue;
 use axum::http::Response;
 use axum::http::StatusCode;
+use axum::response::Redirect;
 use axum::routing::get;
+use axum::routing::post;
 use axum_extra::extract::CookieJar;
 use data::Post;
 use rusqlite::Connection;
@@ -121,17 +123,21 @@ pub struct LoginForm {
 
 async fn post_login(
     State(ctx): State<ServerContext>,
-    Form(form): Form<LoginForm>,
     jar: CookieJar,
-) -> Response<Body> {
-    let body = crate::html::login(&ctx);
-    response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
+    Form(form): Form<LoginForm>,
+) -> Result<(CookieJar, Redirect), StatusCode> {
+    let new_jar = crate::auth::handle_login(&ctx, &form, jar.clone());
+    match new_jar {
+        Some(jar) => Ok((jar, Redirect::to("/"))),
+        None => Ok((jar, Redirect::to("/login"))),
+    }
 }
 
 pub fn app(ctx: ServerContext) -> Router {
     Router::new()
         .route("/", get(list_posts))
         .route("/login", get(get_login))
+        .route("/login", post(post_login))
         // Need to put behind /p/<ID> otherwise /<WRONG LINK> will not be a 404.
         .route("/p/{id}", get(show_post))
         .route("/static/style.css", get(style))
