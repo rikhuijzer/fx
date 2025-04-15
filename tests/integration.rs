@@ -85,6 +85,7 @@ async fn test_login() {
     let conn = Connection::test_default();
     let ctx = ServerContext::new(args, conn);
 
+    // Valid login.
     let form = LoginForm {
         username: "test-admin".to_string(),
         password: "test-password".to_string(),
@@ -107,7 +108,7 @@ async fn test_login() {
     let auth = cookie.split("=").nth(1).unwrap();
     println!("auth: {auth}");
 
-    // Valid login.
+    // Valid cookie.
     let req = Request::builder()
         .method("GET")
         .uri("/")
@@ -123,7 +124,7 @@ async fn test_login() {
     assert!(!body.contains("login"));
     assert!(body.contains("logout"));
 
-    // Invalid login.
+    // Invalid cookie.
     let req = Request::builder()
         .method("GET")
         .uri("/")
