@@ -1,5 +1,6 @@
 use crate::ServeArgs;
 use crate::data;
+use crate::html::ToHtml;
 use crate::html::page;
 use axum::Router;
 use axum::body::Body;
@@ -49,17 +50,6 @@ fn response(
     response
 }
 
-fn format_post(p: &Post) -> String {
-    indoc::formatdoc! {"
-    <div class='post' hx-boost='true' preload='mouseover'>
-        <div class='created_at'>{}</div>
-        <a style='text-decoration: none; color: inherit;' href='/p/{}'>
-            <div class='content'>{}</div>
-        </a>
-    </div>
-    ", p.created_at, p.id, p.content}
-}
-
 async fn list_posts(State(ctx): State<ServerContext>) -> Response<Body> {
     let posts = {
         let conn = ctx.conn.lock().unwrap();
@@ -67,7 +57,7 @@ async fn list_posts(State(ctx): State<ServerContext>) -> Response<Body> {
     };
     let posts = posts
         .iter()
-        .map(format_post)
+        .map(|p| p.to_html())
         .collect::<Vec<String>>()
         .join("\n");
     let body = page(&format!("<ul>{}</ul>", posts));
@@ -85,7 +75,7 @@ async fn show_post(State(ctx): State<ServerContext>, Path(id): Path<i64>) -> Res
         Ok(post) => post,
         Err(_) => return not_found(State(ctx)).await,
     };
-    let body = page(&format_post(&post));
+    let body = page(&post.to_html());
     response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
 }
 
