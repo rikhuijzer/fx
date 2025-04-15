@@ -7,8 +7,6 @@ use aes_gcm_siv::aead::Aead;
 use aes_gcm_siv::aead::Nonce;
 use aes_gcm_siv::aead::rand_core::OsRng;
 use argon2::Argon2;
-use argon2::password_hash::PasswordHasher;
-use argon2::password_hash::SaltString;
 use axum_extra::extract::CookieJar;
 use axum_extra::extract::cookie::Cookie;
 use base64::prelude::BASE64_STANDARD;
@@ -70,8 +68,12 @@ struct Ciphertext {
     ciphertext: Vec<u8>,
 }
 
+fn today() -> String {
+    Utc::now().date_naive().to_string()
+}
+
 fn encrypt_login(password: &str) -> Ciphertext {
-    let plaintext = Utc::now().to_rfc3339();
+    let plaintext = today();
     let key = Key::new(password);
     // Nonce should be unique per message.
     let nonce = Aes256GcmSiv::generate_nonce(&mut OsRng);
@@ -79,7 +81,7 @@ fn encrypt_login(password: &str) -> Ciphertext {
     let nonce = nonce.as_slice();
     Ciphertext {
         nonce: nonce.try_into().unwrap(),
-        ciphertext: ciphertext,
+        ciphertext,
     }
 }
 
@@ -104,17 +106,16 @@ fn encryption_roundtrip() {
     let password = "password";
     let auth = encrypt_login(password);
     let plaintext = decrypt_login(password, &auth).unwrap();
-    let today = Utc::now().date_naive();
-    assert!(plaintext.contains(&today.to_string()));
+    assert_eq!(plaintext, today());
 }
 
 pub fn handle_login(ctx: &ServerContext, form: &LoginForm, jar: CookieJar) -> Option<CookieJar> {
     if verify_login(ctx, form) {
         let ciphertext = encrypt_login(&form.password);
         let ciphertext = serde_json::to_string(&ciphertext).unwrap();
-        // Secure ensures only HTTPS scheme (except on localhost).
-        // Without this, a man-in-the-middle could steal the cookie.
         let age_sec = 2 * 60 * 60 * 24 * 7; // 2 weeks.
+        // Secure ensures only HTTPS scheme (except on localhost).
+        // Without secure, a man-in-the-middle could steal the cookie.
         let cookie = format!("auth={ciphertext}; Max-Age={age_sec}; Secure;");
         let cookie = Cookie::parse(cookie).unwrap();
         let updated_jar = jar.add(cookie);
