@@ -79,3 +79,24 @@ body {
     text-decoration: none;
     color: inherit;
 }
+
+.right {
+    margin-left: auto;
+}
+
+.menu-space {
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+input {
+    border-radius: 5px;
+    padding: 4px;
+    margin-top: 4px;
+    margin-bottom: 10px;
+}
+
+input[type="submit"] {
+    padding: 7px 15px;
+    margin: 10px;
+}

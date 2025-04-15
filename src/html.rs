@@ -64,7 +64,8 @@ pub fn page(ctx: &ServerContext, title: &str, show_about: bool, body: &str) -> S
                     {about}
                     {body}
                     <div class="bottom">
-                        <a class="unstyled-link" href="https://github.com/rikhuijzer/fx">source</a>
+                        <a class="unstyled-link menu-space" href="https://github.com/rikhuijzer/fx">source</a>
+                        <a class="unstyled-link menu-space" href="/login">login</a>
                     </div>
                 </div>
             </div>
@@ -82,7 +83,6 @@ pub fn login(ctx: &ServerContext) -> String {
     <form style="text-align: center;" method="post" action="/login">
         <label for="username">username</label><br>
         <input id="username" name="username" type="text" required/><br>
-        <br>
         <label for="password">password</label><br>
         <input id="password" name="password" type="password" required/><br>
         <br>
