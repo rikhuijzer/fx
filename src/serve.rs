@@ -51,12 +51,12 @@ fn response(
 
 fn format_post(p: &Post) -> String {
     indoc::formatdoc! {"
-        <div class='post'>
-            <div class='created_at'>{}</div>
-            <a style='text-decoration: none; color: inherit;' href='/p/{}'>
-                <div class='content'>{}</div>
-            </a>
-        </div>
+    <div class='post' hx-boost='true' preload='mouseover'>
+        <div class='created_at'>{}</div>
+        <a style='text-decoration: none; color: inherit;' href='/p/{}'>
+            <div class='content'>{}</div>
+        </a>
+    </div>
     ", p.created_at, p.id, p.content}
 }
 

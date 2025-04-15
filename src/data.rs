@@ -65,7 +65,9 @@ impl Post {
     }
     pub fn list(conn: &Connection) -> Result<Vec<Post>> {
         let stmt = "
-            SELECT id, created_at, content FROM posts;
+            SELECT id, created_at, content
+            FROM posts
+            ORDER BY id DESC;
         ";
         let posts = conn
             .prepare(stmt)?
@@ -112,7 +114,8 @@ pub fn init(args: &ServeArgs, conn: &Connection) {
 
     if !args.production {
         let now = chrono::Utc::now();
-        Post::insert(&conn, now, "lorem ipsum").unwrap();
-        Post::insert(&conn, now, "dolor sit amet").unwrap();
+        Post::insert(conn, now, "lorem ipsum").unwrap();
+        let now = chrono::Utc::now();
+        Post::insert(conn, now, "dolor sit amet").unwrap();
     }
 }

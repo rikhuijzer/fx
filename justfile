@@ -11,7 +11,7 @@ default:
 
 # Build release and copy files to public/
 #
-# The copy might speed up Docker builds since due to fewer files in the context.
+# The copy might speed up Docker builds due to fewer files in the context.
 release:
     #!{{shebang}}
 
