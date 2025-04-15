@@ -1,7 +1,10 @@
 use crate::ServeArgs;
 use crate::data;
+use axum_extra::extract::CookieJar;
 use crate::html::ToHtml;
 use crate::html::page;
+use axum::Form;
+use serde::Deserialize;
 use axum::Router;
 use axum::body::Body;
 use axum::extract::Path;
@@ -105,7 +108,18 @@ async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
     response(StatusCode::NOT_FOUND, HeaderMap::new(), &body, &ctx)
 }
 
-async fn login(State(ctx): State<ServerContext>) -> Response<Body> {
+async fn get_login(State(ctx): State<ServerContext>) -> Response<Body> {
+    let body = crate::html::login(&ctx);
+    response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LoginForm {
+    pub username: String,
+    pub password: String,
+}
+
+async fn post_login(State(ctx): State<ServerContext>, Form(form): Form<LoginForm>, jar: CookieJar) -> Response<Body> {
     let body = crate::html::login(&ctx);
     response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
 }
@@ -113,7 +127,7 @@ async fn login(State(ctx): State<ServerContext>) -> Response<Body> {
 pub fn app(ctx: ServerContext) -> Router {
     Router::new()
         .route("/", get(list_posts))
-        .route("/login", get(login))
+        .route("/login", get(get_login))
         // Need to put behind /p/<ID> otherwise /<WRONG LINK> will not be a 404.
         .route("/p/{id}", get(show_post))
         .route("/static/style.css", get(style))
