@@ -15,9 +15,9 @@ use std::sync::Arc;
 use std::sync::Mutex;
 
 #[derive(Clone)]
-struct ServerContext {
-    args: ServeArgs,
-    conn: Arc<Mutex<Connection>>,
+pub struct ServerContext {
+    pub args: ServeArgs,
+    pub conn: Arc<Mutex<Connection>>,
 }
 
 fn response(
@@ -53,6 +53,10 @@ async fn list_posts(State(ctx): State<ServerContext>) -> Response<Body> {
     response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
 }
 
+pub fn app(ctx: ServerContext) -> Router {
+    Router::new().route("/", get(list_posts)).with_state(ctx)
+}
+
 pub async fn run(args: &ServeArgs) {
     let conn = data::connect(args).unwrap();
     data::init(&conn);
@@ -67,8 +71,7 @@ pub async fn run(args: &ServeArgs) {
         args: args.clone(),
         conn,
     };
-    let app = Router::new().route("/", get(list_posts)).with_state(ctx);
-
+    let app = app(ctx);
     let addr = format!("0.0.0.0:{}", args.port);
     tracing::info!("Listening on {addr}");
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();

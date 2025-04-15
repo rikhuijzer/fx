@@ -1,22 +1,5 @@
-mod data;
-mod html;
-mod serve;
-
 use clap::Parser;
-
-#[derive(Clone, Debug, Parser)]
-pub struct ServeArgs {
-    #[arg(long, env = "PRODUCTION")]
-    production: bool,
-    #[arg(long, env = "PORT", default_value = "3000")]
-    port: u16,
-    #[arg(long, env = "DATABASE_PATH", default_value = "/data/db.sqlite")]
-    database_path: String,
-    #[arg(long, env = "ADMIN_USERNAME", default_value = "admin")]
-    admin_username: String,
-    #[arg(long, env = "ADMIN_PASSWORD")]
-    admin_password: Option<String>,
-}
+use fedx::ServeArgs;
 
 #[derive(Debug, clap::Subcommand)]
 enum Task {
@@ -41,7 +24,7 @@ async fn main() {
 
     match &args.task {
         Task::Serve(args) => {
-            serve::run(args).await;
+            fedx::serve::run(args).await;
         }
         Task::License => {
             let license_content = include_str!("../LICENSE");
