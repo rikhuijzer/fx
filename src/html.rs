@@ -1,4 +1,5 @@
 use crate::data::Post;
+use crate::serve::ServerContext;
 
 pub trait ToHtml {
     fn to_html(&self) -> String;
@@ -27,14 +28,23 @@ fn htmx() -> &'static str {
     crossorigin="anonymous" defer></script>"#
 }
 
-pub fn page(title: &str, body: &str) -> String {
+pub fn page(ctx: &ServerContext, title: &str, show_about: bool, body: &str) -> String {
     let htmx = htmx();
     let title = if title.is_empty() {
         "fx".to_string()
     } else {
         format!("{title} - fx")
     };
-    let html = indoc::formatdoc! {
+    let about = if show_about {
+        indoc::formatdoc! {r#"
+        <div class="about">
+     {}
+        </div>
+        "#, ctx.args.admin_name }
+    } else {
+        "".to_string()
+    };
+    indoc::formatdoc! {
         r#"
         <!DOCTYPE html>
         <html>
@@ -51,6 +61,7 @@ pub fn page(title: &str, body: &str) -> String {
                     <div class="top">
                         <a class="unstyled-link" href="/">fx</a>
                     </div>
+                    {about}
                     {body}
                     <div class="bottom">
                         <a class="unstyled-link" href="https://github.com/rikhuijzer/fx">source</a>
@@ -59,13 +70,14 @@ pub fn page(title: &str, body: &str) -> String {
             </div>
         </body>
         "#
-    };
-    html
+    }
 }
 
-pub fn login() -> String {
+pub fn login(ctx: &ServerContext) -> String {
     page(
+        ctx,
         "login",
+        false,
         r#"
     <form style="text-align: center;" method="post" action="/login">
         <label for="username">username</label><br>

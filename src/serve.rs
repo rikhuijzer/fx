@@ -60,7 +60,7 @@ async fn list_posts(State(ctx): State<ServerContext>) -> Response<Body> {
         .map(|p| p.to_html())
         .collect::<Vec<String>>()
         .join("\n");
-    let body = page("", &posts);
+    let body = page(&ctx, "", true, &posts);
     response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
 }
 
@@ -90,7 +90,7 @@ async fn show_post(State(ctx): State<ServerContext>, Path(id): Path<i64>) -> Res
         Err(_) => return not_found(State(ctx)).await,
     };
     let title = truncate(&post.content);
-    let body = page(&title, &post.to_html());
+    let body = page(&ctx, &title, false, &post.to_html());
     response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
 }
 
@@ -101,12 +101,12 @@ async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
             <p>The page you are looking for does not exist.</p>
         </div>
     "};
-    let body = page("not found", body);
+    let body = page(&ctx, "not found", false, body);
     response(StatusCode::NOT_FOUND, HeaderMap::new(), &body, &ctx)
 }
 
 async fn login(State(ctx): State<ServerContext>) -> Response<Body> {
-    let body = crate::html::login();
+    let body = crate::html::login(&ctx);
     response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
 }
 

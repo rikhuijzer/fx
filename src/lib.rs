@@ -14,6 +14,9 @@ pub struct ServeArgs {
     pub database_path: String,
     #[arg(long, env = "ADMIN_USERNAME", default_value = "admin")]
     pub admin_username: String,
+    /// The full name that is shown on top of the main page.
+    #[arg(long, env = "ADMIN_NAME", default_value = "John Doe")]
+    pub admin_name: String,
     #[arg(long, env = "ADMIN_PASSWORD")]
     pub admin_password: Option<String>,
 }
