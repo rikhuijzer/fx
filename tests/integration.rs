@@ -7,8 +7,6 @@ use fedx::serve::ServerContext;
 use fedx::serve::app;
 use http_body_util::BodyExt;
 use rusqlite::Connection;
-use std::sync::Arc;
-use std::sync::Mutex;
 use tower::util::ServiceExt;
 
 trait TestDefault {
@@ -20,7 +18,7 @@ impl TestDefault for ServeArgs {
         Self {
             production: false,
             port: 3000,
-            database_path: "/data/db.sqlite".to_string(),
+            database_path: "".to_string(),
             admin_username: "test-admin".to_string(),
             admin_password: Some("test-password".to_string()),
         }
@@ -36,20 +34,27 @@ impl TestDefault for Connection {
     }
 }
 
-#[tokio::test]
-async fn test_home() {
+async fn request_body(uri: &str) -> String {
     let args = ServeArgs::test_default();
     let conn = Connection::test_default();
-    let ctx = ServerContext {
-        args: args.clone(),
-        conn: Arc::new(Mutex::new(conn)),
-    };
+    let ctx = ServerContext::new(args, conn);
     let app = app(ctx);
-    let req = Request::builder().uri("/").body(Body::empty()).unwrap();
+    let req = Request::builder().uri(uri).body(Body::empty()).unwrap();
     let response = app.oneshot(req).await.unwrap();
     assert_eq!(response.status(), StatusCode::OK);
     let body = response.into_body().collect().await.unwrap();
     let body: Vec<u8> = body.to_bytes().into();
-    let body = String::from_utf8(body).unwrap();
-    assert!(body.contains("<ul>"));
+    String::from_utf8(body).unwrap()
+}
+
+#[tokio::test]
+async fn test_home() {
+    let body = request_body("/").await;
+    assert!(body.contains("<!DOCTYPE html>"));
+}
+
+#[tokio::test]
+async fn test_style() {
+    let body = request_body("/static/style.css").await;
+    assert!(body.contains("body {"));
 }

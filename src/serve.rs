@@ -20,6 +20,15 @@ pub struct ServerContext {
     pub conn: Arc<Mutex<Connection>>,
 }
 
+impl ServerContext {
+    pub fn new(args: ServeArgs, conn: Connection) -> Self {
+        Self {
+            args: args.clone(),
+            conn: Arc::new(Mutex::new(conn)),
+        }
+    }
+}
+
 fn response(
     status: StatusCode,
     headers: HeaderMap,
@@ -53,8 +62,16 @@ async fn list_posts(State(ctx): State<ServerContext>) -> Response<Body> {
     response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
 }
 
+async fn style(State(ctx): State<ServerContext>) -> Response<Body> {
+    let body = include_str!("static/style.css");
+    response(StatusCode::OK, HeaderMap::new(), body, &ctx)
+}
+
 pub fn app(ctx: ServerContext) -> Router {
-    Router::new().route("/", get(list_posts)).with_state(ctx)
+    Router::new()
+        .route("/", get(list_posts))
+        .route("/static/style.css", get(style))
+        .with_state(ctx)
 }
 
 pub async fn run(args: &ServeArgs) {
@@ -65,12 +82,7 @@ pub async fn run(args: &ServeArgs) {
     Post::insert(&conn, now, "Hello, World!").unwrap();
     Post::insert(&conn, now, "Hello, again!").unwrap();
 
-    let conn = Arc::new(Mutex::new(conn));
-
-    let ctx = ServerContext {
-        args: args.clone(),
-        conn,
-    };
+    let ctx = ServerContext::new(args.clone(), conn);
     let app = app(ctx);
     let addr = format!("0.0.0.0:{}", args.port);
     tracing::info!("Listening on {addr}");
