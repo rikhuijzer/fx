@@ -99,6 +99,10 @@ async fn test_login_wrong_password() {
     let response = app(ctx.clone()).oneshot(req).await.unwrap();
     assert_eq!(response.status(), StatusCode::SEE_OTHER);
     assert_eq!(response.headers().get("Location").unwrap(), "/");
+    let cookie = response.headers().get("Set-Cookie").unwrap();
+    let cookie = cookie.to_str().unwrap();
+    assert!(cookie.contains("auth="));
+    assert!(cookie.contains("Secure"));
 
     let form = LoginForm {
         username: "test-admin".to_string(),
