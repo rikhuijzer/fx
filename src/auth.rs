@@ -111,7 +111,12 @@ pub fn is_logged_in(ctx: &ServerContext, jar: &CookieJar) -> bool {
     let cookie = jar.get("auth");
     match cookie {
         Some(cookie) => {
-            let ciphertext = serde_json::from_str(cookie.value()).unwrap();
+            let ciphertext = match serde_json::from_str(cookie.value()) {
+                Ok(ciphertext) => ciphertext,
+                Err(_) => {
+                    return false;
+                }
+            };
             let key = match &ctx.args.admin_password {
                 Some(key) => key,
                 None => {

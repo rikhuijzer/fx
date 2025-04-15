@@ -80,7 +80,7 @@ async fn test_login_page() {
 }
 
 #[tokio::test]
-async fn test_login_wrong_password() {
+async fn test_login() {
     let args = ServeArgs::test_default();
     let conn = Connection::test_default();
     let ctx = ServerContext::new(args, conn);
@@ -103,7 +103,43 @@ async fn test_login_wrong_password() {
     let cookie = cookie.to_str().unwrap();
     assert!(cookie.contains("auth="));
     assert!(cookie.contains("Secure"));
+    let cookie = cookie.split(";").next().unwrap();
+    let auth = cookie.split("=").nth(1).unwrap();
+    println!("auth: {auth}");
 
+    // Valid login.
+    let req = Request::builder()
+        .method("GET")
+        .uri("/")
+        .header("Cookie", format!("auth={auth}"))
+        .body(Body::empty())
+        .unwrap();
+    let response = app(ctx.clone()).oneshot(req).await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response.into_body().collect().await.unwrap();
+    let body: Vec<u8> = body.to_bytes().into();
+    let body = String::from_utf8(body).unwrap();
+    assert!(body.contains("lorem ipsum"));
+    assert!(!body.contains("login"));
+    assert!(body.contains("logout"));
+
+    // Invalid login.
+    let req = Request::builder()
+        .method("GET")
+        .uri("/")
+        .header("Cookie", "auth=invalid")
+        .body(Body::empty())
+        .unwrap();
+    let response = app(ctx.clone()).oneshot(req).await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response.into_body().collect().await.unwrap();
+    let body: Vec<u8> = body.to_bytes().into();
+    let body = String::from_utf8(body).unwrap();
+    assert!(body.contains("lorem ipsum"));
+    assert!(body.contains("login"));
+    assert!(!body.contains("logout"));
+
+    // Wrong password.
     let form = LoginForm {
         username: "test-admin".to_string(),
         password: "wrong-password".to_string(),
