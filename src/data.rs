@@ -85,7 +85,7 @@ impl Post {
         let stmt = "
             SELECT id, created_at, content FROM posts WHERE id = ?;
         ";
-        let post = conn.prepare(stmt)?.query_row([id], |row| {
+        conn.prepare(stmt)?.query_row([id], |row| {
             let date_str: String = row.get("created_at")?;
             let created_at = DateTime::from_sqlite(&date_str);
             Ok(Post {
@@ -93,8 +93,7 @@ impl Post {
                 created_at,
                 content: row.get("content")?,
             })
-        })?;
-        Ok(post)
+        })
     }
 }
 

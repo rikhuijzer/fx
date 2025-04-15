@@ -80,12 +80,24 @@ async fn style(State(ctx): State<ServerContext>) -> Response<Body> {
 }
 
 async fn show_post(State(ctx): State<ServerContext>, Path(id): Path<i64>) -> Response<Body> {
-    let post = {
-        let conn = ctx.conn.lock().unwrap();
-        Post::get(&conn, id).unwrap()
+    let post = Post::get(&ctx.conn.lock().unwrap(), id);
+    let post = match post {
+        Ok(post) => post,
+        Err(_) => return not_found(State(ctx)).await,
     };
     let body = page(&format_post(&post));
     response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
+}
+
+async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
+    let body = indoc::indoc! {"
+        <div style='text-align: center; margin-top: 100px;'>
+            <h1>Not found</h1>
+            <p>The page you are looking for does not exist.</p>
+        </div>
+    "};
+    let body = page(body);
+    response(StatusCode::NOT_FOUND, HeaderMap::new(), &body, &ctx)
 }
 
 pub fn app(ctx: ServerContext) -> Router {
@@ -93,6 +105,7 @@ pub fn app(ctx: ServerContext) -> Router {
         .route("/", get(list_posts))
         .route("/static/style.css", get(style))
         .route("/{id}", get(show_post))
+        .fallback(not_found)
         .with_state(ctx)
 }
 
