@@ -17,6 +17,7 @@ release:
 
     cargo build --release
 
+    rm -rf public
     mkdir -p public
     cp --verbose target/release/fx public/
 
