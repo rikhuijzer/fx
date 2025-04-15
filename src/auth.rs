@@ -45,21 +45,20 @@ fn base64_decode(data: &str) -> String {
 }
 
 struct Key {
-    salt: [u8; 22],
     key: Aes256GcmSiv,
 }
 
 impl Key {
     fn new(password: &str) -> Self {
-        let salt = SaltString::generate(&mut OsRng);
-        let salt = salt.as_str().as_bytes();
+        // Salt can be public because it does not help the attacker.
+        // It is only used to defend against rainbow tables.
+        let salt = b"nblVMlxYtvt0rxo3BML3zw";
         let argon2 = Argon2::default();
         let mut key = [0u8; 32];
         argon2
             .hash_password_into(password.as_bytes(), salt, &mut key)
             .unwrap();
         Key {
-            salt: salt.try_into().unwrap(),
             key: Aes256GcmSiv::new_from_slice(&key).unwrap(),
         }
     }
@@ -88,7 +87,15 @@ fn decrypt_login(password: &str, auth: &Ciphertext) -> Option<String> {
     let key = Key::new(password);
     let nonce = Nonce::<Aes256GcmSiv>::from_slice(&auth.nonce);
     let ciphertext = auth.ciphertext.as_slice();
-    let plaintext = key.key.decrypt(&nonce, ciphertext).unwrap();
+    println!("nonce len: {}", nonce.len());
+    println!("ciphertext len: {}", ciphertext.len());
+    let plaintext = match key.key.decrypt(&nonce, ciphertext) {
+        Ok(plaintext) => plaintext,
+        Err(e) => {
+            println!("failed to decrypt login: {}", e);
+            return None;
+        }
+    };
     String::from_utf8(plaintext).ok()
 }
 
@@ -97,7 +104,8 @@ fn encryption_roundtrip() {
     let password = "password";
     let auth = encrypt_login(password);
     let plaintext = decrypt_login(password, &auth).unwrap();
-    assert_eq!(plaintext, Utc::now().to_rfc3339());
+    let today = Utc::now().date_naive();
+    assert!(plaintext.contains(&today.to_string()));
 }
 
 pub fn handle_login(ctx: &ServerContext, form: &LoginForm, jar: CookieJar) -> Option<CookieJar> {
