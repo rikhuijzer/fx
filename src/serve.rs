@@ -3,6 +3,7 @@ use crate::data;
 use crate::html::page;
 use axum::Router;
 use axum::body::Body;
+use axum::extract::Path;
 use axum::extract::State;
 use axum::http::HeaderMap;
 use axum::http::HeaderValue;
@@ -48,6 +49,17 @@ fn response(
     response
 }
 
+fn format_post(p: &Post) -> String {
+    indoc::formatdoc! {"
+        <div class='post'>
+            <div class='created_at'>{}</div>
+            <a style='text-decoration: none; color: inherit;' href='/{}'>
+                <div class='content'>{}</div>
+            </a>
+        </div>
+    ", p.created_at, p.id, p.content}
+}
+
 async fn list_posts(State(ctx): State<ServerContext>) -> Response<Body> {
     let posts = {
         let conn = ctx.conn.lock().unwrap();
@@ -55,7 +67,7 @@ async fn list_posts(State(ctx): State<ServerContext>) -> Response<Body> {
     };
     let posts = posts
         .iter()
-        .map(|p| format!("<li>{}: {}</li>", p.created_at, p.content))
+        .map(format_post)
         .collect::<Vec<String>>()
         .join("\n");
     let body = page(&format!("<ul>{}</ul>", posts));
@@ -67,10 +79,20 @@ async fn style(State(ctx): State<ServerContext>) -> Response<Body> {
     response(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
+async fn show_post(State(ctx): State<ServerContext>, Path(id): Path<i64>) -> Response<Body> {
+    let post = {
+        let conn = ctx.conn.lock().unwrap();
+        Post::get(&conn, id).unwrap()
+    };
+    let body = page(&format_post(&post));
+    response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
+}
+
 pub fn app(ctx: ServerContext) -> Router {
     Router::new()
         .route("/", get(list_posts))
         .route("/static/style.css", get(style))
+        .route("/{id}", get(show_post))
         .with_state(ctx)
 }
 
