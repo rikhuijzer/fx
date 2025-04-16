@@ -69,7 +69,7 @@ pub fn edit_post_buttons(_ctx: &ServerContext, post: &Post) -> String {
         <button>
             edit
         </button>
-        <a class="button" href="/delete/{id}">
+        <a class="button" href="/post/delete/{id}">
             delete
         </a>
     </div>

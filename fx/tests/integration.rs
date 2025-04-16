@@ -63,11 +63,11 @@ async fn test_home() {
 
 #[tokio::test]
 async fn test_post() {
-    let (status, body) = request_body("/p/1").await;
+    let (status, body) = request_body("/post/1").await;
     assert_eq!(status, StatusCode::OK);
     assert!(body.contains("lorem ipsum"));
 
-    let (status, body) = request_body("/p/2").await;
+    let (status, body) = request_body("/post/2").await;
     assert_eq!(status, StatusCode::OK);
     assert!(body.contains("dolor sit amet"));
 }
@@ -171,7 +171,7 @@ async fn test_login() {
     assert!(body.contains("Invalid username or password"));
 }
 
-async fn request_body_logged_in(uri: &str) -> String {
+async fn request_body_logged_in(uri: &str) -> (StatusCode, String) {
     let args = ServeArgs::test_default();
     let conn = Connection::test_default();
     let salt = fx_auth::generate_salt();
@@ -206,19 +206,21 @@ async fn request_body_logged_in(uri: &str) -> String {
         .body(Body::empty())
         .unwrap();
     let response = app(ctx.clone()).oneshot(req).await.unwrap();
-    assert_eq!(response.status(), StatusCode::OK);
+    let status = response.status();
     let body = response.into_body().collect().await.unwrap();
     let body: Vec<u8> = body.to_bytes().into();
-    String::from_utf8(body).unwrap()
+    let body = String::from_utf8(body).unwrap();
+    (status, body)
 }
 
 #[tokio::test]
 async fn test_delete_confirmation() {
-    let (status, body) = request_body("/delete/1").await;
+    let (status, body) = request_body("/post/delete/1").await;
     assert_eq!(status, StatusCode::NOT_FOUND);
     assert!(!body.contains("Are you sure you want to delete this post?"));
 
-    let body = request_body_logged_in("/delete/1").await;
+    let (status, body) = request_body_logged_in("/post/delete/1").await;
+    assert_eq!(status, StatusCode::OK);
     assert!(body.contains("Are you sure you want to delete this post?"));
     assert!(body.contains("lorem ipsum"));
 }

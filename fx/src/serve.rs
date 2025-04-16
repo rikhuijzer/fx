@@ -89,7 +89,7 @@ async fn list_posts(State(ctx): State<ServerContext>, jar: CookieJar) -> Respons
         .iter()
         .map(|p| {
             format!(
-                "<a class='unstyled-link' href='/p/{}'>{}</a>",
+                "<a class='unstyled-link' href='/post/{}'>{}</a>",
                 p.id,
                 p.to_html(&hctx)
             )
@@ -139,7 +139,7 @@ async fn get_delete(
     let delete_button = indoc::formatdoc! {r#"
         <div class='center medium-text' style='font-weight: bold;'>
             <p>Are you sure you want to delete this post? This action cannot be undone.</p>
-            <form action='/delete/{id}' method='post'>
+            <form action='/post/delete/{id}' method='post'>
                 <button type='submit'>delete</button>
             </form>
             <br>
@@ -262,14 +262,13 @@ async fn post_delete(
 pub fn app(ctx: ServerContext) -> Router {
     Router::new()
         .route("/", get(list_posts))
-        .route("/delete/{id}", get(get_delete))
-        .route("/delete/{id}", post(post_delete))
-        // .route("/delete/{id}", post(post_delete))
+        .route("/post/delete/{id}", get(get_delete))
+        .route("/post/delete/{id}", post(post_delete))
         .route("/login", get(get_login))
         .route("/login", post(post_login))
         .route("/logout", get(get_logout))
-        // Need to put behind /p/<ID> otherwise /<WRONG LINK> will not be a 404.
-        .route("/p/{id}", get(get_post))
+        // Need to put behind /post/<ID> otherwise /<WRONG LINK> will not be a 404.
+        .route("/post/{id}", get(get_post))
         .route("/static/style.css", get(style))
         .fallback(not_found)
         .with_state(ctx)
