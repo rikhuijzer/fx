@@ -15,7 +15,7 @@ default:
 release:
     #!{{shebang}}
 
-    cargo build --release
+    cargo build -p fx --release
 
     rm -rf public
     mkdir -p public
