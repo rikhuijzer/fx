@@ -45,7 +45,7 @@ pre code {
     display: block;
     margin-left: auto;
     margin-right: auto;
-    width: 96%;
+    max-width: 100%;
     font-size: var(--ui-font-size);
     background-color: var(--code-background);
     border-radius: var(--radius);
