@@ -79,10 +79,11 @@ pub fn edit_post_buttons(_ctx: &ServerContext, post: &Post) -> String {
 }
 
 pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String {
+    let title_suffix = &ctx.args.title_suffix;
     let title = if settings.title.is_empty() {
-        "fx".to_string()
+        title_suffix.clone()
     } else {
-        format!("{} - fx", settings.title)
+        format!("{} - {title_suffix}", settings.title)
     };
     let about = if settings.show_about {
         indoc::formatdoc! {r#"

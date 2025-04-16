@@ -2,9 +2,10 @@ app = 'fedx'
 primary_region = 'ams'
 
 [env]
-  PRODUCTION = "true"
-  ADMIN_USERNAME = "rik"
-  ADMIN_NAME = "Rik"
+  FX_PRODUCTION = "true"
+  FX_ADMIN_USERNAME = "rik"
+  FX_ADMIN_NAME = "Rik"
+  FX_TITLE_SUFFIX = "Rik's weblog"
 
 [http_service]
   internal_port = 3000

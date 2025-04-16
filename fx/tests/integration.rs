@@ -21,6 +21,7 @@ impl TestDefault for ServeArgs {
             port: 3000,
             database_path: "".to_string(),
             admin_username: "test-admin".to_string(),
+            title_suffix: "title-suffix".to_string(),
             admin_name: "Test Admin".to_string(),
             admin_password: Some("test-password".to_string()),
         }
