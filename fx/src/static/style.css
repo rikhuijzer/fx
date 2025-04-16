@@ -8,7 +8,8 @@
     --black: #000000;
     --radius: 5px;
     --flame: #fa7a02;
-    --medium: 18px;
+    --ui-font-size: 13px;
+    --text-font-size: 18px;
     --text: #000000;
     --background: hsl(220, 60%, 98%);
     --code-background: hsl(230, 60%, 96%);
@@ -36,6 +37,7 @@ body {
     line-height: 150%;
     background-color: var(--background);
     color: var(--text);
+    font-size: var(--text-font-size);
 }
 
 .container {
@@ -58,6 +60,10 @@ body {
     border-radius: var(--radius);
     padding: 10px;
     margin-bottom: 10px;
+}
+
+.content {
+    font-size: var(--text-font-size);
 }
 
 .post-header {
@@ -100,12 +106,12 @@ input {
     padding: 4px;
     margin-top: 4px;
     margin-bottom: 10px;
+    font-size: var(--ui-font-size);
 }
 
 input[type="submit"] {
     background-color: var(--button-background);
     border: 1px solid var(--border);
-    display: inline-block;
     color: var(--text);
     padding: 7px 20px;
     margin: 12px 6px;
@@ -115,8 +121,22 @@ button {
     background-color: var(--button-background);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    display: inline-block;
     color: var(--text);
     padding: 7px 20px;
+    margin: 12px 6px;
+    font-size: var(--ui-font-size);
+}
+
+a {
+    font-size: var(--ui-font-size);
+}
+
+a.button {
+    background-color: var(--button-background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    text-decoration: none;
+    color: var(--text);
+    padding: 5px 20px;
     margin: 12px 6px;
 }

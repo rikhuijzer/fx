@@ -33,11 +33,9 @@ impl ToHtml for Post {
             <div class='post-header'>
                 <div class='created_at'>{}</div>
             </div>
-            <a class='unstyled-link' href='/p/{}'>
-                <div class='content'>{}</div>
-            </a>
+            <div class='content'>{}</div>
         </div>
-        ", self.created_at, self.id, self.content}
+        ", self.created_at, self.content}
     }
 }
 
@@ -87,7 +85,7 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
     };
     let about = if settings.show_about {
         indoc::formatdoc! {r#"
-        <div class="about">
+        <div class="about" style="margin-bottom: 20px;">
             {}
         </div>
         "#, ctx.args.admin_name }
@@ -102,9 +100,7 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
     let top = match settings.top {
         Top::Default => "",
         Top::Back => indoc::indoc! {"
-        <form action='/'>
-            <input type='submit' value='← back'/>
-        </form>
+        <a href='/' class='button'>← back</a>
         "},
     };
     indoc::formatdoc! {

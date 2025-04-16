@@ -87,7 +87,13 @@ async fn list_posts(State(ctx): State<ServerContext>, jar: CookieJar) -> Respons
     let hctx = HtmlCtx::new(is_logged_in, true);
     let posts = posts
         .iter()
-        .map(|p| p.to_html(&hctx))
+        .map(|p| {
+            format!(
+                "<a class='unstyled-link' href='/p/{}'>{}</a>",
+                p.id,
+                p.to_html(&hctx)
+            )
+        })
         .collect::<Vec<String>>()
         .join("\n");
     let settings = PageSettings::new("", is_logged_in, true, Top::Default);
