@@ -295,16 +295,17 @@ async fn post_add(
     let bytes = bytes.to_vec();
     let content = String::from_utf8(bytes).unwrap();
     let preview = content.contains("preview");
-    let content = content[8..].to_string();
     let content = content.split("&").next().unwrap();
+    let form = serde_urlencoded::from_str::<PostForm>(content).unwrap();
     if preview {
-        let preview = crate::html::post_preview(content);
+        let html = markdown::to_html(&form.content);
+        let preview = crate::html::post_preview(&html);
         let body = page(&ctx, &settings, &preview);
         response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
     } else {
         let now = Utc::now();
         let conn = ctx.conn.lock().unwrap();
-        let post = Post::insert(&conn, now, content);
+        let post = Post::insert(&conn, now, &form.content);
         if post.is_err() {
             return response(
                 StatusCode::INTERNAL_SERVER_ERROR,

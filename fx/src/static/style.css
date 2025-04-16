@@ -41,6 +41,15 @@ body {
     font-size: var(--text-font-size);
 }
 
+pre code {
+    display: block;
+    width: 100%;
+    font-size: var(--ui-font-size);
+    background-color: var(--code-background);
+    border-radius: var(--radius);
+    padding: 10px;
+}
+
 .container {
     display: flex;
     justify-content: center;
