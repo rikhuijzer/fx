@@ -78,14 +78,13 @@ fn is_logged_in(ctx: &ServerContext, jar: &CookieJar) -> bool {
     fx_auth::is_logged_in(&ctx.salt, &login, jar)
 }
 
-async fn list_posts(State(ctx): State<ServerContext>, jar: CookieJar) -> Response<Body> {
-    let is_logged_in = is_logged_in(&ctx, &jar);
+fn list_posts(ctx: &ServerContext, is_logged_in: bool) -> String {
     let posts = {
         let conn = ctx.conn.lock().unwrap();
         Post::list(&conn).unwrap()
     };
     let hctx = HtmlCtx::new(is_logged_in, true);
-    let posts = posts
+    posts
         .iter()
         .map(|p| {
             format!(
@@ -95,8 +94,13 @@ async fn list_posts(State(ctx): State<ServerContext>, jar: CookieJar) -> Respons
             )
         })
         .collect::<Vec<String>>()
-        .join("\n");
+        .join("\n")
+}
+
+async fn get_posts(State(ctx): State<ServerContext>, jar: CookieJar) -> Response<Body> {
+    let is_logged_in = is_logged_in(&ctx, &jar);
     let settings = PageSettings::new("", is_logged_in, true, Top::Homepage);
+    let posts = list_posts(&ctx, is_logged_in);
     let body = page(&ctx, &settings, &posts);
     response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
 }
@@ -134,7 +138,7 @@ async fn get_delete(
         Ok(post) => post,
         Err(_) => return not_found(State(ctx.clone())).await,
     };
-    let settings = PageSettings::new(&post.content, false, false, Top::Back);
+    let settings = PageSettings::new(&post.content, false, false, Top::GoHome);
     let hctx = HtmlCtx::new(false, false);
     let delete_button = indoc::formatdoc! {r#"
         <div class='center medium-text' style='font-weight: bold;'>
@@ -162,7 +166,7 @@ async fn get_post(
         Err(_) => return not_found(State(ctx)).await,
     };
     let title = truncate(&post.content);
-    let settings = PageSettings::new(&title, false, false, Top::Back);
+    let settings = PageSettings::new(&title, false, false, Top::GoHome);
     let hctx = HtmlCtx::new(false, false);
     let mut body = post.to_html(&hctx);
     if is_logged_in {
@@ -179,7 +183,7 @@ async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
             <p>The page you are looking for does not exist.</p>
         </div>
     "};
-    let settings = PageSettings::new("not found", false, false, Top::Back);
+    let settings = PageSettings::new("not found", false, false, Top::GoHome);
     let body = page(&ctx, &settings, body);
     response(StatusCode::NOT_FOUND, HeaderMap::new(), &body, &ctx)
 }
@@ -259,11 +263,29 @@ async fn post_delete(
     Ok(Redirect::to("/"))
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+pub struct PostForm {
+    pub content: String,
+}
+
+async fn post_add(
+    State(ctx): State<ServerContext>,
+    jar: CookieJar,
+    Form(form): Form<PostForm>,
+) -> Response<Body> {
+    let is_logged_in = is_logged_in(&ctx, &jar);
+    let settings = PageSettings::new("", is_logged_in, false, Top::GoBack);
+    let preview = crate::html::post_preview(&form.content);
+    let body = page(&ctx, &settings, &preview);
+    response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
+}
+
 pub fn app(ctx: ServerContext) -> Router {
     Router::new()
-        .route("/", get(list_posts))
+        .route("/", get(get_posts))
         .route("/post/delete/{id}", get(get_delete))
         .route("/post/delete/{id}", post(post_delete))
+        .route("/post/add", post(post_add))
         .route("/login", get(get_login))
         .route("/login", post(post_login))
         .route("/logout", get(get_logout))

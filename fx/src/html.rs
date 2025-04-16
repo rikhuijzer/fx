@@ -1,5 +1,6 @@
 use crate::data::Post;
 use crate::serve::ServerContext;
+use chrono::Utc;
 
 #[derive(Debug)]
 pub struct HtmlCtx {
@@ -39,9 +40,29 @@ impl ToHtml for Post {
     }
 }
 
+pub fn post_preview(content: &str) -> String {
+    let now = Utc::now();
+    indoc::formatdoc! {r#"
+    <div class='post'>
+        <div class='post-header'>
+            <div class='created_at'>{now}</div>
+        </div>
+        <div class='content'>{content}</div>
+    </div>
+    "#
+    }
+}
+
 pub enum Top {
+    /// Show the top section for the homepage.
     Homepage,
-    Back,
+    /// A button that goes back to the homepage.
+    GoHome,
+    /// A button that goes back to the previous page.
+    ///
+    /// This is used after the preview to go back to the post that was being
+    /// edited.
+    GoBack,
 }
 
 pub struct PageSettings {
@@ -80,11 +101,11 @@ fn add_post_form() -> &'static str {
     indoc::indoc! {r#"
     <form style="width: 100%;" action="/post/add" method="post">
         <textarea style="width: 99%; height: 100px;"
-          id="content" name="content" placeholder="content"></textarea>
+          id="content" name="content" placeholder="Your (micro)blogpost.."></textarea>
         <br>
         <div style="display: flex; justify-content: flex-end;">
-            <input type="submit" value="preview"/>
-            <input type="submit" value="publish"/>
+            <input type="submit" value="Preview"/>
+            <input type="submit" value="Publish"/>
         </div>
     </form>
     "#}
@@ -107,9 +128,9 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
         "".to_string()
     };
     let loginout = if settings.is_logged_in {
-        r#"<a class="unstyled-link menu-space" href="/logout">logout</a>"#
+        r#"<a class="unstyled-link menu-space" href="/logout">Logout</a>"#
     } else {
-        r#"<a class="unstyled-link menu-space" href="/login">login</a>"#
+        r#"<a class="unstyled-link menu-space" href="/login">Login</a>"#
     };
     let top = match settings.top {
         Top::Homepage => {
@@ -119,9 +140,17 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
                 ""
             }
         }
-        Top::Back => indoc::indoc! {"
+        Top::GoHome => indoc::indoc! {"
         <a href='/' class='button'>← back</a>
         "},
+        Top::GoBack => indoc::indoc! {r#"
+        <noscript>
+            // no button because loading back will remove the previous content.
+        </noscript>
+        <script>
+            document.write("<a href='javascript:history.back()' class='button'>← back</a>");
+        </script>
+        "#},
     };
     indoc::formatdoc! {
         r#"
