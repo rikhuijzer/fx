@@ -1,5 +1,6 @@
-use crate::serve::LoginForm;
-use crate::serve::ServerContext;
+//! Encryption and authentication.
+//!
+//! This was moved in a separate crate to speed up incremental compilation.
 use aes_gcm_siv::AeadCore;
 use aes_gcm_siv::Aes256GcmSiv;
 use aes_gcm_siv::KeyInit;
@@ -19,16 +20,21 @@ fn constant_time_str_eq(a: &str, b: &str) -> bool {
     a.as_bytes().ct_eq(b.as_bytes()).into()
 }
 
-fn verify_login(ctx: &ServerContext, form: &LoginForm) -> bool {
-    let admin_password = match &ctx.args.admin_password {
-        Some(admin_password) => admin_password,
-        None => {
-            tracing::warn!("admin password not set");
-            return false;
-        }
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Login {
+    pub username: Option<String>,
+    pub password: Option<String>,
+}
+
+fn verify_login(actual: &Login, received: &Login) -> bool {
+    let username_eq = match (&actual.username, &received.username) {
+        (Some(a), Some(e)) => constant_time_str_eq(a, e),
+        _ => false,
     };
-    let username_eq = constant_time_str_eq(&form.username, &ctx.args.admin_username);
-    let password_eq = constant_time_str_eq(&form.password, admin_password);
+    let password_eq = match (&actual.password, &received.password) {
+        (Some(a), Some(e)) => constant_time_str_eq(a, e),
+        _ => false,
+    };
     username_eq && password_eq
 }
 
@@ -105,7 +111,7 @@ pub fn handle_logout(jar: CookieJar) -> CookieJar {
 
 const MAX_AGE_SEC: i64 = 2 * 60 * 60 * 24 * 7; // 2 weeks.
 
-pub fn is_logged_in(ctx: &ServerContext, jar: &CookieJar) -> bool {
+pub fn is_logged_in(login: &Login, jar: &CookieJar) -> bool {
     let cookie = jar.get("auth");
     match cookie {
         Some(cookie) => {
@@ -115,7 +121,7 @@ pub fn is_logged_in(ctx: &ServerContext, jar: &CookieJar) -> bool {
                     return false;
                 }
             };
-            let key = match &ctx.args.admin_password {
+            let key = match &login.password {
                 Some(key) => key,
                 None => {
                     tracing::warn!("admin password not set");
@@ -130,9 +136,16 @@ pub fn is_logged_in(ctx: &ServerContext, jar: &CookieJar) -> bool {
     }
 }
 
-pub fn handle_login(ctx: &ServerContext, form: &LoginForm, jar: CookieJar) -> Option<CookieJar> {
-    if verify_login(ctx, form) {
-        let ciphertext = encrypt_login(&form.password);
+pub fn handle_login(actual: &Login, received: &Login, jar: CookieJar) -> Option<CookieJar> {
+    if verify_login(actual, received) {
+        let password = match &received.password {
+            Some(password) => password,
+            None => {
+                tracing::warn!("admin password not set");
+                return None;
+            }
+        };
+        let ciphertext = encrypt_login(password);
         let ciphertext = serde_json::to_string(&ciphertext).unwrap();
         // Secure ensures only HTTPS scheme (except on localhost).
         // Without secure, a man-in-the-middle could steal the cookie.

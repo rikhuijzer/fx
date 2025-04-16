@@ -48,7 +48,7 @@ async fn main() {
             fx::serve::run(args).await;
         }
         Task::License => {
-            let license_content = include_str!("../LICENSE");
+            let license_content = include_str!("../../LICENSE");
             println!("{}", license_content);
         }
     }

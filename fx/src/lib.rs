@@ -1,4 +1,3 @@
-pub mod auth;
 pub mod data;
 pub mod html;
 pub mod serve;

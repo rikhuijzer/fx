@@ -17,6 +17,7 @@ use axum::routing::get;
 use axum::routing::post;
 use axum_extra::extract::CookieJar;
 use data::Post;
+use fx_auth::Login;
 use rusqlite::Connection;
 use serde::Deserialize;
 use serde::Serialize;
@@ -57,8 +58,23 @@ fn response(
     response
 }
 
+fn is_logged_in(ctx: &ServerContext, jar: &CookieJar) -> bool {
+    let password = match &ctx.args.admin_password {
+        Some(password) => password,
+        None => {
+            tracing::warn!("admin password not set");
+            return false;
+        }
+    };
+    let login = Login {
+        username: Some(ctx.args.admin_username.clone()),
+        password: Some(password.clone()),
+    };
+    fx_auth::is_logged_in(&login, jar)
+}
+
 async fn list_posts(State(ctx): State<ServerContext>, jar: CookieJar) -> Response<Body> {
-    let is_logged_in = crate::auth::is_logged_in(&ctx, &jar);
+    let is_logged_in = is_logged_in(&ctx, &jar);
     let posts = {
         let conn = ctx.conn.lock().unwrap();
         Post::list(&conn).unwrap()
@@ -132,7 +148,27 @@ async fn post_login(
     jar: CookieJar,
     Form(form): Form<LoginForm>,
 ) -> Result<(CookieJar, Redirect), Response<Body>> {
-    let new_jar = crate::auth::handle_login(&ctx, &form, jar.clone());
+    let password = match &ctx.args.admin_password {
+        Some(password) => password,
+        None => {
+            tracing::warn!("admin password not set");
+            return Err(response(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                HeaderMap::new(),
+                "Admin password not set",
+                &ctx,
+            ));
+        }
+    };
+    let actual = Login {
+        username: Some(ctx.args.admin_username.clone()),
+        password: Some(password.clone()),
+    };
+    let received = Login {
+        username: Some(form.username),
+        password: Some(form.password),
+    };
+    let new_jar = fx_auth::handle_login(&actual, &received, jar.clone());
     match new_jar {
         Some(jar) => Ok((jar, Redirect::to("/"))),
         None => {
@@ -151,7 +187,7 @@ async fn get_logout(
     State(_secrets): State<ServerContext>,
     jar: CookieJar,
 ) -> (CookieJar, Redirect) {
-    let updated_jar = crate::auth::handle_logout(jar.clone());
+    let updated_jar = fx_auth::handle_logout(jar.clone());
     (updated_jar, Redirect::to("/"))
 }
 
