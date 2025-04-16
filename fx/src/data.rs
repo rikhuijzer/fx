@@ -35,6 +35,45 @@ fn test_sqlite_datetime() {
     assert_eq!(dt, dt2);
 }
 
+/// Key-value entry.
+#[derive(Clone, Debug)]
+pub struct Kv {
+    pub key: String,
+    pub value: Vec<u8>,
+}
+
+impl Kv {
+    pub fn create_table(conn: &Connection) -> Result<usize> {
+        let stmt = "CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value BLOB)";
+        conn.execute(stmt, [])
+    }
+    pub fn insert(conn: &Connection, key: &str, value: &[u8]) -> Result<usize> {
+        let stmt = &format!("INSERT INTO kv (key, value) VALUES ('{key}', ?)");
+        conn.execute(stmt, [value])
+    }
+    pub fn get(conn: &Connection, key: &str) -> Result<Kv> {
+        let stmt = "SELECT key, value FROM kv WHERE key = ?";
+        let kv: Kv = conn.prepare(stmt)?.query_row([key], |row| {
+            Ok(Kv {
+                key: row.get("key")?,
+                value: row.get("value")?,
+            })
+        })?;
+        Ok(kv)
+    }
+}
+
+#[test]
+fn test_kv() {
+    let conn = Connection::open_in_memory().unwrap();
+    Kv::create_table(&conn).unwrap();
+    let key = "key";
+    let value = b"value";
+    Kv::insert(&conn, key, value).unwrap();
+    let kv = Kv::get(&conn, key).unwrap();
+    assert_eq!(kv.value, value);
+}
+
 #[derive(Clone, Debug)]
 pub struct Post {
     #[allow(dead_code)]
@@ -109,8 +148,13 @@ pub fn connect(args: &ServeArgs) -> Result<Connection> {
     Ok(conn)
 }
 
+fn init_tables(conn: &Connection) {
+    Post::create_table(conn).expect("Failed to create posts table");
+    Kv::create_table(conn).expect("Failed to create kv table");
+}
+
 pub fn init(args: &ServeArgs, conn: &Connection) {
-    Post::create_table(conn).expect("Failed to create table");
+    init_tables(conn);
 
     if !args.production {
         let now = chrono::Utc::now();

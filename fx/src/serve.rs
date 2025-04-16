@@ -18,6 +18,7 @@ use axum::routing::post;
 use axum_extra::extract::CookieJar;
 use data::Post;
 use fx_auth::Login;
+use fx_auth::Salt;
 use rusqlite::Connection;
 use serde::Deserialize;
 use serde::Serialize;
@@ -28,13 +29,15 @@ use std::sync::Mutex;
 pub struct ServerContext {
     pub args: ServeArgs,
     pub conn: Arc<Mutex<Connection>>,
+    pub salt: Salt,
 }
 
 impl ServerContext {
-    pub fn new(args: ServeArgs, conn: Connection) -> Self {
+    pub fn new(args: ServeArgs, conn: Connection, salt: Salt) -> Self {
         Self {
             args: args.clone(),
             conn: Arc::new(Mutex::new(conn)),
+            salt,
         }
     }
 }
@@ -70,7 +73,7 @@ fn is_logged_in(ctx: &ServerContext, jar: &CookieJar) -> bool {
         username: Some(ctx.args.admin_username.clone()),
         password: Some(password.clone()),
     };
-    fx_auth::is_logged_in(&login, jar)
+    fx_auth::is_logged_in(&ctx.salt, &login, jar)
 }
 
 async fn list_posts(State(ctx): State<ServerContext>, jar: CookieJar) -> Response<Body> {
@@ -168,7 +171,7 @@ async fn post_login(
         username: Some(form.username),
         password: Some(form.password),
     };
-    let new_jar = fx_auth::handle_login(&actual, &received, jar.clone());
+    let new_jar = fx_auth::handle_login(&ctx.salt, &actual, &received, jar.clone());
     match new_jar {
         Some(jar) => Ok((jar, Redirect::to("/"))),
         None => {
@@ -204,11 +207,27 @@ pub fn app(ctx: ServerContext) -> Router {
         .with_state(ctx)
 }
 
+/// Return the salt by either generating a new one or reading it from the db.
+///
+/// Re-using the salt between sessions allows users to keep logged in even when
+/// the server restarts.
+fn obtain_salt(conn: &Connection) -> Salt {
+    let salt = data::Kv::get(conn, "salt");
+    match salt {
+        Ok(salt) => salt.value.try_into().unwrap(),
+        Err(_) => {
+            let salt = fx_auth::generate_salt();
+            data::Kv::insert(conn, "salt", &salt).unwrap();
+            salt
+        }
+    }
+}
+
 pub async fn run(args: &ServeArgs) {
     let conn = data::connect(args).unwrap();
     data::init(args, &conn);
-
-    let ctx = ServerContext::new(args.clone(), conn);
+    let salt = obtain_salt(&conn);
+    let ctx = ServerContext::new(args.clone(), conn, salt);
     let app = app(ctx);
     let addr = format!("0.0.0.0:{}", args.port);
     tracing::info!("Listening on {addr}");

@@ -39,7 +39,8 @@ impl TestDefault for Connection {
 async fn request_body(uri: &str) -> String {
     let args = ServeArgs::test_default();
     let conn = Connection::test_default();
-    let ctx = ServerContext::new(args, conn);
+    let salt = fx_auth::generate_salt();
+    let ctx = ServerContext::new(args, conn, salt);
     let app = app(ctx);
     let req = Request::builder().uri(uri).body(Body::empty()).unwrap();
     let response = app.oneshot(req).await.unwrap();
@@ -83,7 +84,8 @@ async fn test_login_page() {
 async fn test_login() {
     let args = ServeArgs::test_default();
     let conn = Connection::test_default();
-    let ctx = ServerContext::new(args, conn);
+    let salt = fx_auth::generate_salt();
+    let ctx = ServerContext::new(args, conn, salt);
 
     // Valid login.
     let form = LoginForm {
