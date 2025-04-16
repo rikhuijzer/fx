@@ -101,11 +101,11 @@ fn add_post_form() -> &'static str {
     indoc::indoc! {r#"
     <form style="width: 100%;" action="/post/add" method="post">
         <textarea style="width: 99%; height: 100px;"
-          id="content" name="content" placeholder="Your (micro)blogpost.."></textarea>
+          id="content" name="content" placeholder="Your text.."></textarea>
         <br>
         <div style="display: flex; justify-content: flex-end;">
-            <input type="submit" value="Preview"/>
-            <input type="submit" value="Publish"/>
+            <input type="submit" name="preview" value="Preview"/>
+            <input type="submit" name="publish" value="Publish"/>
         </div>
     </form>
     "#}

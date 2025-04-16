@@ -9,18 +9,22 @@ use axum::Form;
 use axum::Router;
 use axum::body::Body;
 use axum::extract::Path;
+use axum::extract::Request;
 use axum::extract::State;
 use axum::http::HeaderMap;
 use axum::http::HeaderValue;
 use axum::http::Response;
 use axum::http::StatusCode;
+use axum::response::IntoResponse;
 use axum::response::Redirect;
 use axum::routing::get;
 use axum::routing::post;
 use axum_extra::extract::CookieJar;
+use chrono::Utc;
 use data::Post;
 use fx_auth::Login;
 use fx_auth::Salt;
+use http_body_util::BodyExt;
 use rusqlite::Connection;
 use serde::Deserialize;
 use serde::Serialize;
@@ -271,13 +275,48 @@ pub struct PostForm {
 async fn post_add(
     State(ctx): State<ServerContext>,
     jar: CookieJar,
-    Form(form): Form<PostForm>,
+    req: Request,
 ) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
     let settings = PageSettings::new("", is_logged_in, false, Top::GoBack);
-    let preview = crate::html::post_preview(&form.content);
-    let body = page(&ctx, &settings, &preview);
-    response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
+    let (_, body) = req.into_parts();
+    let bytes = body
+        .collect()
+        .await
+        .map_err(|_err| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to read request body",
+            )
+                .into_response()
+        })
+        .unwrap()
+        .to_bytes();
+    let bytes = bytes.to_vec();
+    let content = String::from_utf8(bytes).unwrap();
+    let preview = content.contains("preview");
+    let content = content[8..].to_string();
+    let content = content.split("&").next().unwrap();
+    if preview {
+        let preview = crate::html::post_preview(content);
+        let body = page(&ctx, &settings, &preview);
+        response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
+    } else {
+        let now = Utc::now();
+        let conn = ctx.conn.lock().unwrap();
+        let post = Post::insert(&conn, now, content);
+        if post.is_err() {
+            return response(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                HeaderMap::new(),
+                "Failed to insert post",
+                &ctx,
+            );
+        };
+        let mut headers = HeaderMap::new();
+        headers.insert("Location", HeaderValue::from_str("/").unwrap());
+        response(StatusCode::SEE_OTHER, headers, "", &ctx)
+    }
 }
 
 pub fn app(ctx: ServerContext) -> Router {
