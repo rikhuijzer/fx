@@ -58,7 +58,7 @@ body {
     margin-bottom: 10px;
 }
 
-.created_at {
+.post-header {
     font-size: 12px;
     color: var(--gray);
 }

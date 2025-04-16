@@ -91,6 +91,8 @@ fn decrypt_login(salt: &Salt, password: &str, auth: &Ciphertext) -> Option<Strin
     let plaintext = match key.key.decrypt(nonce, ciphertext) {
         Ok(plaintext) => plaintext,
         Err(e) => {
+            // This can occur when the salt is incorrect. Should not happen in
+            // production I think. Time will tell.
             println!("failed to decrypt login: {}", e);
             return None;
         }

@@ -1,5 +1,6 @@
 use crate::ServeArgs;
 use crate::data;
+use crate::html::HtmlCtx;
 use crate::html::PageSettings;
 use crate::html::ToHtml;
 use crate::html::page;
@@ -82,9 +83,10 @@ async fn list_posts(State(ctx): State<ServerContext>, jar: CookieJar) -> Respons
         let conn = ctx.conn.lock().unwrap();
         Post::list(&conn).unwrap()
     };
+    let hctx = HtmlCtx::new(is_logged_in);
     let posts = posts
         .iter()
-        .map(|p| p.to_html())
+        .map(|p| p.to_html(&hctx))
         .collect::<Vec<String>>()
         .join("\n");
     let settings = PageSettings::new("", is_logged_in, true);
@@ -119,7 +121,8 @@ async fn show_post(State(ctx): State<ServerContext>, Path(id): Path<i64>) -> Res
     };
     let title = truncate(&post.content);
     let settings = PageSettings::new(&title, false, false);
-    let body = page(&ctx, &settings, &post.to_html());
+    let hctx = HtmlCtx::new(false);
+    let body = page(&ctx, &settings, &post.to_html(&hctx));
     response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
 }
 
@@ -211,22 +214,27 @@ pub fn app(ctx: ServerContext) -> Router {
 ///
 /// Re-using the salt between sessions allows users to keep logged in even when
 /// the server restarts.
-fn obtain_salt(conn: &Connection) -> Salt {
-    let salt = data::Kv::get(conn, "salt");
-    match salt {
-        Ok(salt) => salt.value.try_into().unwrap(),
-        Err(_) => {
-            let salt = fx_auth::generate_salt();
-            data::Kv::insert(conn, "salt", &salt).unwrap();
-            salt
+fn obtain_salt(args: &ServeArgs, conn: &Connection) -> Salt {
+    if args.production {
+        let salt = data::Kv::get(conn, "salt");
+        match salt {
+            Ok(salt) => salt.value.try_into().unwrap(),
+            Err(_) => {
+                let salt = fx_auth::generate_salt();
+                data::Kv::insert(conn, "salt", &salt).unwrap();
+                salt
+            }
         }
+    } else {
+        // Allow the login to persist across restarts.
+        b"nblVMlxYtvt0rxo3BML3zw".to_owned()
     }
 }
 
 pub async fn run(args: &ServeArgs) {
     let conn = data::connect(args).unwrap();
     data::init(args, &conn);
-    let salt = obtain_salt(&conn);
+    let salt = obtain_salt(args, &conn);
     let ctx = ServerContext::new(args.clone(), conn, salt);
     let app = app(ctx);
     let addr = format!("0.0.0.0:{}", args.port);

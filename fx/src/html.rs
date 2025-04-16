@@ -1,20 +1,34 @@
 use crate::data::Post;
 use crate::serve::ServerContext;
 
+pub struct HtmlCtx {
+    is_logged_in: bool,
+}
+
+impl HtmlCtx {
+    pub fn new(is_logged_in: bool) -> Self {
+        Self { is_logged_in }
+    }
+}
+
 pub trait ToHtml {
-    fn to_html(&self) -> String;
+    fn to_html(&self, hctx: &HtmlCtx) -> String;
 }
 
 impl ToHtml for Post {
-    fn to_html(&self) -> String {
+    fn to_html(&self, hctx: &HtmlCtx) -> String {
+        let dots = if hctx.is_logged_in { "..." } else { "" };
         indoc::formatdoc! {"
         <div class='post' hx-boost='true'>
-            <div class='created_at'>{}</div>
+            <div class='post-header'>
+                <div class='created_at'>{}</div>
+                <div class='dots'>{}</div>
+            </div>
             <a class='unstyled-link' href='/p/{}'>
                 <div class='content'>{}</div>
             </a>
         </div>
-        ", self.created_at, self.id, self.content}
+        ", self.created_at, dots, self.id, self.content}
     }
 }
 
