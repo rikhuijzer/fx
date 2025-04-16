@@ -120,7 +120,35 @@ fn truncate(text: &str) -> String {
     text.to_string()
 }
 
-async fn show_post(
+async fn get_delete(
+    State(ctx): State<ServerContext>,
+    Path(id): Path<i64>,
+    jar: CookieJar,
+) -> Response<Body> {
+    let is_logged_in = is_logged_in(&ctx, &jar);
+    if !is_logged_in {
+        return not_found(State(ctx.clone())).await;
+    }
+    let post = Post::get(&ctx.conn.lock().unwrap(), id);
+    let post = match post {
+        Ok(post) => post,
+        Err(_) => return not_found(State(ctx.clone())).await,
+    };
+    let settings = PageSettings::new(&post.content, false, false, Top::Back);
+    let hctx = HtmlCtx::new(false, false);
+    let delete_button = indoc::formatdoc! {r#"
+        <div class='center medium-text' style='font-weight: bold;'>
+            <p>Are you sure you want to delete this post? This action cannot be undone.</p>
+            <a class='button' href='/delete/{id}'>delete</a><br>
+            <br>
+        </div>
+    "#};
+    let body = format!("{}\n{}", delete_button, post.to_html(&hctx));
+    let body = page(&ctx, &settings, &body);
+    response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
+}
+
+async fn get_post(
     State(ctx): State<ServerContext>,
     Path(id): Path<i64>,
     jar: CookieJar,
@@ -205,22 +233,29 @@ async fn post_login(
     }
 }
 
-async fn get_logout(
-    State(_secrets): State<ServerContext>,
-    jar: CookieJar,
-) -> (CookieJar, Redirect) {
+async fn get_logout(State(_ctx): State<ServerContext>, jar: CookieJar) -> (CookieJar, Redirect) {
     let updated_jar = fx_auth::handle_logout(jar.clone());
     (updated_jar, Redirect::to("/"))
+}
+
+#[allow(dead_code)]
+async fn post_delete(
+    State(_ctx): State<ServerContext>,
+    Path(_id): Path<i64>,
+) -> Result<Redirect, Response<Body>> {
+    todo!()
 }
 
 pub fn app(ctx: ServerContext) -> Router {
     Router::new()
         .route("/", get(list_posts))
+        .route("/delete/{id}", get(get_delete))
+        // .route("/delete/{id}", post(post_delete))
         .route("/login", get(get_login))
         .route("/login", post(post_login))
         .route("/logout", get(get_logout))
         // Need to put behind /p/<ID> otherwise /<WRONG LINK> will not be a 404.
-        .route("/p/{id}", get(show_post))
+        .route("/p/{id}", get(get_post))
         .route("/static/style.css", get(style))
         .fallback(not_found)
         .with_state(ctx)

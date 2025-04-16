@@ -69,9 +69,9 @@ pub fn edit_post_buttons(_ctx: &ServerContext, post: &Post) -> String {
         <button>
             edit
         </button>
-        <form style="display: inline-block;" method="post" action="/delete/{id}">
-            <input type="submit" value="delete"/>
-        </form>
+        <a class="button" href="/delete/{id}">
+            delete
+        </a>
     </div>
     "#}
 }
