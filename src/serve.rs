@@ -1,7 +1,6 @@
 use crate::ServeArgs;
 use crate::data;
 use crate::html::PageSettings;
-use serde::Serialize;
 use crate::html::ToHtml;
 use crate::html::page;
 use axum::Form;
@@ -20,6 +19,7 @@ use axum_extra::extract::CookieJar;
 use data::Post;
 use rusqlite::Connection;
 use serde::Deserialize;
+use serde::Serialize;
 use std::sync::Arc;
 use std::sync::Mutex;
 
@@ -117,7 +117,7 @@ async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
 }
 
 async fn get_login(State(ctx): State<ServerContext>) -> Response<Body> {
-    let body = crate::html::login(&ctx);
+    let body = crate::html::login(&ctx, None);
     response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
 }
 
@@ -131,11 +131,19 @@ async fn post_login(
     State(ctx): State<ServerContext>,
     jar: CookieJar,
     Form(form): Form<LoginForm>,
-) -> Result<(CookieJar, Redirect), StatusCode> {
+) -> Result<(CookieJar, Redirect), Response<Body>> {
     let new_jar = crate::auth::handle_login(&ctx, &form, jar.clone());
     match new_jar {
         Some(jar) => Ok((jar, Redirect::to("/"))),
-        None => Err(StatusCode::UNAUTHORIZED),
+        None => {
+            let body = crate::html::login(&ctx, Some("Invalid username or password"));
+            Err(response(
+                StatusCode::UNAUTHORIZED,
+                HeaderMap::new(),
+                &body,
+                &ctx,
+            ))
+        }
     }
 }
 

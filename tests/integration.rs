@@ -154,6 +154,10 @@ async fn test_login() {
         .unwrap();
     let app = app(ctx);
     let response = app.oneshot(req).await.unwrap();
-    assert_eq!(response.status(), StatusCode::SEE_OTHER);
-    assert_eq!(response.headers().get("Location").unwrap(), "/login");
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    let body = response.into_body().collect().await.unwrap();
+    let body: Vec<u8> = body.to_bytes().into();
+    let body = String::from_utf8(body).unwrap();
+    assert!(body.contains("login"));
+    assert!(body.contains("Invalid username or password"));
 }

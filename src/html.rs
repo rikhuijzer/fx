@@ -95,8 +95,12 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
     }
 }
 
-pub fn login(ctx: &ServerContext) -> String {
+pub fn login(ctx: &ServerContext, error: Option<&str>) -> String {
     let settings = PageSettings::new("login", false, false);
+    let error = match error {
+        Some(error) => format!("<div style='font-style: italic;'>{error}</div>"),
+        None => "".to_string(),
+    };
     let body = indoc::formatdoc! {r#"
         <form style="text-align: center;" method="post" action="/login">
             <label for="username">username</label><br>
@@ -104,6 +108,7 @@ pub fn login(ctx: &ServerContext) -> String {
             <label for="password">password</label><br>
             <input id="password" name="password" type="password" required/><br>
             <br>
+            {error}
             <input type="submit" value="login"/>
         </form>
     "#};
