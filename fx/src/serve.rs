@@ -139,7 +139,9 @@ async fn get_delete(
     let delete_button = indoc::formatdoc! {r#"
         <div class='center medium-text' style='font-weight: bold;'>
             <p>Are you sure you want to delete this post? This action cannot be undone.</p>
-            <a class='button' href='/delete/{id}'>delete</a><br>
+            <form action='/delete/{id}' method='post'>
+                <button type='submit'>delete</button>
+            </form>
             <br>
         </div>
     "#};
@@ -238,18 +240,30 @@ async fn get_logout(State(_ctx): State<ServerContext>, jar: CookieJar) -> (Cooki
     (updated_jar, Redirect::to("/"))
 }
 
-#[allow(dead_code)]
 async fn post_delete(
-    State(_ctx): State<ServerContext>,
-    Path(_id): Path<i64>,
+    State(ctx): State<ServerContext>,
+    Path(id): Path<i64>,
+    jar: CookieJar,
 ) -> Result<Redirect, Response<Body>> {
-    todo!()
+    let is_logged_in = is_logged_in(&ctx, &jar);
+    if !is_logged_in {
+        return Err(response(
+            StatusCode::UNAUTHORIZED,
+            HeaderMap::new(),
+            "Unauthorized",
+            &ctx,
+        ));
+    }
+    let conn = ctx.conn.lock().unwrap();
+    Post::delete(&conn, id).unwrap();
+    Ok(Redirect::to("/"))
 }
 
 pub fn app(ctx: ServerContext) -> Router {
     Router::new()
         .route("/", get(list_posts))
         .route("/delete/{id}", get(get_delete))
+        .route("/delete/{id}", post(post_delete))
         // .route("/delete/{id}", post(post_delete))
         .route("/login", get(get_login))
         .route("/login", post(post_login))

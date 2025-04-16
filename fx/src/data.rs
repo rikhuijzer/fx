@@ -136,6 +136,10 @@ impl Post {
             })
         })
     }
+    pub fn delete(conn: &Connection, id: i64) -> Result<usize> {
+        let stmt = "DELETE FROM posts WHERE id = ?";
+        conn.execute(stmt, [id])
+    }
 }
 
 pub fn connect(args: &ServeArgs) -> Result<Connection> {

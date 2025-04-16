@@ -37,7 +37,7 @@ impl TestDefault for Connection {
     }
 }
 
-async fn request_body(uri: &str) -> String {
+async fn request_body(uri: &str) -> (StatusCode, String) {
     let args = ServeArgs::test_default();
     let conn = Connection::test_default();
     let salt = fx_auth::generate_salt();
@@ -45,15 +45,17 @@ async fn request_body(uri: &str) -> String {
     let app = app(ctx);
     let req = Request::builder().uri(uri).body(Body::empty()).unwrap();
     let response = app.oneshot(req).await.unwrap();
-    assert_eq!(response.status(), StatusCode::OK);
+    let status = response.status();
     let body = response.into_body().collect().await.unwrap();
     let body: Vec<u8> = body.to_bytes().into();
-    String::from_utf8(body).unwrap()
+    let body = String::from_utf8(body).unwrap();
+    (status, body)
 }
 
 #[tokio::test]
 async fn test_home() {
-    let body = request_body("/").await;
+    let (status, body) = request_body("/").await;
+    assert_eq!(status, StatusCode::OK);
     assert!(body.contains("<!DOCTYPE html>"));
     assert!(body.contains("lorem ipsum"));
     assert!(body.contains("dolor sit amet"));
@@ -61,22 +63,26 @@ async fn test_home() {
 
 #[tokio::test]
 async fn test_post() {
-    let body = request_body("/p/1").await;
+    let (status, body) = request_body("/p/1").await;
+    assert_eq!(status, StatusCode::OK);
     assert!(body.contains("lorem ipsum"));
 
-    let body = request_body("/p/2").await;
+    let (status, body) = request_body("/p/2").await;
+    assert_eq!(status, StatusCode::OK);
     assert!(body.contains("dolor sit amet"));
 }
 
 #[tokio::test]
 async fn test_style() {
-    let body = request_body("/static/style.css").await;
+    let (status, body) = request_body("/static/style.css").await;
+    assert_eq!(status, StatusCode::OK);
     assert!(body.contains("body {"));
 }
 
 #[tokio::test]
 async fn test_login_page() {
-    let body = request_body("/login").await;
+    let (status, body) = request_body("/login").await;
+    assert_eq!(status, StatusCode::OK);
     assert!(body.contains("<!DOCTYPE html>"));
     assert!(body.contains("username"));
 }
@@ -163,4 +169,56 @@ async fn test_login() {
     let body = String::from_utf8(body).unwrap();
     assert!(body.contains("login"));
     assert!(body.contains("Invalid username or password"));
+}
+
+async fn request_body_logged_in(uri: &str) -> String {
+    let args = ServeArgs::test_default();
+    let conn = Connection::test_default();
+    let salt = fx_auth::generate_salt();
+    let ctx = ServerContext::new(args, conn, salt);
+    let form = LoginForm {
+        username: "test-admin".to_string(),
+        password: "test-password".to_string(),
+    };
+    let form_data = serde_urlencoded::to_string(&form).unwrap();
+    let req = Request::builder()
+        .method("POST")
+        .uri("/login")
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .body(Body::from(form_data))
+        .unwrap();
+    let response = app(ctx.clone()).oneshot(req).await.unwrap();
+    assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    assert_eq!(response.headers().get("Location").unwrap(), "/");
+    let cookie = response.headers().get("Set-Cookie").unwrap();
+    let cookie = cookie.to_str().unwrap();
+    assert!(cookie.contains("auth="));
+    assert!(cookie.contains("Secure"));
+    let cookie = cookie.split(";").next().unwrap();
+    let auth = cookie.split("=").nth(1).unwrap();
+    println!("auth: {auth}");
+
+    // With valid cookie.
+    let req = Request::builder()
+        .method("GET")
+        .uri(uri)
+        .header("Cookie", format!("auth={auth}"))
+        .body(Body::empty())
+        .unwrap();
+    let response = app(ctx.clone()).oneshot(req).await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response.into_body().collect().await.unwrap();
+    let body: Vec<u8> = body.to_bytes().into();
+    String::from_utf8(body).unwrap()
+}
+
+#[tokio::test]
+async fn test_delete_confirmation() {
+    let (status, body) = request_body("/delete/1").await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+    assert!(!body.contains("Are you sure you want to delete this post?"));
+
+    let body = request_body_logged_in("/delete/1").await;
+    assert!(body.contains("Are you sure you want to delete this post?"));
+    assert!(body.contains("lorem ipsum"));
 }
