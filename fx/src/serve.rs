@@ -1,7 +1,9 @@
 use crate::ServeArgs;
 use crate::data;
+use crate::html::PageSettings;
 use crate::html::ToHtml;
 use crate::html::page;
+use axum::Form;
 use axum::Router;
 use axum::body::Body;
 use axum::extract::Path;
@@ -10,9 +12,15 @@ use axum::http::HeaderMap;
 use axum::http::HeaderValue;
 use axum::http::Response;
 use axum::http::StatusCode;
+use axum::response::Redirect;
 use axum::routing::get;
+use axum::routing::post;
+use axum_extra::extract::CookieJar;
 use data::Post;
+use fx_auth::Login;
 use rusqlite::Connection;
+use serde::Deserialize;
+use serde::Serialize;
 use std::sync::Arc;
 use std::sync::Mutex;
 
@@ -50,7 +58,23 @@ fn response(
     response
 }
 
-async fn list_posts(State(ctx): State<ServerContext>) -> Response<Body> {
+fn is_logged_in(ctx: &ServerContext, jar: &CookieJar) -> bool {
+    let password = match &ctx.args.admin_password {
+        Some(password) => password,
+        None => {
+            tracing::warn!("admin password not set");
+            return false;
+        }
+    };
+    let login = Login {
+        username: Some(ctx.args.admin_username.clone()),
+        password: Some(password.clone()),
+    };
+    fx_auth::is_logged_in(&login, jar)
+}
+
+async fn list_posts(State(ctx): State<ServerContext>, jar: CookieJar) -> Response<Body> {
+    let is_logged_in = is_logged_in(&ctx, &jar);
     let posts = {
         let conn = ctx.conn.lock().unwrap();
         Post::list(&conn).unwrap()
@@ -60,7 +84,8 @@ async fn list_posts(State(ctx): State<ServerContext>) -> Response<Body> {
         .map(|p| p.to_html())
         .collect::<Vec<String>>()
         .join("\n");
-    let body = page(&ctx, "", true, &posts);
+    let settings = PageSettings::new("", is_logged_in, true);
+    let body = page(&ctx, &settings, &posts);
     response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
 }
 
@@ -90,7 +115,8 @@ async fn show_post(State(ctx): State<ServerContext>, Path(id): Path<i64>) -> Res
         Err(_) => return not_found(State(ctx)).await,
     };
     let title = truncate(&post.content);
-    let body = page(&ctx, &title, false, &post.to_html());
+    let settings = PageSettings::new(&title, false, false);
+    let body = page(&ctx, &settings, &post.to_html());
     response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
 }
 
@@ -101,19 +127,76 @@ async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
             <p>The page you are looking for does not exist.</p>
         </div>
     "};
-    let body = page(&ctx, "not found", false, body);
+    let settings = PageSettings::new("not found", false, false);
+    let body = page(&ctx, &settings, body);
     response(StatusCode::NOT_FOUND, HeaderMap::new(), &body, &ctx)
 }
 
-async fn login(State(ctx): State<ServerContext>) -> Response<Body> {
-    let body = crate::html::login(&ctx);
+async fn get_login(State(ctx): State<ServerContext>) -> Response<Body> {
+    let body = crate::html::login(&ctx, None);
     response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct LoginForm {
+    pub username: String,
+    pub password: String,
+}
+
+async fn post_login(
+    State(ctx): State<ServerContext>,
+    jar: CookieJar,
+    Form(form): Form<LoginForm>,
+) -> Result<(CookieJar, Redirect), Response<Body>> {
+    let password = match &ctx.args.admin_password {
+        Some(password) => password,
+        None => {
+            tracing::warn!("admin password not set");
+            return Err(response(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                HeaderMap::new(),
+                "Admin password not set",
+                &ctx,
+            ));
+        }
+    };
+    let actual = Login {
+        username: Some(ctx.args.admin_username.clone()),
+        password: Some(password.clone()),
+    };
+    let received = Login {
+        username: Some(form.username),
+        password: Some(form.password),
+    };
+    let new_jar = fx_auth::handle_login(&actual, &received, jar.clone());
+    match new_jar {
+        Some(jar) => Ok((jar, Redirect::to("/"))),
+        None => {
+            let body = crate::html::login(&ctx, Some("Invalid username or password"));
+            Err(response(
+                StatusCode::UNAUTHORIZED,
+                HeaderMap::new(),
+                &body,
+                &ctx,
+            ))
+        }
+    }
+}
+
+async fn get_logout(
+    State(_secrets): State<ServerContext>,
+    jar: CookieJar,
+) -> (CookieJar, Redirect) {
+    let updated_jar = fx_auth::handle_logout(jar.clone());
+    (updated_jar, Redirect::to("/"))
 }
 
 pub fn app(ctx: ServerContext) -> Router {
     Router::new()
         .route("/", get(list_posts))
-        .route("/login", get(login))
+        .route("/login", get(get_login))
+        .route("/login", post(post_login))
+        .route("/logout", get(get_logout))
         // Need to put behind /p/<ID> otherwise /<WRONG LINK> will not be a 404.
         .route("/p/{id}", get(show_post))
         .route("/static/style.css", get(style))
