@@ -13,8 +13,8 @@
     --text-font-size: 18px;
     --text: #000000;
     --background: hsl(220, 60%, 98%);
-    --code-background: hsl(230, 60%, 96%);
-    --button-background: hsl(230, 60%, 90%);
+    --code-background: hsl(230, 60%, 80%);
+    --button-background: hsl(230, 60%, 85%);
     --code-border: #dbdbdb;
     --border: hsl(0, 0%, 60%);
     --blue-gradient: linear-gradient(to right, var(--dark-blue), var(--blue));
@@ -25,8 +25,8 @@
         --blue-gradient: linear-gradient(to right, var(--blue), var(--light-blue));
         --background: hsl(0, 0%, 15%);
         --border: hsl(0, 0%, 40%);
-        --code-background: hsl(0, 0%, 5%);
-        --button-background: hsl(0, 0%, 20%);
+        --code-background: hsl(0, 0%, 20%);
+        --button-background: hsl(0, 0%, 25%);
         --code-border: #0e0e0e;
         --text: #ddd;
         --xrcf-title: #d1cdcd;
@@ -41,15 +41,24 @@ body {
     font-size: var(--text-font-size);
 }
 
+code {
+    background-color: var(--code-background);
+    border-radius: var(--radius);
+    font-size: 0.96rem;
+    padding: 0.2rem;
+}
+
 pre code {
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-    max-width: 100%;
     font-size: var(--ui-font-size);
     background-color: var(--code-background);
     border-radius: var(--radius);
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
     padding: 10px;
+    overflow: auto;
+    white-space: pre;
+    word-wrap: normal;
 }
 
 .container {
@@ -163,6 +172,7 @@ textarea {
     border: 1px solid var(--border);
     background-color: var(--button-background);
     color: var(--text);
+    padding: 7px;
 }
 
 a.button {

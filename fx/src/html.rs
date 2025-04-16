@@ -100,8 +100,8 @@ pub fn edit_post_buttons(_ctx: &ServerContext, post: &Post) -> String {
 
 fn add_post_form() -> &'static str {
     indoc::indoc! {r#"
-    <form style="width: 100%;" action="/post/add" method="post">
-        <textarea style="width: 99%; height: 100px;"
+    <form style="width: 99%;" action="/post/add" method="post">
+        <textarea style="width: 98%; height: 100px;"
           id="content" name="content" placeholder="Your text.."></textarea>
         <br>
         <div style="display: flex; justify-content: flex-end;">
