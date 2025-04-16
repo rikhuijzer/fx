@@ -3,6 +3,7 @@ use crate::data;
 use crate::html::HtmlCtx;
 use crate::html::PageSettings;
 use crate::html::ToHtml;
+use crate::html::Top;
 use crate::html::page;
 use axum::Form;
 use axum::Router;
@@ -83,13 +84,13 @@ async fn list_posts(State(ctx): State<ServerContext>, jar: CookieJar) -> Respons
         let conn = ctx.conn.lock().unwrap();
         Post::list(&conn).unwrap()
     };
-    let hctx = HtmlCtx::new(is_logged_in);
+    let hctx = HtmlCtx::new(is_logged_in, true);
     let posts = posts
         .iter()
         .map(|p| p.to_html(&hctx))
         .collect::<Vec<String>>()
         .join("\n");
-    let settings = PageSettings::new("", is_logged_in, true);
+    let settings = PageSettings::new("", is_logged_in, true, Top::Default);
     let body = page(&ctx, &settings, &posts);
     response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
 }
@@ -125,11 +126,11 @@ async fn show_post(
         Err(_) => return not_found(State(ctx)).await,
     };
     let title = truncate(&post.content);
-    let settings = PageSettings::new(&title, false, false);
-    let hctx = HtmlCtx::new(false);
+    let settings = PageSettings::new(&title, false, false, Top::Back);
+    let hctx = HtmlCtx::new(false, false);
     let mut body = post.to_html(&hctx);
     if is_logged_in {
-        body = format!("{body}\n{}", crate::html::edit_post_buttons(&ctx, &post));
+        body = format!("{}\n{body}", crate::html::edit_post_buttons(&ctx, &post));
     }
     let body = page(&ctx, &settings, &body);
     response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
@@ -142,7 +143,7 @@ async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
             <p>The page you are looking for does not exist.</p>
         </div>
     "};
-    let settings = PageSettings::new("not found", false, false);
+    let settings = PageSettings::new("not found", false, false, Top::Back);
     let body = page(&ctx, &settings, body);
     response(StatusCode::NOT_FOUND, HeaderMap::new(), &body, &ctx)
 }

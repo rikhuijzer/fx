@@ -1,14 +1,19 @@
 use crate::data::Post;
 use crate::serve::ServerContext;
 
+#[derive(Debug)]
 pub struct HtmlCtx {
     #[allow(dead_code)]
     is_logged_in: bool,
+    border: bool,
 }
 
 impl HtmlCtx {
-    pub fn new(is_logged_in: bool) -> Self {
-        Self { is_logged_in }
+    pub fn new(is_logged_in: bool, border: bool) -> Self {
+        Self {
+            is_logged_in,
+            border,
+        }
     }
 }
 
@@ -17,9 +22,14 @@ pub trait ToHtml {
 }
 
 impl ToHtml for Post {
-    fn to_html(&self, _: &HtmlCtx) -> String {
+    fn to_html(&self, hctx: &HtmlCtx) -> String {
+        let border = if hctx.border {
+            "border: 1px solid var(--border);"
+        } else {
+            ""
+        };
         indoc::formatdoc! {"
-        <div class='post' hx-boost='true'>
+        <div class='post' style='{border}'>
             <div class='post-header'>
                 <div class='created_at'>{}</div>
             </div>
@@ -31,28 +41,25 @@ impl ToHtml for Post {
     }
 }
 
-fn htmx() -> &'static str {
-    r#"
-    <script src="https://unpkg.com/htmx.org@2.0.4"
-    integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" 
-    crossorigin="anonymous" defer></script>
-    <script src="https://unpkg.com/htmx-ext-preload@2.1.0" 
-    integrity="sha384-fkzubQiTB69M7XTToqW6tplvxAOJkqPl5JmLAbumV2EacmuJb8xEP9KnJafk/rg8" 
-    crossorigin="anonymous" defer></script>"#
+pub enum Top {
+    Default,
+    Back,
 }
 
 pub struct PageSettings {
     title: String,
     is_logged_in: bool,
     show_about: bool,
+    top: Top,
 }
 
 impl PageSettings {
-    pub fn new(title: &str, is_logged_in: bool, show_about: bool) -> Self {
+    pub fn new(title: &str, is_logged_in: bool, show_about: bool, top: Top) -> Self {
         Self {
             title: title.to_string(),
             is_logged_in,
             show_about,
+            top,
         }
     }
 }
@@ -60,7 +67,7 @@ impl PageSettings {
 pub fn edit_post_buttons(_ctx: &ServerContext, post: &Post) -> String {
     let id = post.id;
     indoc::formatdoc! {r#"
-    <div style="display: flex; align-items: center;">
+    <div style="margin-left: auto; display: flex; align-items: center;">
         <button>
             edit
         </button>
@@ -72,7 +79,6 @@ pub fn edit_post_buttons(_ctx: &ServerContext, post: &Post) -> String {
 }
 
 pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String {
-    let htmx = htmx();
     let title = if settings.title.is_empty() {
         "fx".to_string()
     } else {
@@ -81,7 +87,7 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
     let about = if settings.show_about {
         indoc::formatdoc! {r#"
         <div class="about">
-     {}
+            {}
         </div>
         "#, ctx.args.admin_name }
     } else {
@@ -92,6 +98,14 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
     } else {
         r#"<a class="unstyled-link menu-space" href="/login">login</a>"#
     };
+    let top = match settings.top {
+        Top::Default => "",
+        Top::Back => indoc::indoc! {"
+        <form action='/'>
+            <input type='submit' value='← back'/>
+        </form>
+        "},
+    };
     indoc::formatdoc! {
         r#"
         <!DOCTYPE html>
@@ -101,13 +115,12 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <link rel="stylesheet" href="/static/style.css">
             <title>{title}</title>
-            {htmx}
         </head>
         <body>
             <div class="container">
                 <div class="middle">
                     <div class="top">
-                        <a class="unstyled-link" href="/">fx</a>
+                        {top}
                     </div>
                     {about}
                     {body}
@@ -123,7 +136,8 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
 }
 
 pub fn login(ctx: &ServerContext, error: Option<&str>) -> String {
-    let settings = PageSettings::new("login", false, false);
+    let top = Top::Default;
+    let settings = PageSettings::new("login", false, false, top);
     let error = match error {
         Some(error) => format!("<div style='font-style: italic;'>{error}</div>"),
         None => "".to_string(),

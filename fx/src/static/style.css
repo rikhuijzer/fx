@@ -55,7 +55,6 @@ body {
 }
 
 .post {
-    border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 10px;
     margin-bottom: 10px;
@@ -109,7 +108,7 @@ input[type="submit"] {
     display: inline-block;
     color: var(--text);
     padding: 7px 20px;
-    margin: 10px;
+    margin: 12px 6px;
 }
 
 button {
@@ -119,5 +118,5 @@ button {
     display: inline-block;
     color: var(--text);
     padding: 7px 20px;
-    margin: 10px;
+    margin: 12px 6px;
 }
