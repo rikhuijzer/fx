@@ -96,7 +96,7 @@ async fn list_posts(State(ctx): State<ServerContext>, jar: CookieJar) -> Respons
         })
         .collect::<Vec<String>>()
         .join("\n");
-    let settings = PageSettings::new("", is_logged_in, true, Top::Default);
+    let settings = PageSettings::new("", is_logged_in, true, Top::Homepage);
     let body = page(&ctx, &settings, &posts);
     response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
 }

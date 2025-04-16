@@ -40,7 +40,7 @@ impl ToHtml for Post {
 }
 
 pub enum Top {
-    Default,
+    Homepage,
     Back,
 }
 
@@ -76,6 +76,20 @@ pub fn edit_post_buttons(_ctx: &ServerContext, post: &Post) -> String {
     "#}
 }
 
+fn add_post_form() -> &'static str {
+    indoc::indoc! {r#"
+    <form style="width: 100%;" action="/post/add" method="post">
+        <textarea style="width: 99%; height: 100px;"
+          id="content" name="content" placeholder="content"></textarea>
+        <br>
+        <div style="display: flex; justify-content: flex-end;">
+            <input type="submit" value="preview"/>
+            <input type="submit" value="publish"/>
+        </div>
+    </form>
+    "#}
+}
+
 pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String {
     let title_suffix = &ctx.args.title_suffix;
     let title = if settings.title.is_empty() {
@@ -98,7 +112,13 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
         r#"<a class="unstyled-link menu-space" href="/login">login</a>"#
     };
     let top = match settings.top {
-        Top::Default => "",
+        Top::Homepage => {
+            if settings.is_logged_in {
+                add_post_form()
+            } else {
+                ""
+            }
+        }
         Top::Back => indoc::indoc! {"
         <a href='/' class='button'>← back</a>
         "},
@@ -116,10 +136,10 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
         <body>
             <div class="container">
                 <div class="middle">
+                    {about}
                     <div class="top">
                         {top}
                     </div>
-                    {about}
                     {body}
                     <div class="bottom">
                         <a class="unstyled-link menu-space" href="https://github.com/rikhuijzer/fx">source</a>
@@ -133,21 +153,20 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
 }
 
 pub fn login(ctx: &ServerContext, error: Option<&str>) -> String {
-    let top = Top::Default;
+    let top = Top::Homepage;
     let settings = PageSettings::new("login", false, false, top);
     let error = match error {
         Some(error) => format!("<div style='font-style: italic;'>{error}</div>"),
         None => "".to_string(),
     };
     let body = indoc::formatdoc! {r#"
-        <form style="text-align: center;" method="post" action="/login">
-            <label for="username">username</label><br>
-            <input id="username" name="username" type="text" required/><br>
-            <label for="password">password</label><br>
-            <input id="password" name="password" type="password" required/><br>
-            <br>
+        <form style="text-align: center; margin-top: 15vh;" method="post" action="/login">
+            <input style="font-size: 1rem;" id="username" name="username" type="text"
+               placeholder="username" required/><br>
+            <input style="font-size: 1rem;" id="password" name="password" type="password"
+               placeholder="password" required/><br>
             {error}
-            <input type="submit" value="login"/>
+            <input style="font-size: 1rem;" type="submit" value="login"/>
         </form>
     "#};
     page(ctx, &settings, &body)

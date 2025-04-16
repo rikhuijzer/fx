@@ -119,6 +119,10 @@ input[type="submit"] {
     margin: 12px 6px;
 }
 
+input[type="submit"]:hover {
+    cursor: pointer;
+}
+
 .ui-text {
     font-size: var(--ui-font-size);
 }
@@ -142,6 +146,12 @@ button {
     line-height: 1.3;
     margin: 12px 6px;
     font-size: var(--ui-font-size);
+}
+
+textarea {
+    border: 1px solid var(--border);
+    background-color: var(--button-background);
+    color: var(--text);
 }
 
 a.button {
