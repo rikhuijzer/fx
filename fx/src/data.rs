@@ -164,6 +164,17 @@ pub fn init(args: &ServeArgs, conn: &Connection) {
         let now = chrono::Utc::now();
         Post::insert(conn, now, "lorem ipsum").unwrap();
         let now = chrono::Utc::now();
-        Post::insert(conn, now, "dolor sit amet").unwrap();
+        let content = indoc::indoc! {"
+            # Code
+
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+            eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim
+            ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
+            aliquip ex ea commodo consequat.
+            ```rust
+            x = 1
+            ```
+        "};
+        Post::insert(conn, now, &content).unwrap();
     }
 }

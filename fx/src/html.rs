@@ -24,6 +24,7 @@ pub trait ToHtml {
 
 impl ToHtml for Post {
     fn to_html(&self, hctx: &HtmlCtx) -> String {
+        let html = markdown::to_html(&self.content);
         let border = if hctx.border {
             "border: 1px solid var(--border);"
         } else {
@@ -34,9 +35,9 @@ impl ToHtml for Post {
             <div class='post-header'>
                 <div class='created_at'>{}</div>
             </div>
-            <div class='content'>{}</div>
+            <div class='content'>{html}</div>
         </div>
-        ", self.created_at, self.content}
+        ", self.created_at}
     }
 }
 
