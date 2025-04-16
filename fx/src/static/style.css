@@ -6,22 +6,25 @@
     --gray: #808080;
     --xrcf-title: #333;
     --black: #000000;
+    --radius: 5px;
     --flame: #fa7a02;
     --medium: 18px;
     --text: #000000;
-    --background: hsl(230, 60%, 98%);
-    --code-background: hsl(230, 60%, 98%);
+    --background: hsl(220, 60%, 98%);
+    --code-background: hsl(230, 60%, 96%);
+    --button-background: hsl(230, 60%, 90%);
     --code-border: #dbdbdb;
-    --border: #eaeaea;
+    --border: hsl(0, 0%, 60%);
     --blue-gradient: linear-gradient(to right, var(--dark-blue), var(--blue));
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
         --blue-gradient: linear-gradient(to right, var(--blue), var(--light-blue));
-        --background: hsl(0, 0%, 20%);
-        --border: #4e4e4e;
+        --background: hsl(0, 0%, 15%);
+        --border: hsl(0, 0%, 40%);
         --code-background: hsl(0, 0%, 5%);
+        --button-background: hsl(0, 0%, 20%);
         --code-border: #0e0e0e;
         --text: #ddd;
         --xrcf-title: #d1cdcd;
@@ -53,12 +56,15 @@ body {
 
 .post {
     border: 1px solid var(--border);
-    border-radius: 5px;
+    border-radius: var(--radius);
     padding: 10px;
     margin-bottom: 10px;
 }
 
 .post-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     font-size: 12px;
     color: var(--gray);
 }
@@ -90,13 +96,28 @@ body {
 }
 
 input {
-    border-radius: 5px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
     padding: 4px;
     margin-top: 4px;
     margin-bottom: 10px;
 }
 
 input[type="submit"] {
-    padding: 7px 15px;
+    background-color: var(--button-background);
+    border: 1px solid var(--border);
+    display: inline-block;
+    color: var(--text);
+    padding: 7px 20px;
+    margin: 10px;
+}
+
+button {
+    background-color: var(--button-background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: inline-block;
+    color: var(--text);
+    padding: 7px 20px;
     margin: 10px;
 }

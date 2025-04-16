@@ -113,7 +113,12 @@ fn truncate(text: &str) -> String {
     text.to_string()
 }
 
-async fn show_post(State(ctx): State<ServerContext>, Path(id): Path<i64>) -> Response<Body> {
+async fn show_post(
+    State(ctx): State<ServerContext>,
+    Path(id): Path<i64>,
+    jar: CookieJar,
+) -> Response<Body> {
+    let is_logged_in = is_logged_in(&ctx, &jar);
     let post = Post::get(&ctx.conn.lock().unwrap(), id);
     let post = match post {
         Ok(post) => post,
@@ -122,7 +127,11 @@ async fn show_post(State(ctx): State<ServerContext>, Path(id): Path<i64>) -> Res
     let title = truncate(&post.content);
     let settings = PageSettings::new(&title, false, false);
     let hctx = HtmlCtx::new(false);
-    let body = page(&ctx, &settings, &post.to_html(&hctx));
+    let mut body = post.to_html(&hctx);
+    if is_logged_in {
+        body = format!("{body}\n{}", crate::html::edit_post_buttons(&ctx, &post));
+    }
+    let body = page(&ctx, &settings, &body);
     response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
 }
 

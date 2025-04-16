@@ -2,6 +2,7 @@ use crate::data::Post;
 use crate::serve::ServerContext;
 
 pub struct HtmlCtx {
+    #[allow(dead_code)]
     is_logged_in: bool,
 }
 
@@ -16,19 +17,17 @@ pub trait ToHtml {
 }
 
 impl ToHtml for Post {
-    fn to_html(&self, hctx: &HtmlCtx) -> String {
-        let dots = if hctx.is_logged_in { "..." } else { "" };
+    fn to_html(&self, _: &HtmlCtx) -> String {
         indoc::formatdoc! {"
         <div class='post' hx-boost='true'>
             <div class='post-header'>
                 <div class='created_at'>{}</div>
-                <div class='dots'>{}</div>
             </div>
             <a class='unstyled-link' href='/p/{}'>
                 <div class='content'>{}</div>
             </a>
         </div>
-        ", self.created_at, dots, self.id, self.content}
+        ", self.created_at, self.id, self.content}
     }
 }
 
@@ -56,6 +55,20 @@ impl PageSettings {
             show_about,
         }
     }
+}
+
+pub fn edit_post_buttons(_ctx: &ServerContext, post: &Post) -> String {
+    let id = post.id;
+    indoc::formatdoc! {r#"
+    <div style="display: flex; align-items: center;">
+        <button>
+            edit
+        </button>
+        <form style="display: inline-block;" method="post" action="/delete/{id}">
+            <input type="submit" value="delete"/>
+        </form>
+    </div>
+    "#}
 }
 
 pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String {
