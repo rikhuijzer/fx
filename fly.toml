@@ -38,5 +38,5 @@ primary_region = 'ams'
   cpus = 1
 
 [mounts]
-source = "database_storage"
+source = "database_storage2"
 destination = "/data"

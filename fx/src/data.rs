@@ -182,7 +182,10 @@ pub fn init(args: &ServeArgs, conn: &Connection) {
 
     if !args.production {
         let now = chrono::Utc::now();
-        Post::insert(conn, now, now, "lorem ipsum").unwrap();
+        let content = indoc::indoc! {"
+            Lorem ipsum dolor sit [foo](https://example.com/foo) [amet](https://example.com).
+        "};
+        Post::insert(conn, now, now, &content).unwrap();
         let now = chrono::Utc::now();
         let content = indoc::indoc! {"
             # Code

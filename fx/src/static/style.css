@@ -33,6 +33,7 @@
         --text: hsl(0, 0%, 100%);
         --xrcf-title: #d1cdcd;
         --header: hsl(0, 0%, 100%);
+        --accent: hsl(212, 91%, 65%);
     }
 }
 
@@ -46,6 +47,14 @@ body {
 
 h1, h2, h3, h4, h5, h6 {
     color: var(--header);
+}
+
+a {
+    color: var(--accent);
+}
+
+a:visited {
+    color: hsl(270, 60%, 60%);
 }
 
 code {
