@@ -1,0 +1,40 @@
+name: audit
+
+on:
+  schedule:
+    - cron: '44 3 * * *'
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  cargo-audit:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo install --debug --path .
+      - run: >
+          jas install
+          --gh rustsec/rustsec@cargo-audit/v0.21.2
+          --archive-filename cargo-audit
+          --sha 5eaad156124e01d54ce937cbb2c069a8145b01e7fa29aef62bef1b386b4c1519
+          --gh-token ${{ secrets.GITHUB_TOKEN }}
+      - run: cargo-audit audit
+
+  cargo-deny:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo install --debug --path .
+      - run: >
+          jas install
+          --gh EmbarkStudios/cargo-deny@0.18.2
+          --sha 43c4a79c4b9fd1fcb3dddb305a1b4d8f7ac4a72accd61bb50a0b698789ca894c
+          --gh-token ${{ secrets.GITHUB_TOKEN }}
+      - run: cargo-deny check advisories

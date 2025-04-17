@@ -125,7 +125,11 @@ pre code {
 
 .unstyled-link {
     text-decoration: none;
-    color: inherit;
+    color: var(--text);
+}
+
+.unstyled-link:visited {
+    color: var(--text);
 }
 
 .right {

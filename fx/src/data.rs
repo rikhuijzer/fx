@@ -185,7 +185,7 @@ pub fn init(args: &ServeArgs, conn: &Connection) {
         let content = indoc::indoc! {"
             [Lorem](https://example.com/lorem) ipsum
         "};
-        Post::insert(conn, now, now, &content).unwrap();
+        Post::insert(conn, now, now, content).unwrap();
         let now = chrono::Utc::now();
         let content = indoc::indoc! {"
             # Code
@@ -198,6 +198,6 @@ pub fn init(args: &ServeArgs, conn: &Connection) {
             x = 1
             ```
         "};
-        Post::insert(conn, now, now, &content).unwrap();
+        Post::insert(conn, now, now, content).unwrap();
     }
 }
