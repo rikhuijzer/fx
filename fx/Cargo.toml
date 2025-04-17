@@ -28,3 +28,14 @@ tracing-subscriber = "0.3"
 
 [dev-dependencies]
 pretty_assertions = "1"
+
+[profile.dev]
+debug = 0
+strip = "debuginfo"
+split-debuginfo = "unpacked"
+
+[profile.release]
+lto = true
+strip = true
+codegen-units = 1
+opt-level = "z"
