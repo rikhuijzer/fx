@@ -1,5 +1,6 @@
 use crate::data::Post;
 use crate::serve::ServerContext;
+use chrono::DateTime;
 
 fn border_style(width: u64) -> String {
     format!(
@@ -8,13 +9,20 @@ fn border_style(width: u64) -> String {
     )
 }
 
+fn show_date<Tz: chrono::TimeZone>(datetime: &DateTime<Tz>) -> String {
+    datetime.date_naive().to_string()
+}
+
 pub fn post_to_html(post: &Post, border: bool) -> String {
     let html = crate::md::to_html(&post.content);
     let style = if border { &border_style(1) } else { "" };
     let updated = if post.created == post.updated {
         ""
     } else {
-        &format!("div class='updated'>last update: {}</div>", post.updated)
+        &format!(
+            "div class='updated'>last update: {}</div>",
+            show_date(&post.updated)
+        )
     };
     indoc::formatdoc! {"
     <div class='post' style='{style}'>
@@ -24,7 +32,7 @@ pub fn post_to_html(post: &Post, border: bool) -> String {
         </div>
         <div class='content'>{html}</div>
     </div>
-    ", post.created}
+    ", show_date(&post.created)}
 }
 
 pub enum Top {

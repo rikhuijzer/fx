@@ -8,7 +8,6 @@ use rusqlite::Result;
 
 pub trait SqliteDateTime {
     const FORMAT: &str = "%Y-%m-%d %H:%M:%S";
-    #[allow(dead_code)]
     fn from_sqlite(s: &str) -> Self;
     fn to_sqlite(&self) -> String;
 }
