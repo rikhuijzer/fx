@@ -12,6 +12,14 @@ fn without_links_core(node: &Node) -> String {
                 preview.push_str(&without_links_core(child));
             }
         }
+        Node::Heading(heading) => {
+            preview.push_str(&"#".repeat(heading.depth as usize));
+            preview.push_str(" ");
+            for child in heading.children.iter() {
+                preview.push_str(&without_links_core(child));
+            }
+            preview.push_str("\n\n");
+        }
         Node::Text(text) => preview.push_str(&text.value),
         Node::Html(html) => preview.push_str(&html.value),
         Node::Link(link) => {
@@ -62,7 +70,11 @@ pub fn sanitize_preview(post: &mut Post) {
 #[test]
 fn test_remove_link() {
     use chrono::Utc;
-    let content = "Lorem ipsum [foo](https://example.com/foo) dolor sit amet";
+    let content = indoc::indoc! {"
+        # Title
+
+        Lorem ipsum [foo](https://example.com/foo) dolor sit amet
+    "};
     let mut post = Post {
         id: 0,
         content: content.to_string(),
@@ -70,7 +82,12 @@ fn test_remove_link() {
         updated: Utc::now(),
     };
     sanitize_preview(&mut post);
-    assert_eq!(post.content, "Lorem ipsum foo dolor sit amet");
+    let expected = indoc::indoc! {"
+        # Title
+
+        Lorem ipsum foo dolor sit amet
+    "};
+    assert_eq!(post.content, expected.trim());
 }
 
 #[test]
