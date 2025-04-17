@@ -96,6 +96,21 @@ fn add_post_form() -> &'static str {
     "#}
 }
 
+/// Return formatted HTML that is more readable.
+fn pretty_html(page: &str) -> String {
+    use html5ever::tendril::TendrilSink;
+    use markup5ever_rcdom::SerializableHandle;
+
+    let sink = markup5ever_rcdom::RcDom::default();
+    let opts = html5ever::driver::ParseOpts::default();
+    let parser = html5ever::parse_document(sink, opts);
+    let dom = parser.from_utf8().read_from(&mut page.as_bytes()).unwrap();
+    let doc: SerializableHandle = dom.document.clone().into();
+    let mut out = Vec::new();
+    html5ever::serialize(&mut out, &doc, Default::default()).unwrap();
+    String::from_utf8(out).unwrap()
+}
+
 pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String {
     let title_suffix = &ctx.args.title_suffix;
     let full_title = if settings.title.is_empty() {
@@ -144,7 +159,7 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
     let title = &settings.title;
     let html_lang = &ctx.args.html_lang;
     let extra_head = &settings.extra_head;
-    indoc::formatdoc! {
+    let page = indoc::formatdoc! {
         r#"
         <!DOCTYPE html>
         <html lang="{html_lang}">
@@ -172,7 +187,8 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
             </div>
         </body>
         "#,
-    }
+    };
+    pretty_html(&page)
 }
 
 pub fn login(ctx: &ServerContext, error: Option<&str>) -> String {
