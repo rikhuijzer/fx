@@ -26,4 +26,7 @@ pub struct ServeArgs {
     /// The about text that is shown below the full name on the front page.
     #[arg(long, env = "FX_ABOUT", default_value = "")]
     pub about: String,
+    /// The language of the website.
+    #[arg(long, env = "FX_HTML_LANG", default_value = "en")]
+    pub html_lang: String,
 }

@@ -24,6 +24,7 @@ impl TestDefault for ServeArgs {
             title_suffix: "title-suffix".to_string(),
             full_name: "Test Admin".to_string(),
             about: "Building stuff".to_string(),
+            html_lang: "en".to_string(),
             admin_password: Some("test-password".to_string()),
         }
     }

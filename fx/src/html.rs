@@ -90,7 +90,7 @@ fn add_post_form() -> &'static str {
 
 pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String {
     let title_suffix = &ctx.args.title_suffix;
-    let title = if settings.title.is_empty() {
+    let full_title = if settings.title.is_empty() {
         title_suffix.clone()
     } else {
         format!("{} - {title_suffix}", settings.title)
@@ -133,15 +133,18 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
         </script>
         "#},
     };
+    let title = &settings.title;
+    let html_lang = &ctx.args.html_lang;
     indoc::formatdoc! {
         r#"
         <!DOCTYPE html>
-        <html>
+        <html lang="{html_lang}">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <link rel="stylesheet" href="/static/style.css">
-            <title>{title}</title>
+            <title>{full_title}</title>
+            <meta content="{title}", property="og:site_name"/>
         </head>
         <body>
             <div class="container">
@@ -158,7 +161,7 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
                 </div>
             </div>
         </body>
-        "#
+        "#,
     }
 }
 
