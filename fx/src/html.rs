@@ -1,4 +1,5 @@
 use crate::data::Post;
+use crate::data::SqliteDateTime;
 use crate::serve::ServerContext;
 use chrono::DateTime;
 
@@ -77,9 +78,9 @@ pub fn edit_post_buttons(_ctx: &ServerContext, post: &Post) -> String {
     let id = post.id;
     indoc::formatdoc! {r#"
     <div style="margin-left: auto; display: flex; align-items: center;">
-        <button>
+        <a class="button" href="/post/edit/{id}">
             edit
-        </button>
+        </a>
         <a class="button" href="/post/delete/{id}">
             delete
         </a>
@@ -102,6 +103,33 @@ fn add_post_form() -> &'static str {
         </div>
     </form>
     "
+}
+
+pub fn edit_post_form(post: &Post) -> String {
+    let id = post.id;
+    let content = &post.content;
+    let published = post.created.to_sqlite();
+    let updated = post.updated.to_sqlite();
+    format!(
+        "
+    <form style='width: 100%;' action='/post/edit/{id}' method='post'>
+        <label style='font-size: 0.8rem;' for='published'>Published (UTC)</label>
+        <input name='published' value='{published}'><br>
+        <label style='font-size: 0.8rem;' for='updated'>Updated (UTC)</label>
+        <input name='updated' value='{updated}'>
+        <textarea \
+          style='display: block; width: 100%; height: 60vh; margin-top: 10px;' \
+          class='boxsizing-border' \
+          id='content' name='content' placeholder='Your text..'>{content}</textarea>
+        </textarea>
+        <br>
+        <div style='display: flex; justify-content: flex-end;'>
+            <input type='submit' name='preview' value='Preview'/>
+            <input type='submit' name='publish' value='Publish'/>
+        </div>
+    </form>
+    "
+    )
 }
 
 /// Return formatted HTML that is more readable.

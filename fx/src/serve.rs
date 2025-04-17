@@ -1,5 +1,6 @@
 use crate::ServeArgs;
 use crate::data;
+use crate::data::SqliteDateTime;
 use crate::html::PageSettings;
 use crate::html::Top;
 use crate::html::page;
@@ -158,6 +159,29 @@ async fn get_delete(
     response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
 }
 
+async fn get_edit(
+    State(ctx): State<ServerContext>,
+    Path(id): Path<i64>,
+    jar: CookieJar,
+) -> Response<Body> {
+    let is_logged_in = is_logged_in(&ctx, &jar);
+    let post = Post::get(&ctx.conn.lock().unwrap(), id);
+    let post = match post {
+        Ok(post) => post,
+        Err(_) => return not_found(State(ctx)).await,
+    };
+    let body = crate::html::edit_post_form(&post);
+    let settings = PageSettings::new(
+        &post.content,
+        is_logged_in,
+        false,
+        Top::GoBack,
+        &ctx.args.extra_head,
+    );
+    let body = page(&ctx, &settings, &body);
+    response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
+}
+
 async fn get_post(
     State(ctx): State<ServerContext>,
     Path(id): Path<i64>,
@@ -278,16 +302,21 @@ async fn post_delete(
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct PostForm {
+pub struct EditPostForm {
+    pub published: String,
+    pub updated: String,
     pub content: String,
 }
 
-async fn post_add(
+async fn post_edit(
     State(ctx): State<ServerContext>,
     jar: CookieJar,
     req: Request,
 ) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
+    if !is_logged_in {
+        return not_found(State(ctx)).await;
+    }
     let extra_head = &ctx.args.extra_head;
     let settings = PageSettings::new("", is_logged_in, false, Top::GoBack, extra_head);
     let (_, body) = req.into_parts();
@@ -305,20 +334,71 @@ async fn post_add(
         .to_bytes();
     let bytes = bytes.to_vec();
     let content = String::from_utf8(bytes).unwrap();
-    let preview = content.contains("preview");
-    let content = content.split("&").next().unwrap();
-    let form = serde_urlencoded::from_str::<PostForm>(content).unwrap();
-    if preview {
+    let publish = content.contains("publish=Publish");
+    let form = serde_urlencoded::from_str::<EditPostForm>(&content).unwrap();
+    if publish {
+        let now = Utc::now();
+        let conn = ctx.conn.lock().unwrap();
+        // TODO:  should update not insert
+        let post = Post::insert(&conn, now, now, &form.content);
+        if post.is_err() {
+            return response(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                HeaderMap::new(),
+                "Failed to insert post",
+                &ctx,
+            );
+        };
+        let mut headers = HeaderMap::new();
+        headers.insert("Location", HeaderValue::from_str("/").unwrap());
+        response(StatusCode::SEE_OTHER, headers, "", &ctx)
+    } else {
         let post = Post {
             id: 0,
-            created: Utc::now(),
-            updated: Utc::now(),
+            created: SqliteDateTime::from_sqlite(&form.published),
+            updated: SqliteDateTime::from_sqlite(&form.updated),
             content: form.content,
         };
         let preview = crate::html::post_to_html(&post, false);
         let body = page(&ctx, &settings, &preview);
         response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
-    } else {
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct AddPostForm {
+    pub content: String,
+}
+
+async fn post_add(
+    State(ctx): State<ServerContext>,
+    jar: CookieJar,
+    req: Request,
+) -> Response<Body> {
+    let is_logged_in = is_logged_in(&ctx, &jar);
+    if !is_logged_in {
+        return not_found(State(ctx)).await;
+    }
+    let extra_head = &ctx.args.extra_head;
+    let settings = PageSettings::new("", is_logged_in, false, Top::GoBack, extra_head);
+    let (_, body) = req.into_parts();
+    let bytes = body
+        .collect()
+        .await
+        .map_err(|_err| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to read request body",
+            )
+                .into_response()
+        })
+        .unwrap()
+        .to_bytes();
+    let bytes = bytes.to_vec();
+    let content = String::from_utf8(bytes).unwrap();
+    let publish = content.contains("publish=Publish");
+    let form = serde_urlencoded::from_str::<AddPostForm>(&content).unwrap();
+    if publish {
         let now = Utc::now();
         let conn = ctx.conn.lock().unwrap();
         let post = Post::insert(&conn, now, now, &form.content);
@@ -333,6 +413,16 @@ async fn post_add(
         let mut headers = HeaderMap::new();
         headers.insert("Location", HeaderValue::from_str("/").unwrap());
         response(StatusCode::SEE_OTHER, headers, "", &ctx)
+    } else {
+        let post = Post {
+            id: 0,
+            created: Utc::now(),
+            updated: Utc::now(),
+            content: form.content,
+        };
+        let preview = crate::html::post_to_html(&post, false);
+        let body = page(&ctx, &settings, &preview);
+        response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
     }
 }
 
@@ -355,6 +445,8 @@ pub fn app(ctx: ServerContext) -> Router {
         .route("/", get(get_posts))
         .route("/post/delete/{id}", get(get_delete))
         .route("/post/delete/{id}", post(post_delete))
+        .route("/post/edit/{id}", get(get_edit))
+        .route("/post/edit/{id}", post(post_edit))
         .route("/post/add", post(post_add))
         .route("/login", get(get_login))
         .route("/login", post(post_login))

@@ -4,6 +4,7 @@ use tracing::Level;
 use tracing::subscriber::SetGlobalDefaultError;
 
 #[derive(Debug, clap::Subcommand)]
+#[allow(clippy::large_enum_variant)]
 enum Task {
     /// Start the server.
     Serve(ServeArgs),

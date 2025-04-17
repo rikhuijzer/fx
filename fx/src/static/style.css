@@ -143,6 +143,8 @@ pre code {
 }
 
 input {
+    background-color: var(--button-background);
+    color: var(--text);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 4px;
@@ -152,9 +154,7 @@ input {
 }
 
 input[type="submit"] {
-    background-color: var(--button-background);
     border: 1px solid var(--border);
-    color: var(--text);
     padding: 7px 20px;
     line-height: 1.3;
     margin: 12px 6px;
