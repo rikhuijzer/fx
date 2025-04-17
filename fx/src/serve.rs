@@ -47,10 +47,10 @@ impl ServerContext {
     }
 }
 
-fn response(
+fn response<D: Sized + ToString>(
     status: StatusCode,
     headers: HeaderMap,
-    body: &str,
+    body: D,
     ctx: &ServerContext,
 ) -> Response<Body> {
     let mut response: Response<Body> = Response::default();
@@ -67,7 +67,7 @@ fn response(
 }
 
 fn is_logged_in(ctx: &ServerContext, jar: &CookieJar) -> bool {
-    let password = match &ctx.args.admin_password {
+    let password = match &ctx.args.password {
         Some(password) => password,
         None => {
             tracing::warn!("admin password not set");
@@ -75,7 +75,7 @@ fn is_logged_in(ctx: &ServerContext, jar: &CookieJar) -> bool {
         }
     };
     let login = Login {
-        username: Some(ctx.args.admin_username.clone()),
+        username: Some(ctx.args.username.clone()),
         password: Some(password.clone()),
     };
     fx_auth::is_logged_in(&ctx.salt, &login, jar)
@@ -218,7 +218,7 @@ async fn post_login(
     jar: CookieJar,
     Form(form): Form<LoginForm>,
 ) -> Result<(CookieJar, Redirect), Response<Body>> {
-    let password = match &ctx.args.admin_password {
+    let password = match &ctx.args.password {
         Some(password) => password,
         None => {
             tracing::warn!("admin password not set");
@@ -231,7 +231,7 @@ async fn post_login(
         }
     };
     let actual = Login {
-        username: Some(ctx.args.admin_username.clone()),
+        username: Some(ctx.args.username.clone()),
         password: Some(password.clone()),
     };
     let received = Login {
@@ -336,6 +336,24 @@ async fn post_add(
     }
 }
 
+async fn get_webfinger(State(ctx): State<ServerContext>) -> Response<Body> {
+    let body = crate::ap::webfinger(&ctx, "admin");
+    let body = match body {
+        Some(body) => body,
+        None => return not_found(State(ctx)).await,
+    };
+    let body = match serde_json::to_string(&body) {
+        Ok(body) => body,
+        Err(_) => return not_found(State(ctx)).await,
+    };
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        "Content-Type",
+        HeaderValue::from_static("application/jrd+json; charset=utf-8"),
+    );
+    response(StatusCode::OK, headers, &body, &ctx)
+}
+
 pub fn app(ctx: ServerContext) -> Router {
     Router::new()
         .route("/", get(get_posts))
@@ -348,6 +366,7 @@ pub fn app(ctx: ServerContext) -> Router {
         // Need to put behind /post/<ID> otherwise /<WRONG LINK> will not be a 404.
         .route("/post/{id}", get(get_post))
         .route("/static/style.css", get(style))
+        .route("/.well-known/webfinger", get(get_webfinger))
         .fallback(not_found)
         .with_state(ctx)
 }

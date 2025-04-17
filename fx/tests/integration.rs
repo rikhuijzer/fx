@@ -20,12 +20,13 @@ impl TestDefault for ServeArgs {
             production: false,
             port: 3000,
             database_path: "".to_string(),
-            admin_username: "test-admin".to_string(),
+            username: "test-admin".to_string(),
             title_suffix: "title-suffix".to_string(),
+            domain: Some("example.com".to_string()),
             full_name: "Test Admin".to_string(),
             about: "Building stuff".to_string(),
             html_lang: "en".to_string(),
-            admin_password: Some("test-password".to_string()),
+            password: Some("test-password".to_string()),
             extra_head: "<meta property='test' content='test'>".to_string(),
         }
     }

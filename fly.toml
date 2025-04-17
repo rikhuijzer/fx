@@ -3,10 +3,11 @@ primary_region = 'ams'
 
 [env]
   FX_PRODUCTION = "true"
-  FX_ADMIN_USERNAME = "rik"
+  FX_USERNAME = "rik"
   FX_TITLE_SUFFIX = "Rik's weblog"
   FX_FULL_NAME = "Rik"
   FX_ABOUT = "Building open source software"
+  FX_DOMAIN = "fx.huijzer.xyz"
 
 [http_service]
   internal_port = 3000
