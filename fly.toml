@@ -5,6 +5,7 @@ primary_region = 'ams'
   FX_PRODUCTION = "true"
   FX_ADMIN_USERNAME = "rik"
   FX_ADMIN_NAME = "Rik"
+  FX_ADMIN_ABOUT = "Building open source software"
   FX_TITLE_SUFFIX = "Rik's weblog"
 
 [http_service]

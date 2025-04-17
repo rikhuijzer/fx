@@ -15,12 +15,15 @@ pub struct ServeArgs {
     pub database_path: String,
     #[arg(long, env = "FX_ADMIN_USERNAME", default_value = "admin")]
     pub admin_username: String,
+    #[arg(long, env = "FX_ADMIN_PASSWORD")]
+    pub admin_password: Option<String>,
     /// The website title.
     #[arg(long, env = "FX_TITLE_SUFFIX", default_value = "fx")]
     pub title_suffix: String,
     /// The full name that is shown on top of the main page.
-    #[arg(long, env = "FX_ADMIN_NAME", default_value = "John Doe")]
-    pub admin_name: String,
-    #[arg(long, env = "FX_ADMIN_PASSWORD")]
-    pub admin_password: Option<String>,
+    #[arg(long, env = "FX_FULL_NAME", default_value = "John Doe")]
+    pub full_name: String,
+    /// The about text that is shown below the full name on the front page.
+    #[arg(long, env = "FX_ABOUT", default_value = "")]
+    pub about: String,
 }

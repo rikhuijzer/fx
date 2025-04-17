@@ -22,7 +22,8 @@ impl TestDefault for ServeArgs {
             database_path: "".to_string(),
             admin_username: "test-admin".to_string(),
             title_suffix: "title-suffix".to_string(),
-            admin_name: "Test Admin".to_string(),
+            full_name: "Test Admin".to_string(),
+            about: "Building stuff".to_string(),
             admin_password: Some("test-password".to_string()),
         }
     }

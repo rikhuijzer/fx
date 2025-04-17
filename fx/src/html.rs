@@ -3,8 +3,11 @@ use crate::serve::ServerContext;
 
 pub fn post_to_html(post: &Post, border: bool) -> String {
     let html = crate::md::to_html(&post.content);
-    let border = if border {
-        "border: 1px solid var(--border);"
+    let style = if border {
+        indoc::indoc! {"
+            border-bottom: 1px solid var(--border);
+            border-radius: 0px;
+        "}
     } else {
         ""
     };
@@ -14,7 +17,7 @@ pub fn post_to_html(post: &Post, border: bool) -> String {
         &format!("div class='updated'>last update: {}</div>", post.updated)
     };
     indoc::formatdoc! {"
-    <div class='post' style='{border}'>
+    <div class='post' style='{style}'>
         <div class='post-header'>
             <div class='created'>{}</div>
             {updated}
@@ -70,9 +73,12 @@ pub fn edit_post_buttons(_ctx: &ServerContext, post: &Post) -> String {
 
 fn add_post_form() -> &'static str {
     indoc::indoc! {r#"
-    <form style="width: 99%;" action="/post/add" method="post">
-        <textarea style="width: 98%; height: 100px;"
-          id="content" name="content" placeholder="Your text.."></textarea>
+    <form style="width: 100%;" action="/post/add" method="post">
+        <textarea
+          style="display: block; width: 100%; height: 100px;"
+          class="boxsizing-border"
+          id="content" name="content" placeholder="Your text..">
+        </textarea>
         <br>
         <div style="display: flex; justify-content: flex-end;">
             <input type="submit" name="preview" value="Preview"/>
@@ -91,10 +97,14 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
     };
     let about = if settings.show_about {
         indoc::formatdoc! {r#"
-        <div class="about" style="margin-bottom: 20px;">
-            {}
+        <div class="introduction" style="padding: 10px; margin-bottom: 20px;">
+            <div class="full-name"
+              style="font-size: 1.2rem; margin-bottom: 10px; font-weight: bold;">
+                {}
+            </div>
+            <div class="about" style="">{}</div>
         </div>
-        "#, ctx.args.admin_name }
+        "#, ctx.args.full_name, ctx.args.about }
     } else {
         "".to_string()
     };
