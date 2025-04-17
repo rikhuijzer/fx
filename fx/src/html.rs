@@ -1,57 +1,27 @@
 use crate::data::Post;
 use crate::serve::ServerContext;
-use chrono::Utc;
 
-#[derive(Debug)]
-pub struct HtmlCtx {
-    #[allow(dead_code)]
-    is_logged_in: bool,
-    border: bool,
-}
-
-impl HtmlCtx {
-    pub fn new(is_logged_in: bool, border: bool) -> Self {
-        Self {
-            is_logged_in,
-            border,
-        }
-    }
-}
-
-pub trait ToHtml {
-    fn to_html(&self, hctx: &HtmlCtx) -> String;
-}
-
-impl ToHtml for Post {
-    fn to_html(&self, hctx: &HtmlCtx) -> String {
-        let html = markdown::to_html(&self.content);
-        let border = if hctx.border {
-            "border: 1px solid var(--border);"
-        } else {
-            ""
-        };
-        indoc::formatdoc! {"
-        <div class='post' style='{border}'>
-            <div class='post-header'>
-                <div class='created_at'>{}</div>
-            </div>
-            <div class='content'>{html}</div>
-        </div>
-        ", self.created_at}
-    }
-}
-
-pub fn post_preview(content: &str) -> String {
-    let now = Utc::now();
-    indoc::formatdoc! {r#"
-    <div class='post'>
+pub fn post_to_html(post: &Post, border: bool) -> String {
+    let html = markdown::to_html(&post.content);
+    let border = if border {
+        "border: 1px solid var(--border);"
+    } else {
+        ""
+    };
+    let updated = if post.created == post.updated {
+        ""
+    } else {
+        &format!("div class='updated'>last update: {}</div>", post.updated)
+    };
+    indoc::formatdoc! {"
+    <div class='post' style='{border}'>
         <div class='post-header'>
-            <div class='created_at'>{now}</div>
+            <div class='created'>{}</div>
+            {updated}
         </div>
-        <div class='content'>{content}</div>
+        <div class='content'>{html}</div>
     </div>
-    "#
-    }
+    ", post.created}
 }
 
 pub enum Top {
@@ -172,7 +142,7 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
                     </div>
                     {body}
                     <div class="bottom">
-                        <a class="unstyled-link menu-space" href="https://github.com/rikhuijzer/fx">source</a>
+                        <a class="unstyled-link menu-space" href="https://github.com/rikhuijzer/fx">Source</a>
                         {loginout}
                     </div>
                 </div>

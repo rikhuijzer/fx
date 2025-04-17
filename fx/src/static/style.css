@@ -13,23 +13,26 @@
     --text-font-size: 18px;
     --text: #000000;
     --background: hsl(220, 60%, 98%);
-    --code-background: hsl(230, 60%, 80%);
-    --button-background: hsl(230, 60%, 85%);
+    --code-background: hsl(0, 0%, 94%);
+    --button-background: hsl(0, 0%, 92%);
     --code-border: #dbdbdb;
     --border: hsl(0, 0%, 60%);
     --blue-gradient: linear-gradient(to right, var(--dark-blue), var(--blue));
+    --accent: hsl(212, 91%, 60%);
+    --header: hsl(212, 90%, 18%);
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
         --blue-gradient: linear-gradient(to right, var(--blue), var(--light-blue));
-        --background: hsl(0, 0%, 15%);
+        --background: hsl(0, 0%, 10%);
         --border: hsl(0, 0%, 40%);
-        --code-background: hsl(0, 0%, 20%);
-        --button-background: hsl(0, 0%, 25%);
+        --code-background: hsl(0, 0%, 18%);
+        --button-background: hsl(0, 0%, 20%);
         --code-border: #0e0e0e;
-        --text: #ddd;
+        --text: hsl(0, 0%, 100%);
         --xrcf-title: #d1cdcd;
+        --header: hsl(0, 0%, 100%);
     }
 }
 
@@ -39,6 +42,10 @@ body {
     background-color: var(--background);
     color: var(--text);
     font-size: var(--text-font-size);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--header);
 }
 
 code {

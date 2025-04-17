@@ -1,8 +1,6 @@
 use crate::ServeArgs;
 use crate::data;
-use crate::html::HtmlCtx;
 use crate::html::PageSettings;
-use crate::html::ToHtml;
 use crate::html::Top;
 use crate::html::page;
 use axum::Form;
@@ -12,6 +10,7 @@ use axum::extract::Path;
 use axum::extract::Request;
 use axum::extract::State;
 use axum::http::HeaderMap;
+use crate::html::post_to_html;
 use axum::http::HeaderValue;
 use axum::http::Response;
 use axum::http::StatusCode;
@@ -82,19 +81,18 @@ fn is_logged_in(ctx: &ServerContext, jar: &CookieJar) -> bool {
     fx_auth::is_logged_in(&ctx.salt, &login, jar)
 }
 
-fn list_posts(ctx: &ServerContext, is_logged_in: bool) -> String {
+fn list_posts(ctx: &ServerContext, _is_logged_in: bool) -> String {
     let posts = {
         let conn = ctx.conn.lock().unwrap();
         Post::list(&conn).unwrap()
     };
-    let hctx = HtmlCtx::new(is_logged_in, true);
     posts
         .iter()
         .map(|p| {
             format!(
                 "<a class='unstyled-link' href='/post/{}'>{}</a>",
                 p.id,
-                p.to_html(&hctx)
+                post_to_html(p, true)
             )
         })
         .collect::<Vec<String>>()
@@ -143,7 +141,6 @@ async fn get_delete(
         Err(_) => return not_found(State(ctx.clone())).await,
     };
     let settings = PageSettings::new(&post.content, false, false, Top::GoHome);
-    let hctx = HtmlCtx::new(false, false);
     let delete_button = indoc::formatdoc! {r#"
         <div class='center medium-text' style='font-weight: bold;'>
             <p>Are you sure you want to delete this post? This action cannot be undone.</p>
@@ -153,7 +150,7 @@ async fn get_delete(
             <br>
         </div>
     "#};
-    let body = format!("{}\n{}", delete_button, post.to_html(&hctx));
+    let body = format!("{}\n{}", delete_button, post_to_html(&post, false));
     let body = page(&ctx, &settings, &body);
     response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
 }
@@ -171,8 +168,7 @@ async fn get_post(
     };
     let title = truncate(&post.content);
     let settings = PageSettings::new(&title, false, false, Top::GoHome);
-    let hctx = HtmlCtx::new(false, false);
-    let mut body = post.to_html(&hctx);
+    let mut body = post_to_html(&post, false);
     if is_logged_in {
         body = format!("{}\n{body}", crate::html::edit_post_buttons(&ctx, &post));
     }
@@ -298,14 +294,19 @@ async fn post_add(
     let content = content.split("&").next().unwrap();
     let form = serde_urlencoded::from_str::<PostForm>(content).unwrap();
     if preview {
-        let html = markdown::to_html(&form.content);
-        let preview = crate::html::post_preview(&html);
+        let post = Post {
+            id: 0,
+            created: Utc::now(),
+            updated: Utc::now(),
+            content: form.content,
+        };
+        let preview = crate::html::post_to_html(&post, false);
         let body = page(&ctx, &settings, &preview);
         response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
     } else {
         let now = Utc::now();
         let conn = ctx.conn.lock().unwrap();
-        let post = Post::insert(&conn, now, &form.content);
+        let post = Post::insert(&conn, now, now, &form.content);
         if post.is_err() {
             return response(
                 StatusCode::INTERNAL_SERVER_ERROR,

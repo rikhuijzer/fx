@@ -76,9 +76,14 @@ fn test_kv() {
 
 #[derive(Clone, Debug)]
 pub struct Post {
+    /// The id of the post.
     #[allow(dead_code)]
     pub id: i64,
-    pub created_at: chrono::DateTime<chrono::Utc>,
+    /// The date and time the post was created.
+    pub created: chrono::DateTime<chrono::Utc>,
+    /// The date and time the post was last updated.
+    pub updated: chrono::DateTime<chrono::Utc>,
+    /// The content of the post.
     pub content: String,
 }
 
@@ -87,36 +92,47 @@ impl Post {
         let stmt = "
             CREATE TABLE IF NOT EXISTS posts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                created_at DATETIME NOT NULL,
+                created DATETIME NOT NULL,
+                updated DATETIME NOT NULL,
                 content TEXT NOT NULL
             );
         ";
         conn.execute(stmt, [])
     }
-    pub fn insert(conn: &Connection, created_at: DateTime<Utc>, content: &str) -> Result<usize> {
+    pub fn insert(
+        conn: &Connection,
+        created: DateTime<Utc>,
+        updated: DateTime<Utc>,
+        content: &str,
+    ) -> Result<usize> {
         let stmt = "
-            INSERT INTO posts (created_at, content)
-            VALUES (?, ?);
+            INSERT INTO posts (created, updated, content)
+            VALUES (?, ?, ?);
         ";
-        let created_at = created_at.to_sqlite();
+        let created = created.to_sqlite();
+        let updated = updated.to_sqlite();
         let content = content.to_string();
-        conn.execute(stmt, [created_at, content])
+        conn.execute(stmt, [created, updated, content])
     }
     pub fn list(conn: &Connection) -> Result<Vec<Post>> {
         let stmt = "
-            SELECT id, created_at, content
+            SELECT id, created, updated, content
             FROM posts
             ORDER BY id DESC;
         ";
         let posts = conn
             .prepare(stmt)?
             .query_map([], |row| {
-                let date_str: String = row.get("created_at")?;
-                let created_at = DateTime::from_sqlite(&date_str);
+                let created_str: String = row.get("created")?;
+                let created = DateTime::from_sqlite(&created_str);
+                let updated_str: String = row.get("updated")?;
+                let updated = DateTime::from_sqlite(&updated_str);
+                let content = row.get("content")?;
                 Ok(Post {
                     id: row.get("id")?,
-                    created_at,
-                    content: row.get("content")?,
+                    created,
+                    updated,
+                    content,
                 })
             })?
             .collect::<Result<Vec<_>, _>>()?;
@@ -124,15 +140,19 @@ impl Post {
     }
     pub fn get(conn: &Connection, id: i64) -> Result<Post> {
         let stmt = "
-            SELECT id, created_at, content FROM posts WHERE id = ?;
+            SELECT id, created, updated, content FROM posts WHERE id = ?;
         ";
         conn.prepare(stmt)?.query_row([id], |row| {
-            let date_str: String = row.get("created_at")?;
-            let created_at = DateTime::from_sqlite(&date_str);
+            let created_str: String = row.get("created")?;
+            let created = DateTime::from_sqlite(&created_str);
+            let updated_str: String = row.get("updated")?;
+            let updated = DateTime::from_sqlite(&updated_str);
+            let content = row.get("content")?;
             Ok(Post {
                 id: row.get("id")?,
-                created_at,
-                content: row.get("content")?,
+                created,
+                updated,
+                content,
             })
         })
     }
@@ -162,7 +182,7 @@ pub fn init(args: &ServeArgs, conn: &Connection) {
 
     if !args.production {
         let now = chrono::Utc::now();
-        Post::insert(conn, now, "lorem ipsum").unwrap();
+        Post::insert(conn, now, now, "lorem ipsum").unwrap();
         let now = chrono::Utc::now();
         let content = indoc::indoc! {"
             # Code
@@ -175,6 +195,6 @@ pub fn init(args: &ServeArgs, conn: &Connection) {
             x = 1
             ```
         "};
-        Post::insert(conn, now, &content).unwrap();
+        Post::insert(conn, now, now, &content).unwrap();
     }
 }
