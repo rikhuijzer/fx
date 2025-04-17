@@ -7,11 +7,12 @@ use serde_json::json;
 /// Returns a JSON object that can be used as WebFinger response.
 ///
 /// And do some basic verification via <https://webfinger.net/>.
-pub fn webfinger(ctx: &ServerContext, username: &str) -> Option<Value> {
+pub fn webfinger(ctx: &ServerContext) -> Option<Value> {
     let domain = match &ctx.args.domain {
         Some(domain) => domain,
         None => return None,
     };
+    let username = &ctx.args.username;
     let domain = domain.trim_matches('/');
     let domain = domain.replace("http://", "");
     let domain = domain.replace("https://", "");

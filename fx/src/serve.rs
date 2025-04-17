@@ -337,14 +337,10 @@ async fn post_add(
 }
 
 async fn get_webfinger(State(ctx): State<ServerContext>) -> Response<Body> {
-    let body = crate::ap::webfinger(&ctx, "admin");
+    let body = crate::ap::webfinger(&ctx);
     let body = match body {
         Some(body) => body,
         None => return not_found(State(ctx)).await,
-    };
-    let body = match serde_json::to_string(&body) {
-        Ok(body) => body,
-        Err(_) => return not_found(State(ctx)).await,
     };
     let mut headers = HeaderMap::new();
     headers.insert(
