@@ -57,19 +57,19 @@ async fn test_home() {
     let (status, body) = request_body("/").await;
     assert_eq!(status, StatusCode::OK);
     assert!(body.contains("<!DOCTYPE html>"));
-    assert!(body.contains("lorem ipsum"));
-    assert!(body.contains("dolor sit amet"));
+    assert!(body.contains("Lorem"));
+    assert!(body.contains("Dolor"));
 }
 
 #[tokio::test]
 async fn test_post() {
     let (status, body) = request_body("/post/1").await;
     assert_eq!(status, StatusCode::OK);
-    assert!(body.contains("lorem ipsum"));
+    assert!(body.contains("Lorem"));
 
     let (status, body) = request_body("/post/2").await;
     assert_eq!(status, StatusCode::OK);
-    assert!(body.contains("dolor sit amet"));
+    assert!(body.contains("Dolor"));
 }
 
 #[tokio::test]
@@ -129,7 +129,7 @@ async fn test_login() {
     let body = response.into_body().collect().await.unwrap();
     let body: Vec<u8> = body.to_bytes().into();
     let body = String::from_utf8(body).unwrap();
-    assert!(body.contains("lorem ipsum"));
+    assert!(body.contains("Lorem"));
     assert!(!body.contains("login"));
     assert!(body.contains("logout"));
 
@@ -145,7 +145,7 @@ async fn test_login() {
     let body = response.into_body().collect().await.unwrap();
     let body: Vec<u8> = body.to_bytes().into();
     let body = String::from_utf8(body).unwrap();
-    assert!(body.contains("lorem ipsum"));
+    assert!(body.contains("Lorem"));
     assert!(body.contains("login"));
     assert!(!body.contains("logout"));
 
@@ -222,5 +222,5 @@ async fn test_delete_confirmation() {
     let (status, body) = request_body_logged_in("/post/delete/1").await;
     assert_eq!(status, StatusCode::OK);
     assert!(body.contains("Are you sure you want to delete this post?"));
-    assert!(body.contains("lorem ipsum"));
+    assert!(body.contains("Lorem"));
 }
