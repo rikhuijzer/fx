@@ -25,6 +25,10 @@ fn without_links_core(node: &Node) -> String {
         Node::Link(link) => {
             preview.push_str(&without_links_core(link.children.first().unwrap()));
         }
+        Node::Code(code) => {
+            let lang = code.lang.clone().unwrap_or("".to_string());
+            preview.push_str(&format!("\n\n```{}\n{}\n```\n", lang, code.value));
+        }
         _ => {}
     }
     preview
@@ -49,7 +53,7 @@ pub fn sanitize_preview(post: &mut Post) {
     let options = ParseOptions::default();
     let tree = to_mdast(&post.content, &options).unwrap();
     let mut preview = String::new();
-    let max_length = 160;
+    let max_length = 600;
     for node in tree.children().unwrap() {
         if max_length < preview.len() {
             // Not adding a link because a preview is already a link.
@@ -93,9 +97,28 @@ fn test_remove_link() {
 #[test]
 fn test_truncate() {
     use chrono::Utc;
-    let content = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+    // Need indoc to avoid indented lines to be interpreted as code.
+    let content = indoc::indoc! {"
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
+    do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad
+    minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex
+    ea commodo consequat.
     
-    Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod
+    tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
+    quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
+    consequat.
+    
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod
+    tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
+    quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
+    consequat.
+    
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod
+    tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
+    quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
+    consequat.
+    "};
     let mut post = Post {
         id: 0,
         content: content.to_string(),
