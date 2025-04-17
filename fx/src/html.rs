@@ -1,13 +1,17 @@
 use crate::data::Post;
 use crate::serve::ServerContext;
 
+fn border_style(width: u64) -> String {
+    format!(
+        "border-bottom: {}px solid; border-radius: 0px; \
+       border-image: var(--blue-gradient) 1;",
+        width
+    )
+}
+
 pub fn post_to_html(post: &Post, border: bool) -> String {
     let html = crate::md::to_html(&post.content);
-    let style = if border {
-        "border-bottom: 1px solid var(--border); border-radius: 0px;"
-    } else {
-        ""
-    };
+    let style = if border { &border_style(1) } else { "" };
     let updated = if post.created == post.updated {
         ""
     } else {
@@ -80,7 +84,7 @@ fn add_post_form() -> &'static str {
     "
     <form style='width: 100%;' action='/post/add' method='post'>
         <textarea \
-          style='display: block; width: 100%; height: 100px;' \
+          style='display: block; width: 100%; height: 100px; margin-top: 10px;' \
           class='boxsizing-border' \
           id='content' name='content' placeholder='Your text..'>
         </textarea>
@@ -110,15 +114,20 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
         format!("{} - {title_suffix}", settings.title)
     };
     let about = if settings.show_about {
-        format!("
-        <div class='introduction' style='padding: 10px; margin-bottom: 20px;'>
+        format!(
+            "
+        <div class='introduction' style='padding: 10px; {}'>
             <div class='full-name' \
               style='font-size: 1.2rem; margin-bottom: 10px; font-weight: bold;'>
                 {}
             </div>
-            <div class='about'>{}</div>
+            <div class='about' style='font-size: 0.9rem;'>{}</div>
         </div>
-        ", ctx.args.full_name, ctx.args.about)
+        ",
+            border_style(2),
+            ctx.args.full_name,
+            ctx.args.about
+        )
     } else {
         "".to_string()
     };
