@@ -82,13 +82,14 @@ fn is_logged_in(ctx: &ServerContext, jar: &CookieJar) -> bool {
 }
 
 fn list_posts(ctx: &ServerContext, _is_logged_in: bool) -> String {
-    let posts = {
+    let mut posts = {
         let conn = ctx.conn.lock().unwrap();
         Post::list(&conn).unwrap()
     };
     posts
-        .iter()
+        .iter_mut()
         .map(|p| {
+            crate::md::sanitize_preview(p);
             format!(
                 "<a class='unstyled-link' href='/post/{}'>{}</a>",
                 p.id,

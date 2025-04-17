@@ -1,5 +1,6 @@
 pub mod data;
 pub mod html;
+mod md;
 pub mod serve;
 
 use clap::Parser;

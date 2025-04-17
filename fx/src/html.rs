@@ -2,7 +2,7 @@ use crate::data::Post;
 use crate::serve::ServerContext;
 
 pub fn post_to_html(post: &Post, border: bool) -> String {
-    let html = markdown::to_html(&post.content);
+    let html = crate::md::to_html(&post.content);
     let border = if border {
         "border: 1px solid var(--border);"
     } else {
