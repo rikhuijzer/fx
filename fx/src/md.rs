@@ -14,7 +14,7 @@ fn without_links_core(node: &Node) -> String {
         }
         Node::Heading(heading) => {
             preview.push_str(&"#".repeat(heading.depth as usize));
-            preview.push_str(" ");
+            preview.push(' ');
             for child in heading.children.iter() {
                 preview.push_str(&without_links_core(child));
             }

@@ -26,6 +26,7 @@ impl TestDefault for ServeArgs {
             about: "Building stuff".to_string(),
             html_lang: "en".to_string(),
             admin_password: Some("test-password".to_string()),
+            extra_head: "<meta property='test' content='test'>".to_string(),
         }
     }
 }
@@ -61,6 +62,7 @@ async fn test_home() {
     assert!(body.contains("<!DOCTYPE html>"));
     assert!(body.contains("Lorem"));
     assert!(body.contains("Dolor"));
+    assert!(body.contains("<meta property='test' content='test'>"));
 }
 
 #[tokio::test]

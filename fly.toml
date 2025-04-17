@@ -4,9 +4,9 @@ primary_region = 'ams'
 [env]
   FX_PRODUCTION = "true"
   FX_ADMIN_USERNAME = "rik"
-  FX_ADMIN_NAME = "Rik"
-  FX_ADMIN_ABOUT = "Building open source software"
   FX_TITLE_SUFFIX = "Rik's weblog"
+  FX_FULL_NAME = "Rik"
+  FX_ABOUT = "Building open source software"
 
 [http_service]
   internal_port = 3000

@@ -102,7 +102,8 @@ fn list_posts(ctx: &ServerContext, _is_logged_in: bool) -> String {
 
 async fn get_posts(State(ctx): State<ServerContext>, jar: CookieJar) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
-    let settings = PageSettings::new("", is_logged_in, true, Top::Homepage);
+    let extra_head = &ctx.args.extra_head;
+    let settings = PageSettings::new("", is_logged_in, true, Top::Homepage, extra_head);
     let posts = list_posts(&ctx, is_logged_in);
     let body = page(&ctx, &settings, &posts);
     response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
@@ -141,7 +142,8 @@ async fn get_delete(
         Ok(post) => post,
         Err(_) => return not_found(State(ctx.clone())).await,
     };
-    let settings = PageSettings::new(&post.content, false, false, Top::GoHome);
+    let extra_head = &ctx.args.extra_head;
+    let settings = PageSettings::new(&post.content, false, false, Top::GoHome, extra_head);
     let delete_button = indoc::formatdoc! {r#"
         <div class='center medium-text' style='font-weight: bold;'>
             <p>Are you sure you want to delete this post? This action cannot be undone.</p>
@@ -168,7 +170,16 @@ async fn get_post(
         Err(_) => return not_found(State(ctx)).await,
     };
     let title = truncate(&post.content);
-    let settings = PageSettings::new(&title, false, false, Top::GoHome);
+    let author = &ctx.args.full_name;
+    let published = &post.created;
+    let updated = &post.updated;
+    let extra_head = indoc::formatdoc! {r#"
+        <meta property="article:author" content="{author}"/>
+        <meta property="article:published_time" content="{published}"/>
+        <meta property="article:modified_time" content="{updated}"/>
+        {}
+    "#, ctx.args.extra_head};
+    let settings = PageSettings::new(&title, is_logged_in, false, Top::GoHome, &extra_head);
     let mut body = post_to_html(&post, false);
     if is_logged_in {
         body = format!("{}\n{body}", crate::html::edit_post_buttons(&ctx, &post));
@@ -178,13 +189,15 @@ async fn get_post(
 }
 
 async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
+    let is_logged_in = is_logged_in(&ctx, &CookieJar::new());
     let body = indoc::indoc! {"
         <div style='text-align: center; margin-top: 100px;'>
             <h1>Not found</h1>
             <p>The page you are looking for does not exist.</p>
         </div>
     "};
-    let settings = PageSettings::new("not found", false, false, Top::GoHome);
+    let extra_head = &ctx.args.extra_head;
+    let settings = PageSettings::new("not found", is_logged_in, false, Top::GoHome, extra_head);
     let body = page(&ctx, &settings, body);
     response(StatusCode::NOT_FOUND, HeaderMap::new(), &body, &ctx)
 }
@@ -275,7 +288,8 @@ async fn post_add(
     req: Request,
 ) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
-    let settings = PageSettings::new("", is_logged_in, false, Top::GoBack);
+    let extra_head = &ctx.args.extra_head;
+    let settings = PageSettings::new("", is_logged_in, false, Top::GoBack, extra_head);
     let (_, body) = req.into_parts();
     let bytes = body
         .collect()

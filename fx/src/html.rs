@@ -44,15 +44,23 @@ pub struct PageSettings {
     is_logged_in: bool,
     show_about: bool,
     top: Top,
+    extra_head: String,
 }
 
 impl PageSettings {
-    pub fn new(title: &str, is_logged_in: bool, show_about: bool, top: Top) -> Self {
+    pub fn new(
+        title: &str,
+        is_logged_in: bool,
+        show_about: bool,
+        top: Top,
+        extra_head: &str,
+    ) -> Self {
         Self {
             title: title.to_string(),
             is_logged_in,
             show_about,
             top,
+            extra_head: extra_head.to_string(),
         }
     }
 }
@@ -135,6 +143,7 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
     };
     let title = &settings.title;
     let html_lang = &ctx.args.html_lang;
+    let extra_head = &settings.extra_head;
     indoc::formatdoc! {
         r#"
         <!DOCTYPE html>
@@ -144,7 +153,8 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <link rel="stylesheet" href="/static/style.css">
             <title>{full_title}</title>
-            <meta content="{title}", property="og:site_name"/>
+            <meta property="og:site_name" content="{title}"/>
+            {extra_head}
         </head>
         <body>
             <div class="container">
@@ -167,7 +177,7 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
 
 pub fn login(ctx: &ServerContext, error: Option<&str>) -> String {
     let top = Top::Homepage;
-    let settings = PageSettings::new("login", false, false, top);
+    let settings = PageSettings::new("login", false, false, top, "");
     let error = match error {
         Some(error) => format!("<div style='font-style: italic;'>{error}</div>"),
         None => "".to_string(),
