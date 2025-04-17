@@ -155,6 +155,17 @@ impl Post {
             })
         })
     }
+    pub fn update(self: &Self, conn: &Connection) -> Result<usize> {
+        let stmt = "
+            UPDATE posts SET created = ?, updated = ?, content = ?
+            WHERE id = ?;
+        ";
+        let created = self.created.to_sqlite();
+        let updated = self.updated.to_sqlite();
+        let content = self.content.to_string();
+        let id = self.id.to_string();
+        conn.execute(stmt, [created, updated, content, id])
+    }
     pub fn delete(conn: &Connection, id: i64) -> Result<usize> {
         let stmt = "DELETE FROM posts WHERE id = ?";
         conn.execute(stmt, [id])

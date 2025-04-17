@@ -108,13 +108,13 @@ fn add_post_form() -> &'static str {
 pub fn edit_post_form(post: &Post) -> String {
     let id = post.id;
     let content = &post.content;
-    let published = post.created.to_sqlite();
+    let created = post.created.to_sqlite();
     let updated = post.updated.to_sqlite();
     format!(
         "
     <form style='width: 100%;' action='/post/edit/{id}' method='post'>
-        <label style='font-size: 0.8rem;' for='published'>Published (UTC)</label>
-        <input name='published' value='{published}'><br>
+        <label style='font-size: 0.8rem;' for='created'>Created (UTC)</label>
+        <input name='created' value='{created}'><br>
         <label style='font-size: 0.8rem;' for='updated'>Updated (UTC)</label>
         <input name='updated' value='{updated}'>
         <textarea \

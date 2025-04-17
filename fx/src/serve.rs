@@ -195,11 +195,11 @@ async fn get_post(
     };
     let title = truncate(&post.content);
     let author = &ctx.args.full_name;
-    let published = &post.created;
+    let created = &post.created;
     let updated = &post.updated;
     let extra_head = indoc::formatdoc! {r#"
         <meta property="article:author" content="{author}"/>
-        <meta property="article:published_time" content="{published}"/>
+        <meta property="article:published_time" content="{created}"/>
         <meta property="article:modified_time" content="{updated}"/>
         {}
     "#, ctx.args.extra_head};
@@ -303,7 +303,7 @@ async fn post_delete(
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct EditPostForm {
-    pub published: String,
+    pub created: String,
     pub updated: String,
     pub content: String,
 }
@@ -311,6 +311,7 @@ pub struct EditPostForm {
 async fn post_edit(
     State(ctx): State<ServerContext>,
     jar: CookieJar,
+    Path(id): Path<i64>,
     req: Request,
 ) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
@@ -337,15 +338,19 @@ async fn post_edit(
     let publish = content.contains("publish=Publish");
     let form = serde_urlencoded::from_str::<EditPostForm>(&content).unwrap();
     if publish {
-        let now = Utc::now();
         let conn = ctx.conn.lock().unwrap();
-        // TODO:  should update not insert
-        let post = Post::insert(&conn, now, now, &form.content);
+        let post = Post {
+            id,
+            created: SqliteDateTime::from_sqlite(&form.created),
+            updated: SqliteDateTime::from_sqlite(&form.updated),
+            content: form.content,
+        };
+        let post = post.update(&conn);
         if post.is_err() {
             return response(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 HeaderMap::new(),
-                "Failed to insert post",
+                format!("Failed to update post: {}", post.err().unwrap()),
                 &ctx,
             );
         };
@@ -355,7 +360,7 @@ async fn post_edit(
     } else {
         let post = Post {
             id: 0,
-            created: SqliteDateTime::from_sqlite(&form.published),
+            created: SqliteDateTime::from_sqlite(&form.created),
             updated: SqliteDateTime::from_sqlite(&form.updated),
             content: form.content,
         };
