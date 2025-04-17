@@ -3,8 +3,7 @@ use crate::serve::ServerContext;
 
 fn border_style(width: u64) -> String {
     format!(
-        "border-bottom: {}px solid; border-radius: 0px; \
-       border-image: var(--blue-gradient) 1;",
+        "border-bottom: {}px solid var(--border); border-radius: 0px;",
         width
     )
 }

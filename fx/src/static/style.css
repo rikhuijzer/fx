@@ -24,7 +24,7 @@
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --blue-gradient: linear-gradient(to right, var(--blue), var(--light-blue));
+        --blue-gradient: linear-gradient(to right, var(--black), var(--dark-blue));
         --background: hsl(0, 0%, 10%);
         --border: hsl(0, 0%, 40%);
         --code-background: hsl(0, 0%, 18%);
