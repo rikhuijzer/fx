@@ -4,10 +4,7 @@ use crate::serve::ServerContext;
 pub fn post_to_html(post: &Post, border: bool) -> String {
     let html = crate::md::to_html(&post.content);
     let style = if border {
-        indoc::indoc! {"
-            border-bottom: 1px solid var(--border);
-            border-radius: 0px;
-        "}
+        "border-bottom: 1px solid var(--border); border-radius: 0px;"
     } else {
         ""
     };
@@ -80,35 +77,29 @@ pub fn edit_post_buttons(_ctx: &ServerContext, post: &Post) -> String {
 }
 
 fn add_post_form() -> &'static str {
-    indoc::indoc! {r#"
-    <form style="width: 100%;" action="/post/add" method="post">
-        <textarea
-          style="display: block; width: 100%; height: 100px;"
-          class="boxsizing-border"
-          id="content" name="content" placeholder="Your text..">
+    "
+    <form style='width: 100%;' action='/post/add' method='post'>
+        <textarea \
+          style='display: block; width: 100%; height: 100px;' \
+          class='boxsizing-border' \
+          id='content' name='content' placeholder='Your text..'>
         </textarea>
         <br>
-        <div style="display: flex; justify-content: flex-end;">
-            <input type="submit" name="preview" value="Preview"/>
-            <input type="submit" name="publish" value="Publish"/>
+        <div style='display: flex; justify-content: flex-end;'>
+            <input type='submit' name='preview' value='Preview'/>
+            <input type='submit' name='publish' value='Publish'/>
         </div>
     </form>
-    "#}
+    "
 }
 
 /// Return formatted HTML that is more readable.
 fn pretty_html(page: &str) -> String {
-    use html5ever::tendril::TendrilSink;
-    use markup5ever_rcdom::SerializableHandle;
-
-    let sink = markup5ever_rcdom::RcDom::default();
-    let opts = html5ever::driver::ParseOpts::default();
-    let parser = html5ever::parse_document(sink, opts);
-    let dom = parser.from_utf8().read_from(&mut page.as_bytes()).unwrap();
-    let doc: SerializableHandle = dom.document.clone().into();
-    let mut out = Vec::new();
-    html5ever::serialize(&mut out, &doc, Default::default()).unwrap();
-    String::from_utf8(out).unwrap()
+    page.lines()
+        .map(|line| line.trim())
+        .filter(|line| !line.is_empty())
+        .collect::<Vec<&str>>()
+        .join("\n")
 }
 
 pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String {
@@ -119,15 +110,15 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
         format!("{} - {title_suffix}", settings.title)
     };
     let about = if settings.show_about {
-        indoc::formatdoc! {r#"
-        <div class="introduction" style="padding: 10px; margin-bottom: 20px;">
-            <div class="full-name"
-              style="font-size: 1.2rem; margin-bottom: 10px; font-weight: bold;">
+        format!("
+        <div class='introduction' style='padding: 10px; margin-bottom: 20px;'>
+            <div class='full-name' \
+              style='font-size: 1.2rem; margin-bottom: 10px; font-weight: bold;'>
                 {}
             </div>
-            <div class="about" style="">{}</div>
+            <div class='about'>{}</div>
         </div>
-        "#, ctx.args.full_name, ctx.args.about }
+        ", ctx.args.full_name, ctx.args.about)
     } else {
         "".to_string()
     };
