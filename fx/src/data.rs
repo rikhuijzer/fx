@@ -24,11 +24,16 @@ impl SqliteDateTime for DateTime<Utc> {
 }
 
 pub fn backup(conn: &Connection) -> Result<Vec<u8>> {
-    let path = "__fx_backup.db";
-    let stmt = format!("VACUUM INTO '{}'", path);
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos().to_string();
+    let tmp_dir = std::env::temp_dir();
+    let tmp_path = tmp_dir.join(timestamp);
+    let stmt = format!("VACUUM INTO '{}'", &tmp_path.display());
     conn.execute(&stmt, [])?;
-    let backup = std::fs::read(path).unwrap();
-    std::fs::remove_file(path).unwrap();
+    let backup = std::fs::read(&tmp_path).unwrap();
+    std::fs::remove_file(&tmp_path).unwrap();
     Ok(backup)
 }
 
