@@ -5,6 +5,10 @@ compatibility_date = "2023-03-22"
 # Disable publishing to workers.dev.
 workers_dev = false
 
+routes = [
+    { pattern = "fx2.huijzer.xyz", custom_domain = true }
+]
+
 [vars]
 WORKER_ENV = "production"
 
