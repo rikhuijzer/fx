@@ -16,7 +16,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - run: cargo install --debug --path .
+      - run: cargo install --debug jas@0.3.0
       - run: >
           jas install
           --gh rustsec/rustsec@cargo-audit/v0.21.2
@@ -31,7 +31,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - run: cargo install --debug --path .
+      - run: cargo install --debug jas@0.3.0
       - run: >
           jas install
           --gh EmbarkStudios/cargo-deny@0.18.2
