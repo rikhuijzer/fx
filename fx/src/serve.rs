@@ -112,7 +112,9 @@ async fn get_posts(State(ctx): State<ServerContext>, jar: CookieJar) -> Response
 
 async fn style(State(ctx): State<ServerContext>) -> Response<Body> {
     let body = include_str!("static/style.css");
-    response(StatusCode::OK, HeaderMap::new(), body, &ctx)
+    let mut headers = HeaderMap::new();
+    headers.insert("Content-Type", HeaderValue::from_static("text/css"));
+    response(StatusCode::OK, headers, body, &ctx)
 }
 
 fn truncate(text: &str) -> String {

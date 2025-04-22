@@ -5,7 +5,7 @@
 [docker svg]: https://img.shields.io/badge/docker-%230db7ed.svg?logo=docker&logoColor=white
 [docker]: https://hub.docker.com/repository/docker/rikhuijzer/fx
 
-A simple (micro)blogging server that you can host yourself.
+A simple (micro)blogging server that you can self-host.
 
 What made sites like Twitter nice was that it was easy to quickly write something down and later be able to find it back.
 For example, say you have just read a nice blog post and want to remember it for later, you could just tweet it.
