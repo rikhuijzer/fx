@@ -1,22 +1,19 @@
-use axum::{routing::get, Router};
-use tower_service::Service;
 use worker::*;
 
-fn router() -> Router {
-    Router::new().route("/", get(root))
-}
-
 #[event(fetch)]
-async fn fetch(
-    req: HttpRequest,
-    _env: Env,
-    _ctx: Context,
-) -> Result<axum::http::Response<axum::body::Body>> {
+async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     console_error_panic_hook::set_once();
 
-    Ok(router().call(req).await?)
-}
+    let router = Router::new()
+        .get_async("/", |_, _ctx| async move { Response::ok("Hello") })
+        .get_async("/test", |_, ctx| async move {
+            let db = ctx.env.d1("FXDB")?;
+            let stmt =
+                db.prepare("CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value BLOB)");
+            let query = stmt.bind(&[]).unwrap();
+            query.run().await.unwrap();
+            Response::ok("added table")
+        });
 
-pub async fn root() -> &'static str {
-    "Hello Axum!"
+    router.run(req, env).await
 }

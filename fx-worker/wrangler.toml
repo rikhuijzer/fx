@@ -22,3 +22,10 @@ head_sampling_rate = 1
 
 [limits]
 cpu_ms = 3000
+
+# Created with
+# wrangler d1 create fx-db --location=weur
+[[d1_databases]]
+binding = "FXDB"
+database_name = "fx-db"
+database_id = "ed406863-6c0e-4444-92ce-03f358cf5ed8"

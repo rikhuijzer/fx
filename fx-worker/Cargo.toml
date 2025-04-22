@@ -14,10 +14,10 @@ crate-type = ["cdylib"]
 wasm-opt = false
 
 [dependencies]
-axum = { version = "0.8", default-features = false }
-console_error_panic_hook = { version = "0.1.6" }
+axum = { version = "0.8", default-features = false, features = ["form", "json", "macros"] }
+console_error_panic_hook = { version = "0.1.7" }
+fx-auth = { path = "../fx-auth" }
 getrandom = { version = "0.2", features = ["js"] }
-tower-service = "0.3"
 wasm-bindgen-futures = "0.4"
 worker = { version = "0.5", features = ["axum", "http", "d1"] }
 worker-macros = { version = "0.5", features = ["http"] }

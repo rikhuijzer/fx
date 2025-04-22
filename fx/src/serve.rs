@@ -25,21 +25,29 @@ use data::Post;
 use fx_auth::Login;
 use fx_auth::Salt;
 use http_body_util::BodyExt;
+#[cfg(feature = "clib")]
 use rusqlite::Connection;
 use serde::Deserialize;
 use serde::Serialize;
 use std::sync::Arc;
 use std::sync::Mutex;
 
+struct DbConn {
+    #[cfg(feature = "clib")]
+    conn: Connection,
+    #[cfg(not(feature = "clib"))]
+    conn: (),
+}
+
 #[derive(Clone)]
 pub struct ServerContext {
     pub args: ServeArgs,
-    pub conn: Arc<Mutex<Connection>>,
+    pub conn: Arc<Mutex<DbConn>>,
     pub salt: Salt,
 }
 
 impl ServerContext {
-    pub fn new(args: ServeArgs, conn: Connection, salt: Salt) -> Self {
+    pub fn new(args: ServeArgs, conn: DbConn, salt: Salt) -> Self {
         Self {
             args: args.clone(),
             conn: Arc::new(Mutex::new(conn)),
@@ -468,7 +476,8 @@ pub fn app(ctx: ServerContext) -> Router {
 ///
 /// Re-using the salt between sessions allows users to keep logged in even when
 /// the server restarts.
-pub fn obtain_salt(args: &ServeArgs, conn: &Connection) -> Salt {
+#[cfg(feature = "clib")]
+pub fn obtain_salt(args: &ServeArgs, conn: &DbConn) -> Salt {
     if args.production {
         let salt = data::Kv::get(conn, "salt");
         match salt {

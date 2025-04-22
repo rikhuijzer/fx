@@ -3,7 +3,9 @@ use chrono::DateTime;
 use chrono::NaiveDateTime;
 use chrono::TimeZone;
 use chrono::Utc;
+#[cfg(feature = "clib")]
 use rusqlite::Connection;
+#[cfg(feature = "clib")]
 use rusqlite::Result;
 
 pub trait SqliteDateTime {
@@ -42,14 +44,17 @@ pub struct Kv {
 }
 
 impl Kv {
+    #[cfg(feature = "clib")]
     pub fn create_table(conn: &Connection) -> Result<usize> {
         let stmt = "CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value BLOB)";
         conn.execute(stmt, [])
     }
+    #[cfg(feature = "clib")]
     pub fn insert(conn: &Connection, key: &str, value: &[u8]) -> Result<usize> {
         let stmt = &format!("INSERT INTO kv (key, value) VALUES ('{key}', ?)");
         conn.execute(stmt, [value])
     }
+    #[cfg(feature = "clib")]
     pub fn get(conn: &Connection, key: &str) -> Result<Kv> {
         let stmt = "SELECT key, value FROM kv WHERE key = ?";
         let kv: Kv = conn.prepare(stmt)?.query_row([key], |row| {
@@ -63,6 +68,7 @@ impl Kv {
 }
 
 #[test]
+#[cfg(feature = "clib")]
 fn test_kv() {
     let conn = Connection::open_in_memory().unwrap();
     Kv::create_table(&conn).unwrap();
@@ -87,6 +93,7 @@ pub struct Post {
 }
 
 impl Post {
+    #[cfg(feature = "clib")]
     fn create_table(conn: &Connection) -> Result<usize> {
         let stmt = "
             CREATE TABLE IF NOT EXISTS posts (
@@ -98,6 +105,7 @@ impl Post {
         ";
         conn.execute(stmt, [])
     }
+    #[cfg(feature = "clib")]
     pub fn insert(
         conn: &Connection,
         created: DateTime<Utc>,
@@ -113,6 +121,7 @@ impl Post {
         let content = content.to_string();
         conn.execute(stmt, [created, updated, content])
     }
+    #[cfg(feature = "clib")]
     pub fn list(conn: &Connection) -> Result<Vec<Post>> {
         let stmt = "
             SELECT id, created, updated, content
@@ -137,6 +146,19 @@ impl Post {
             .collect::<Result<Vec<_>, _>>()?;
         Ok(posts)
     }
+    #[cfg(not(feature = "clib"))]
+    pub fn list(db: &DbConn) -> Result<Vec<Post>> {
+        let conn = db.conn.lock().unwrap();
+        let stmt = "
+            SELECT id, created, updated, content
+            FROM posts
+            ORDER BY id DESC;
+        ";
+        let stmt = conn.prepare(stmt)?;
+        let query = stmt.bind(&[]);
+        let posts = query.all::<Post>().await?;
+    }
+    #[cfg(feature = "clib")]
     pub fn get(conn: &Connection, id: i64) -> Result<Post> {
         let stmt = "
             SELECT id, created, updated, content FROM posts WHERE id = ?;
@@ -155,6 +177,7 @@ impl Post {
             })
         })
     }
+    #[cfg(feature = "clib")]
     pub fn update(self: &Self, conn: &Connection) -> Result<usize> {
         let stmt = "
             UPDATE posts SET created = ?, updated = ?, content = ?
@@ -166,12 +189,14 @@ impl Post {
         let id = self.id.to_string();
         conn.execute(stmt, [created, updated, content, id])
     }
+    #[cfg(feature = "clib")]
     pub fn delete(conn: &Connection, id: i64) -> Result<usize> {
         let stmt = "DELETE FROM posts WHERE id = ?";
         conn.execute(stmt, [id])
     }
 }
 
+#[cfg(feature = "clib")]
 pub fn connect(args: &ServeArgs) -> Result<Connection> {
     let conn = if args.production {
         let path = &args.database_path;
@@ -182,11 +207,13 @@ pub fn connect(args: &ServeArgs) -> Result<Connection> {
     Ok(conn)
 }
 
+#[cfg(feature = "clib")]
 fn init_tables(conn: &Connection) {
     Post::create_table(conn).expect("Failed to create posts table");
     Kv::create_table(conn).expect("Failed to create kv table");
 }
 
+#[cfg(feature = "clib")]
 pub fn init(args: &ServeArgs, conn: &Connection) {
     init_tables(conn);
 
