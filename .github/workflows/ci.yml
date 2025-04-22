@@ -45,6 +45,7 @@ jobs:
           --gh casey/just@1.40.0
           --sha d065d0df1a1f99529869fba8a5b3e0a25c1795b9007099b00dfabe29c7c1f7b6
           --gh-token ${{ secrets.GITHUB_TOKEN }}
+      - run: sudo timedatectl set-timezone Europe/Amsterdam
       - run: date +'%Y-%m-%d %H:%M' > fx/src/version.txt
       - run: just release
       - name: Build and push Docker image
