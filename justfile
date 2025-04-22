@@ -24,7 +24,7 @@ release:
     cat > public/Dockerfile << EOF
     FROM gcr.io/distroless/cc-debian12
     COPY fx /
-    CMD ["./fx", "serve"]
+    CMD ["/fx", "serve"]
     EOF
 
     cat public/Dockerfile
