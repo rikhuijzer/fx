@@ -53,7 +53,7 @@ jobs:
       - run: >
           jas install
           --gh casey/just@1.40.0
-          --sha 181b91d0ceebe8a57723fb648ed2ce1a44d849438ce2e658339df4f8db5f1263
+          --sha d065d0df1a1f99529869fba8a5b3e0a25c1795b9007099b00dfabe29c7c1f7b6
           --gh-token ${{ secrets.GITHUB_TOKEN }}
       - run: just release
       - name: Build and push Docker image
