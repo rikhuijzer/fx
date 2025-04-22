@@ -19,3 +19,32 @@ I think this is a sad development since links are an essential part of the inter
 - Small footprint (requires less than 100 MB of RAM)
 - Mobile-friendly interface for writing and publishing posts from your phone
 - Markdown support
+
+## Installation
+
+Via Docker Compose:
+
+```yml
+services:
+  fx:
+    image: 'rikhuijzer/fx:main'
+    container_name: 'fx'
+    environment:
+      FX_PRODUCTION: 'true'
+      FX_USERNAME: 'rik'
+      FX_TITLE_SUFFIX: "My Weblog"
+      FX_FULL_NAME: 'John Doe'
+      FX_ABOUT: 'Running a web server'
+      FX_DOMAIN: 'example.com'
+    env_file:
+      # Put `FX_PASSWORD="<PASSWORD>"` in this file where `<PASSWORD>` is the
+      # password for the admin user.
+      - 'FX_PASSWORD.env'
+    working_dir: '/app'
+    ports:
+      - '3000:3000'
+    volumes:
+      # Stores the SQLite database.
+      - './data:/data:rw'
+    restart: 'unless-stopped'
+```
