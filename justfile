@@ -22,7 +22,7 @@ release:
     cp --verbose target/release/fx public/
 
     cat > public/Dockerfile << EOF
-    FROM debian:bookworm-slim
+    FROM gcr.io/distroless/cc-debian12
     WORKDIR /app
     COPY fx /usr/local/bin
     ENTRYPOINT ["/usr/local/bin/fx", "serve"]
