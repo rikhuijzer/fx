@@ -21,18 +21,6 @@ jobs:
       - run: rustup update stable
       - run: rustup default stable
       - run: cargo test
-      - run: cargo install --debug jas@0.3.0
-      - run: >
-          jas install
-          --gh casey/just@1.40.0
-          --sha 181b91d0ceebe8a57723fb648ed2ce1a44d849438ce2e658339df4f8db5f1263
-          --gh-token ${{ secrets.GITHUB_TOKEN }}
-      - run: >
-          jas install
-          --gh superfly/flyctl@v0.3.102
-          --sha 2894ca44760b47544aa9e07e3bf403f1d77fb7c0f5b62985e7b36805528b03d4
-          --gh-token ${{ secrets.GITHUB_TOKEN }}
-      - run: just release
   
   deploy:
     needs: test
