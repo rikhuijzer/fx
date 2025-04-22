@@ -23,8 +23,7 @@ release:
 
     cat > public/Dockerfile << EOF
     FROM gcr.io/distroless/cc-debian12
-    WORKDIR /app
-    COPY fx /app/fx
+    COPY fx /
     ENTRYPOINT ["./fx", "serve"]
     EOF
 
