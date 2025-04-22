@@ -37,6 +37,8 @@ jobs:
         uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804
         with:
           images: 'rikhuijzer/fx'
+      - run: rustup update stable
+      - run: rustup default stable
       - run: cargo install --debug jas@0.3.0
       - run: >
           jas install
