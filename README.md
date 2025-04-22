@@ -32,7 +32,7 @@ services:
     environment:
       FX_PRODUCTION: 'true'
       FX_USERNAME: 'rik'
-      FX_TITLE_SUFFIX: "My Weblog"
+      FX_TITLE_SUFFIX: 'My Weblog'
       FX_FULL_NAME: 'John Doe'
       FX_ABOUT: 'Running a web server'
       FX_DOMAIN: 'example.com'

@@ -117,7 +117,7 @@ impl Post {
         let stmt = "
             SELECT id, created, updated, content
             FROM posts
-            ORDER BY id DESC;
+            ORDER BY created DESC;
         ";
         let posts = conn
             .prepare(stmt)?
