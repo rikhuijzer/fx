@@ -176,7 +176,7 @@ async fn test_login() {
     assert!(body.contains("Invalid username or password"));
 }
 
-async fn request_body_logged_in(uri: &str) -> (StatusCode, String) {
+async fn request_body_logged_in(uri: &str) -> (StatusCode, Vec<u8>) {
     let args = ServeArgs::test_default();
     let conn = Connection::test_default();
     let salt = fx_auth::generate_salt();
@@ -214,7 +214,6 @@ async fn request_body_logged_in(uri: &str) -> (StatusCode, String) {
     let status = response.status();
     let body = response.into_body().collect().await.unwrap();
     let body: Vec<u8> = body.to_bytes().into();
-    let body = String::from_utf8(body).unwrap();
     (status, body)
 }
 
@@ -226,6 +225,7 @@ async fn test_delete_confirmation() {
 
     let (status, body) = request_body_logged_in("/post/delete/1").await;
     assert_eq!(status, StatusCode::OK);
+    let body = String::from_utf8(body).unwrap();
     assert!(body.contains("Are you sure you want to delete this post?"));
     assert!(body.contains("Lorem"));
 }
@@ -237,4 +237,11 @@ async fn test_no_access() {
         let (status, _body) = request_body(endpoint).await;
         assert_eq!(status, StatusCode::NOT_FOUND);
     }
+}
+
+#[tokio::test]
+async fn test_backup() {
+    let (status, body) = request_body_logged_in("/backup").await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(body.len() > 0);
 }
