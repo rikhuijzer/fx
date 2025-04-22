@@ -6,9 +6,8 @@ on:
   pull_request:
   workflow_dispatch:
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    concurrency: deploy-group
+  test:
+    runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
@@ -22,19 +21,36 @@ jobs:
       - run: rustup update stable
       - run: rustup default stable
       - run: cargo test
+  
+  deploy:
+    needs: test
+    runs-on: ubuntu-24.04-arm
+    concurrency: deploy-group
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804
+        with:
+          images: 'rikhuijzer/fx'
+      - run: rustup update stable
+      - run: rustup default stable
       - run: cargo install --debug jas@0.3.0
       - run: >
           jas install
           --gh casey/just@1.40.0
-          --sha 181b91d0ceebe8a57723fb648ed2ce1a44d849438ce2e658339df4f8db5f1263
-          --gh-token ${{ secrets.GITHUB_TOKEN }}
-      - run: >
-          jas install
-          --gh superfly/flyctl@v0.3.102
-          --sha 2894ca44760b47544aa9e07e3bf403f1d77fb7c0f5b62985e7b36805528b03d4
+          --sha d065d0df1a1f99529869fba8a5b3e0a25c1795b9007099b00dfabe29c7c1f7b6
           --gh-token ${{ secrets.GITHUB_TOKEN }}
       - run: just release
-      - run: flyctl deploy public/ --config="../fly.toml" --remote-only
-        if: github.event_name == 'push'
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      - name: Build and push Docker image
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
