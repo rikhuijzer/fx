@@ -7,8 +7,7 @@ on:
   workflow_dispatch:
 jobs:
   test:
-    runs-on: ubuntu-latest
-    concurrency: deploy-group
+    runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
@@ -38,6 +37,7 @@ jobs:
   deploy:
     needs: test
     runs-on: ubuntu-24.04-arm
+    concurrency: deploy-group
     steps:
       - uses: actions/checkout@v4
       - uses: docker/login-action@ec9cdf07d570632daeb912f5b2099cb9ec1d01e6
