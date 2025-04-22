@@ -229,3 +229,12 @@ async fn test_delete_confirmation() {
     assert!(body.contains("Are you sure you want to delete this post?"));
     assert!(body.contains("Lorem"));
 }
+
+#[tokio::test]
+async fn test_no_access() {
+    let endpoints = ["/backup"];
+    for endpoint in endpoints {
+        let (status, _body) = request_body(endpoint).await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+    }
+}

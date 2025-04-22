@@ -48,12 +48,15 @@ impl ServerContext {
     }
 }
 
-fn response<D: Sized + ToString>(
+fn response<D: Sized>(
     status: StatusCode,
     headers: HeaderMap,
     body: D,
     ctx: &ServerContext,
-) -> Response<Body> {
+) -> Response<Body>
+where
+    Body: From<D>,
+{
     let mut response: Response<Body> = Response::default();
     *response.status_mut() = status;
     *response.headers_mut() = headers;
@@ -63,7 +66,7 @@ fn response<D: Sized + ToString>(
             HeaderValue::from_static("max-age=604800; preload"), // 1 week.
         );
     }
-    *response.body_mut() = Body::from(body.to_string());
+    *response.body_mut() = Body::from(body);
     response
 }
 
@@ -101,13 +104,28 @@ fn list_posts(ctx: &ServerContext, _is_logged_in: bool) -> String {
         .join("\n")
 }
 
+async fn get_backup(State(ctx): State<ServerContext>, jar: CookieJar) -> Response<Body> {
+    let is_logged_in = is_logged_in(&ctx, &jar);
+    if !is_logged_in {
+        return not_found(State(ctx)).await;
+    }
+    let conn = ctx.conn.lock().unwrap();
+    let backup = data::backup(&conn).unwrap();
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        "Content-Type",
+        HeaderValue::from_static("application/octet-stream"),
+    );
+    response::<Vec<u8>>(StatusCode::OK, headers, backup, &ctx)
+}
+
 async fn get_posts(State(ctx): State<ServerContext>, jar: CookieJar) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
     let extra_head = &ctx.args.extra_head;
     let settings = PageSettings::new("", is_logged_in, true, Top::Homepage, extra_head);
     let posts = list_posts(&ctx, is_logged_in);
     let body = page(&ctx, &settings, &posts);
-    response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
+    response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
 async fn style(State(ctx): State<ServerContext>) -> Response<Body> {
@@ -158,7 +176,7 @@ async fn get_delete(
     "#};
     let body = format!("{}\n{}", delete_button, post_to_html(&post, false));
     let body = page(&ctx, &settings, &body);
-    response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
+    response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
 async fn get_edit(
@@ -181,7 +199,7 @@ async fn get_edit(
         &ctx.args.extra_head,
     );
     let body = page(&ctx, &settings, &body);
-    response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
+    response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
 async fn get_post(
@@ -211,7 +229,7 @@ async fn get_post(
         body = format!("{}\n{body}", crate::html::edit_post_buttons(&ctx, &post));
     }
     let body = page(&ctx, &settings, &body);
-    response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
+    response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
 async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
@@ -225,12 +243,12 @@ async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
     let extra_head = &ctx.args.extra_head;
     let settings = PageSettings::new("not found", is_logged_in, false, Top::GoHome, extra_head);
     let body = page(&ctx, &settings, body);
-    response(StatusCode::NOT_FOUND, HeaderMap::new(), &body, &ctx)
+    response::<String>(StatusCode::NOT_FOUND, HeaderMap::new(), body, &ctx)
 }
 
 async fn get_login(State(ctx): State<ServerContext>) -> Response<Body> {
     let body = crate::html::login(&ctx, None);
-    response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
+    response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -269,10 +287,10 @@ async fn post_login(
         Some(jar) => Ok((jar, Redirect::to("/"))),
         None => {
             let body = crate::html::login(&ctx, Some("Invalid username or password"));
-            Err(response(
+            Err(response::<String>(
                 StatusCode::UNAUTHORIZED,
                 HeaderMap::new(),
-                &body,
+                body,
                 &ctx,
             ))
         }
@@ -368,7 +386,7 @@ async fn post_edit(
         };
         let preview = crate::html::post_to_html(&post, false);
         let body = page(&ctx, &settings, &preview);
-        response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
+        response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
     }
 }
 
@@ -429,7 +447,7 @@ async fn post_add(
         };
         let preview = crate::html::post_to_html(&post, false);
         let body = page(&ctx, &settings, &preview);
-        response(StatusCode::OK, HeaderMap::new(), &body, &ctx)
+        response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
     }
 }
 
@@ -438,18 +456,20 @@ async fn get_webfinger(State(ctx): State<ServerContext>) -> Response<Body> {
     let body = match body {
         Some(body) => body,
         None => return not_found(State(ctx)).await,
-    };
+    }
+    .to_string();
     let mut headers = HeaderMap::new();
     headers.insert(
         "Content-Type",
         HeaderValue::from_static("application/jrd+json; charset=utf-8"),
     );
-    response(StatusCode::OK, headers, &body, &ctx)
+    response::<String>(StatusCode::OK, headers, body, &ctx)
 }
 
 pub fn app(ctx: ServerContext) -> Router {
     Router::new()
         .route("/", get(get_posts))
+        .route("/backup", get(get_backup))
         .route("/post/delete/{id}", get(get_delete))
         .route("/post/delete/{id}", post(post_delete))
         .route("/post/edit/{id}", get(get_edit))

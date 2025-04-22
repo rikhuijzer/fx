@@ -23,6 +23,15 @@ impl SqliteDateTime for DateTime<Utc> {
     }
 }
 
+pub fn backup(conn: &Connection) -> Result<Vec<u8>> {
+    let path = "__fx_backup.db";
+    let stmt = format!("VACUUM INTO '{}'", path);
+    conn.execute(&stmt, [])?;
+    let backup = std::fs::read(path).unwrap();
+    std::fs::remove_file(path).unwrap();
+    Ok(backup)
+}
+
 #[test]
 fn test_sqlite_datetime() {
     let dt = Utc.with_ymd_and_hms(2025, 1, 1, 0, 0, 0).unwrap();
@@ -155,7 +164,7 @@ impl Post {
             })
         })
     }
-    pub fn update(self: &Self, conn: &Connection) -> Result<usize> {
+    pub fn update(&self, conn: &Connection) -> Result<usize> {
         let stmt = "
             UPDATE posts SET created = ?, updated = ?, content = ?
             WHERE id = ?;
