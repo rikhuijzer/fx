@@ -6,7 +6,7 @@ on:
   pull_request:
   workflow_dispatch:
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
     concurrency: deploy-group
     steps:
@@ -34,7 +34,32 @@ jobs:
           --sha 2894ca44760b47544aa9e07e3bf403f1d77fb7c0f5b62985e7b36805528b03d4
           --gh-token ${{ secrets.GITHUB_TOKEN }}
       - run: just release
-      - run: flyctl deploy public/ --config="../fly.toml" --remote-only
-        if: github.event_name == 'push'
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+  
+  deploy:
+    needs: test
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@ec9cdf07d570632daeb912f5b2099cb9ec1d01e6
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@3343011071fa59c64a174cc6aa415dc13b31b7b2
+        with:
+          images: rikhuijzer/fx
+      - run: cargo install --debug jas@0.3.0
+      - run: >
+          jas install
+          --gh casey/just@1.40.0
+          --sha 181b91d0ceebe8a57723fb648ed2ce1a44d849438ce2e658339df4f8db5f1263
+          --gh-token ${{ secrets.GITHUB_TOKEN }}
+      - run: just release
+      - name: Build and push Docker image
+        uses: docker/build-push-action@d63c96254b2c3dce2a3e8745f423cf62caafb13a
+        with:
+          context: .
+          push: github.event_name != 'pull_request'
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
