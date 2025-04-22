@@ -57,9 +57,10 @@ jobs:
           --gh-token ${{ secrets.GITHUB_TOKEN }}
       - run: just release
       - name: Build and push Docker image
+        if: github.event_name != 'pull_request'
         uses: docker/build-push-action@d63c96254b2c3dce2a3e8745f423cf62caafb13a
         with:
           context: .
-          push: github.event_name != 'pull_request'
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
