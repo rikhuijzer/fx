@@ -24,8 +24,8 @@ release:
     cat > public/Dockerfile << EOF
     FROM gcr.io/distroless/cc-debian12
     WORKDIR /app
-    COPY fx /usr/local/bin
-    ENTRYPOINT ["/usr/local/bin/fx", "serve"]
+    COPY fx /app/fx
+    ENTRYPOINT ["./fx", "serve"]
     EOF
 
     cat public/Dockerfile
