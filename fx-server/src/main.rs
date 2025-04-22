@@ -39,6 +39,18 @@ pub fn init_subscriber(level: Level, ansi: bool) -> Result<(), SetGlobalDefaultE
     tracing::subscriber::set_global_default(subscriber)
 }
 
+async fn serve(args: &ServeArgs) {
+    let conn = fx::data::connect(args).unwrap();
+    fx::data::init(args, &conn);
+    let salt = fx::serve::obtain_salt(args, &conn);
+    let ctx = fx::serve::ServerContext::new(args.clone(), conn, salt);
+    let app = fx::serve::app(ctx);
+    let addr = format!("0.0.0.0:{}", args.port);
+    tracing::info!("Listening on {addr}");
+    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    axum::serve(listener, app).await.unwrap();
+}
+
 #[tokio::main]
 async fn main() {
     let args = Args::parse();
@@ -46,7 +58,7 @@ async fn main() {
 
     match &args.task {
         Task::Serve(args) => {
-            fx::serve::run(args).await;
+            serve(args).await;
         }
         Task::License => {
             let license_content = include_str!("../../LICENSE");

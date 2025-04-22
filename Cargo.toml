@@ -3,6 +3,8 @@ resolver = "2"
 members = [
     "fx",
     "fx-auth",
+    "fx-server",
+    "fx-worker",
 ]
 
 [workspace.package]

@@ -468,7 +468,7 @@ pub fn app(ctx: ServerContext) -> Router {
 ///
 /// Re-using the salt between sessions allows users to keep logged in even when
 /// the server restarts.
-fn obtain_salt(args: &ServeArgs, conn: &Connection) -> Salt {
+pub fn obtain_salt(args: &ServeArgs, conn: &Connection) -> Salt {
     if args.production {
         let salt = data::Kv::get(conn, "salt");
         match salt {
@@ -483,16 +483,4 @@ fn obtain_salt(args: &ServeArgs, conn: &Connection) -> Salt {
         // Allow the login to persist across restarts.
         b"nblVMlxYtvt0rxo3BML3zw".to_owned()
     }
-}
-
-pub async fn run(args: &ServeArgs) {
-    let conn = data::connect(args).unwrap();
-    data::init(args, &conn);
-    let salt = obtain_salt(args, &conn);
-    let ctx = ServerContext::new(args.clone(), conn, salt);
-    let app = app(ctx);
-    let addr = format!("0.0.0.0:{}", args.port);
-    tracing::info!("Listening on {addr}");
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    axum::serve(listener, app).await.unwrap();
 }

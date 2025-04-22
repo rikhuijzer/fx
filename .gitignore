@@ -4,3 +4,5 @@ build/
 dist/
 public/
 **/*.sqlite
+**/package-lock.json
+**/node_modules

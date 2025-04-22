@@ -1,0 +1,13 @@
+{
+	"name": "fx-worker",
+	"version": "0.0.0",
+	"private": true,
+	"scripts": {
+		"dry": "wrangler deploy --dry-run --outdir=dist",
+		"deploy": "wrangler deploy",
+		"dev": "wrangler dev --local"
+	},
+	"devDependencies": {
+		"wrangler": "^4.10.0"
+	}
+}

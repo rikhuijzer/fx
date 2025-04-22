@@ -1,0 +1,20 @@
+name = "fx"
+main = "build/worker/shim.mjs"
+compatibility_date = "2023-03-22"
+
+# Disable publishing to workers.dev.
+workers_dev = false
+
+[vars]
+WORKER_ENV = "production"
+
+[build]
+command = "worker-build --release"
+
+[observability]
+enabled = true
+# 1 means sample 100% of logs. 0.1 means sample 10% of logs.
+head_sampling_rate = 1
+
+[limits]
+cpu_ms = 3000

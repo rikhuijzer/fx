@@ -1,0 +1,26 @@
+[package]
+name = "fx-worker"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+readme = "../README.md"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
+
+[dependencies]
+axum = { version = "0.8", default-features = false }
+console_error_panic_hook = { version = "0.1.6" }
+getrandom = { version = "0.2", features = ["js"] }
+tower-service = "0.3"
+wasm-bindgen-futures = "0.4"
+worker = { version = "0.5", features = ["axum", "http", "d1"] }
+worker-macros = { version = "0.5", features = ["http"] }
+
+[dev-dependencies]
+pretty_assertions = "1"

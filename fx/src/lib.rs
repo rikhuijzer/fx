@@ -4,9 +4,7 @@ pub mod html;
 mod md;
 pub mod serve;
 
-use clap::Parser;
-
-#[derive(Clone, Debug, Parser)]
+#[derive(Clone, Debug, clap::Parser)]
 pub struct ServeArgs {
     #[arg(long, env = "FX_PRODUCTION")]
     pub production: bool,
