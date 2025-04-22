@@ -1,3 +1,10 @@
+# fx &emsp; [![build status]][actions] [![docker svg]][docker]
+
+[build status]: https://img.shields.io/github/actions/workflow/status/rikhuijzer/fx/ci.yml?branch=main
+[actions]: https://github.com/rikhuijzer/fx/actions?query=branch%3Amain
+[docker svg]: https://img.shields.io/badge/docker-%230db7ed.svg?logo=docker&logoColor=white
+[docker]: https://hub.docker.com/repository/docker/rikhuijzer/fx
+
 # fx
 
 A simple (micro)blogging server that you can host yourself.
