@@ -5,8 +5,6 @@
 [docker svg]: https://img.shields.io/badge/docker-%230db7ed.svg?logo=docker&logoColor=white
 [docker]: https://hub.docker.com/repository/docker/rikhuijzer/fx
 
-# fx
-
 A simple (micro)blogging server that you can host yourself.
 
 What made sites like Twitter nice was that it was easy to quickly write something down and later be able to find it back.
