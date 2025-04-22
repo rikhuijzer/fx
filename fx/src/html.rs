@@ -194,6 +194,7 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
     let title = &settings.title;
     let html_lang = &ctx.args.html_lang;
     let extra_head = &settings.extra_head;
+    let version = include_str!("version.txt").trim();
     let page = indoc::formatdoc! {
         r#"
         <!DOCTYPE html>
@@ -215,7 +216,7 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
                     </div>
                     {body}
                     <div class="bottom">
-                        <a class="unstyled-link menu-space" href="https://github.com/rikhuijzer/fx">Source</a>
+                        <a class="unstyled-link menu-space" href="https://github.com/rikhuijzer/fx">Running fx version: {version}</a>
                         {loginout}
                     </div>
                 </div>
