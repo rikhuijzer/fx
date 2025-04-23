@@ -27,7 +27,8 @@ pub fn backup(conn: &Connection) -> Result<Vec<u8>> {
     let timestamp = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
-        .as_nanos().to_string();
+        .as_nanos()
+        .to_string();
     let tmp_dir = std::env::temp_dir();
     let tmp_path = tmp_dir.join(timestamp);
     let stmt = format!("VACUUM INTO '{}'", &tmp_path.display());

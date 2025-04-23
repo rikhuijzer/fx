@@ -128,10 +128,21 @@ async fn get_posts(State(ctx): State<ServerContext>, jar: CookieJar) -> Response
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
-async fn style(State(ctx): State<ServerContext>) -> Response<Body> {
+fn content_type(headers: &mut HeaderMap, content_type: &str) {
+    let val = HeaderValue::from_str(content_type).unwrap();
+    headers.insert("Content-Type", val);
+}
+
+fn cache_control(headers: &mut HeaderMap) {
+    let val = HeaderValue::from_static("public, max-age=600");
+    headers.insert("Cache-Control", val);
+}
+
+async fn get_style(State(ctx): State<ServerContext>) -> Response<Body> {
     let body = include_str!("static/style.css");
     let mut headers = HeaderMap::new();
-    headers.insert("Content-Type", HeaderValue::from_static("text/css"));
+    content_type(&mut headers, "text/css");
+    cache_control(&mut headers);
     response(StatusCode::OK, headers, body, &ctx)
 }
 
@@ -480,7 +491,7 @@ pub fn app(ctx: ServerContext) -> Router {
         .route("/logout", get(get_logout))
         // Need to put behind /post/<ID> otherwise /<WRONG LINK> will not be a 404.
         .route("/post/{id}", get(get_post))
-        .route("/static/style.css", get(style))
+        .route("/static/style.css", get(get_style))
         .route("/.well-known/webfinger", get(get_webfinger))
         .fallback(not_found)
         .with_state(ctx)
