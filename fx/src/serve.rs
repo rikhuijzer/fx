@@ -94,11 +94,7 @@ fn list_posts(ctx: &ServerContext, _is_logged_in: bool) -> String {
         .iter_mut()
         .map(|p| {
             crate::md::sanitize_preview(p);
-            format!(
-                "<a class='unstyled-link' href='/post/{}'>{}</a>",
-                p.id,
-                post_to_html(p, true)
-            )
+            post_to_html(p, true)
         })
         .collect::<Vec<String>>()
         .join("\n")

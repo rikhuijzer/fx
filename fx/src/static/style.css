@@ -40,6 +40,7 @@
 body {
     font-family: sans-serif;
     line-height: 150%;
+    text-rendering: optimizeLegibility;
     background-color: var(--background);
     color: var(--text);
     font-size: var(--text-font-size);
@@ -131,6 +132,10 @@ pre code {
 
 .unstyled-link:visited {
     color: var(--text);
+}
+
+.unstyled-link:hover {
+    text-decoration: underline;
 }
 
 .right {

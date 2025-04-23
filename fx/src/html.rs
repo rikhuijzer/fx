@@ -14,9 +14,31 @@ fn show_date<Tz: chrono::TimeZone>(datetime: &DateTime<Tz>) -> String {
     datetime.date_naive().to_string()
 }
 
-pub fn post_to_html(post: &Post, border: bool) -> String {
-    let html = crate::md::to_html(&post.content);
-    let style = if border { &border_style(1) } else { "" };
+fn turn_title_into_link(post: &Post, html: &str) -> String {
+    let html = html.trim();
+    let title = html.split("\n").next().unwrap();
+    let rest = html.split("\n").skip(1).collect::<Vec<&str>>().join("\n");
+    if title.starts_with("# ") {
+        let title = title.trim_start_matches("# ");
+        format!(
+            "<a href='/post/{}' class='unstyled-link'><h1>{}</h1></a>\n{}",
+            post.id, title, rest
+        )
+    } else {
+        html.to_string()
+    }
+}
+
+pub fn post_to_html(post: &Post, is_preview: bool) -> String {
+    // Not wrapping the full post in a `href` because that prevents text
+    // selection. I've tried all kinds of workarounds with putting a `position:
+    // relative` object in front of the link with `z-index`, but that didn't
+    // work. I guess it's easiest to just have the date and optionally title be
+    // links and the rest as normal. Then, links in the content also don't have
+    // to be removed (since nested links are not allowed in html).
+    let md = turn_title_into_link(post, &post.content);
+    let html = crate::md::to_html(&md);
+    let style = if is_preview { &border_style(1) } else { "" };
     let updated = if post.created == post.updated {
         ""
     } else {
@@ -27,13 +49,15 @@ pub fn post_to_html(post: &Post, border: bool) -> String {
     };
     indoc::formatdoc! {"
     <div class='post' style='{style}'>
-        <div class='post-header'>
-            <div class='created'>{}</div>
-            {updated}
-        </div>
+        <a href='/post/{}' class='unstyled-link'>
+            <div class='post-header'>
+                <div class='created'>{}</div>
+                {updated}
+            </div>
+        </a>
         <div class='content'>{html}</div>
     </div>
-    ", show_date(&post.created)}
+    ", post.id, show_date(&post.created)}
 }
 
 pub enum Top {
