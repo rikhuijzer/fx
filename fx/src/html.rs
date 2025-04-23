@@ -50,18 +50,28 @@ pub fn post_to_html(post: &Post, is_preview: bool) -> String {
             show_date(&post.updated)
         )
     };
+    let post_link = if is_preview {
+        format!("<a href='/post/{}' class='unstyled-link'>", post.id)
+    } else {
+        "<span>".to_string()
+    };
+    let post_link_end = if is_preview {
+        "</a>".to_string()
+    } else {
+        "</span>".to_string()
+    };
     let post_preview_class = if is_preview { "post-preview" } else { "" };
     indoc::formatdoc! {"
     <div class='post' style='{style}'>
-        <a href='/post/{}' class='unstyled-link'>
+        {post_link}
             <div class='post-header'>
                 <div class='created'>{}</div>
                 {updated}
             </div>
-        </a>
+        {post_link_end}
         <div data-post-id='{}' class='post-content {post_preview_class}'>{html}</div>
     </div>
-    ", post.id, show_date(&post.created), post.id}
+    ", show_date(&post.created), post.id}
 }
 
 pub enum Top {

@@ -23,7 +23,9 @@ fn without_links_core(node: &Node) -> String {
         Node::Text(text) => preview.push_str(&text.value),
         Node::Html(html) => preview.push_str(&html.value),
         Node::Link(link) => {
-            preview.push_str(&without_links_core(link.children.first().unwrap()));
+            let text = without_links_core(link.children.first().unwrap());
+            let url = &link.url;
+            preview.push_str(&format!("<a href='{url}'>{text}</a>"));
         }
         Node::Code(code) => {
             let lang = code.lang.clone().unwrap_or("".to_string());
@@ -46,9 +48,6 @@ pub fn to_html(content: &str) -> String {
 }
 
 /// Prepare post to be shown as preview.
-///
-/// This means truncating the content as well as removing any links because
-/// nested links are not allowed in HTML.
 pub fn sanitize_preview(post: &mut Post) {
     let options = ParseOptions::default();
     let tree = to_mdast(&post.content, &options).unwrap();
