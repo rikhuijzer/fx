@@ -71,7 +71,7 @@ pub fn sanitize_preview(post: &mut Post) {
 }
 
 #[test]
-fn test_remove_link() {
+fn test_keep_link() {
     use chrono::Utc;
     let content = indoc::indoc! {"
         # Title
@@ -88,7 +88,7 @@ fn test_remove_link() {
     let expected = indoc::indoc! {"
         # Title
 
-        Lorem ipsum foo dolor sit amet
+        Lorem ipsum <a href='https://example.com/foo'>foo</a> dolor sit amet
     "};
     assert_eq!(post.content, expected.trim());
 }
