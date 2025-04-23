@@ -135,7 +135,7 @@ fn cache_control(headers: &mut HeaderMap) {
 }
 
 async fn get_style(State(ctx): State<ServerContext>) -> Response<Body> {
-    let body = include_str!("static/style.css");
+    let body = crate::html::minify(include_str!("static/style.css"));
     let mut headers = HeaderMap::new();
     content_type(&mut headers, "text/css");
     cache_control(&mut headers);
@@ -143,7 +143,7 @@ async fn get_style(State(ctx): State<ServerContext>) -> Response<Body> {
 }
 
 async fn get_script(State(ctx): State<ServerContext>) -> Response<Body> {
-    let body = include_str!("static/script.js");
+    let body = crate::html::minify(include_str!("static/script.js"));
     let mut headers = HeaderMap::new();
     content_type(&mut headers, "text/javascript");
     cache_control(&mut headers);

@@ -170,8 +170,8 @@ pub fn edit_post_form(post: &Post) -> String {
     )
 }
 
-/// Return formatted HTML that is more readable.
-fn pretty_html(page: &str) -> String {
+/// Return formatted HTML/CSS that is smal and readable.
+pub fn minify(page: &str) -> String {
     page.lines()
         .map(|line| line.trim())
         .filter(|line| !line.is_empty())
@@ -263,7 +263,7 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
         </body>
         "#,
     };
-    pretty_html(&page)
+    minify(&page)
 }
 
 pub fn login(ctx: &ServerContext, error: Option<&str>) -> String {
