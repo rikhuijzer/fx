@@ -133,7 +133,15 @@ pub fn is_logged_in(salt: &Salt, login: &Login, jar: &CookieJar) -> bool {
                     return false;
                 }
             };
-            let plaintext = decrypt_login(salt, key, &ciphertext).unwrap();
+            let plaintext = match decrypt_login(salt, key, &ciphertext) {
+                Some(plaintext) => plaintext,
+                None => {
+                    tracing::warn!(
+                        "failed to decrypt login; probably a cookie that belongs to another salt"
+                    );
+                    return false;
+                }
+            };
             let date = NaiveDate::parse_from_str(&plaintext, "%Y-%m-%d").unwrap();
             today() <= date + chrono::Duration::days(MAX_AGE_SEC)
         }
