@@ -8,9 +8,9 @@
     --black: #000000;
     --radius: 5px;
     --flame: #fa7a02;
-    --ui-font-size: 13px;
-    --medium-font-size: 16px;
-    --text-font-size: 18px;
+    --ui-font-size: 12px;
+    --medium-font-size: 14px;
+    --text-font-size: 16px;
     --text: #000000;
     --background: hsl(220, 60%, 98%);
     --code-background: hsl(0, 0%, 94%);
@@ -37,8 +37,16 @@
     }
 }
 
+@media (min-width: 640px) {
+    :root {
+        --ui-font-size: 13px;
+        --medium-font-size: 16px;
+        --text-font-size: 18px;
+    }
+}
+
 body {
-    font-family: sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu, sans-serif;
     line-height: 150%;
     text-rendering: optimizeLegibility;
     background-color: var(--background);
@@ -196,6 +204,9 @@ textarea {
     background-color: var(--button-background);
     color: var(--text);
     padding: 7px;
+    /* Too small size will cause browser to zoom on mobile. */
+    /* Being bigger on big screens is also not too bad. */
+    font-size: 18px;
 }
 
 a.button {
