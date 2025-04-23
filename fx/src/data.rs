@@ -207,9 +207,8 @@ pub fn init(args: &ServeArgs, conn: &Connection) {
 
     if !args.production {
         let now = chrono::Utc::now();
-        let content = indoc::indoc! {"
-            [Lorem](https://example.com/lorem) ipsum
-        "};
+        let content = "[Lorem](https://example.com/lorem) ipsum ut enim ad \
+        minim veniam sit amet ipsum lorem consectetur adipiscing elit sed do eiusmod";
         Post::insert(conn, now, now, content).unwrap();
         let now = chrono::Utc::now();
         let content = indoc::indoc! {"

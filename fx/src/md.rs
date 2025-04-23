@@ -94,7 +94,7 @@ fn test_keep_link() {
 }
 
 #[test]
-fn test_truncate() {
+fn test_sanitize_preview() {
     use chrono::Utc;
     // Need indoc to avoid indented lines to be interpreted as code.
     let content = indoc::indoc! {"
@@ -127,4 +127,69 @@ fn test_truncate() {
     sanitize_preview(&mut post);
     println!("post: {}", post.content);
     assert!(post.content.contains("Show more"));
+}
+
+fn remove_urls(md: &str) -> String {
+    // This will break on nested links, but is good enough for now.
+    let re = regex::Regex::new(r"\[(.*?)\]\(https?://.*?\)").unwrap();
+    re.replace_all(md, "$1").to_string()
+}
+
+fn truncate(text: &str, max_length: usize) -> String {
+    let mut text = text.to_string();
+    if text.len() > max_length {
+        let mut pos = max_length;
+        while pos > 0 && !text.is_char_boundary(pos) {
+            pos -= 1;
+        }
+        text.truncate(pos);
+    }
+    text.trim().to_string()
+}
+
+pub fn extract_html_title(post: &Post) -> String {
+    let title = &post.content;
+    // This also would make a post with a single word on the first line have
+    // that as the title which I guess makes sense.
+    let title = title.split("\n").next().unwrap();
+    let title = if title.starts_with("# ") {
+        title.trim_start_matches("# ")
+    } else {
+        title
+    };
+    let title = remove_urls(title);
+    println!("title: {}", title);
+    let max_length = 40;
+    if title.len() <= max_length {
+        title
+    } else {
+        format!("{}...", truncate(&title, max_length))
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use chrono::Utc;
+
+    #[test]
+    fn test_extract_html_title() {
+        let post = Post {
+            id: 0,
+            content: "[lorem](https://example.com/lorem) ipsum".to_string(),
+            created: Utc::now(),
+            updated: Utc::now(),
+        };
+        let title = extract_html_title(&post);
+        assert_eq!(title, "lorem ipsum");
+
+        let post = Post {
+            id: 0,
+            content: "# Title\nipsum".to_string(),
+            created: Utc::now(),
+            updated: Utc::now(),
+        };
+        let title = extract_html_title(&post);
+        assert_eq!(title, "Title");
+    }
 }

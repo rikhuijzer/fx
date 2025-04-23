@@ -180,11 +180,11 @@ pub fn minify(page: &str) -> String {
 }
 
 pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String {
-    let title_suffix = &ctx.args.title_suffix;
+    let site_name = &ctx.args.site_name;
     let full_title = if settings.title.is_empty() {
-        title_suffix.clone()
+        site_name.clone()
     } else {
-        format!("{} - {title_suffix}", settings.title)
+        format!("{} - {site_name}", settings.title)
     };
     let about = if settings.show_about {
         format!(
@@ -229,7 +229,6 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
         </script>
         "#},
     };
-    let title = &settings.title;
     let html_lang = &ctx.args.html_lang;
     let extra_head = &settings.extra_head;
     let version = include_str!("version.txt").trim();
@@ -243,7 +242,7 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
             <link rel="stylesheet" href="/static/style.css">
             <script src="/static/script.js" defer></script>
             <title>{full_title}</title>
-            <meta property="og:site_name" content="{title}"/>
+            <meta property='og:site_name' content='{site_name}'/>
             {extra_head}
         </head>
         <body>

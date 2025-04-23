@@ -20,9 +20,9 @@ pub struct ServeArgs {
     /// The password for the admin interface.
     #[arg(long, env = "FX_PASSWORD")]
     pub password: Option<String>,
-    /// The website title.
-    #[arg(long, env = "FX_TITLE_SUFFIX", default_value = "fx")]
-    pub title_suffix: String,
+    /// The website name used in the title suffix and og:site_name.
+    #[arg(long, env = "FX_SITE_NAME", default_value = "fx")]
+    pub site_name: String,
     /// The website domain name, for example "example.com".
     ///
     /// Required for WebFinger.

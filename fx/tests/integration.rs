@@ -21,7 +21,7 @@ impl TestDefault for ServeArgs {
             port: 3000,
             database_path: "".to_string(),
             username: "test-admin".to_string(),
-            title_suffix: "title-suffix".to_string(),
+            site_name: "site-name".to_string(),
             domain: Some("example.com".to_string()),
             full_name: "Test Admin".to_string(),
             about: "Building stuff".to_string(),
@@ -85,10 +85,24 @@ async fn test_style() {
 }
 
 #[tokio::test]
+async fn test_metadata() {
+    let (status, body) = request_body("/post/1").await;
+    assert_eq!(status, StatusCode::OK);
+    let lines = body.lines().collect::<Vec<_>>();
+    let head_start = lines.iter().position(|line| line.contains("<head>")).unwrap();
+    let head_end = lines.iter().position(|line| line.contains("</head>")).unwrap();
+    let head = lines[head_start..head_end + 1].join("\n");
+    println!("head:\n{head}");
+    assert!(body.contains("<!DOCTYPE html>"));
+    assert!(body.contains("<title>Lorem ipsum ut enim ad minim veniam sit... - site-name</title>"));
+    assert!(body.contains("<meta property='og:site_name' content='site-name'/>"));
+    assert!(body.contains("<meta property='article:author' content='Test Admin'/>"));
+}
+
+#[tokio::test]
 async fn test_login_page() {
     let (status, body) = request_body("/login").await;
     assert_eq!(status, StatusCode::OK);
-    assert!(body.contains("<!DOCTYPE html>"));
     assert!(body.contains("username"));
 }
 

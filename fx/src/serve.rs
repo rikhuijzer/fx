@@ -150,20 +150,6 @@ async fn get_script(State(ctx): State<ServerContext>) -> Response<Body> {
     response(StatusCode::OK, headers, body, &ctx)
 }
 
-fn truncate(text: &str) -> String {
-    let max_length = 40;
-    let mut text = text.to_string();
-    if text.len() > max_length {
-        let mut pos = max_length;
-        while pos > 0 && !text.is_char_boundary(pos) {
-            pos -= 1;
-        }
-        text.truncate(pos);
-        text.push_str("...");
-    }
-    text.to_string()
-}
-
 async fn get_delete(
     State(ctx): State<ServerContext>,
     Path(id): Path<i64>,
@@ -179,7 +165,8 @@ async fn get_delete(
         Err(_) => return not_found(State(ctx.clone())).await,
     };
     let extra_head = &ctx.args.extra_head;
-    let settings = PageSettings::new(&post.content, false, false, Top::GoHome, extra_head);
+    let title = crate::md::extract_html_title(&post);
+    let settings = PageSettings::new(&title, false, false, Top::GoHome, extra_head);
     let delete_button = indoc::formatdoc! {r#"
         <div class='center medium-text' style='font-weight: bold;'>
             <p>Are you sure you want to delete this post? This action cannot be undone.</p>
@@ -228,14 +215,15 @@ async fn get_post(
         Ok(post) => post,
         Err(_) => return not_found(State(ctx)).await,
     };
-    let title = truncate(&post.content);
+    let title = crate::md::extract_html_title(&post);
+    println!("title: {}", title);
     let author = &ctx.args.full_name;
     let created = &post.created;
     let updated = &post.updated;
     let extra_head = indoc::formatdoc! {r#"
-        <meta property="article:author" content="{author}"/>
-        <meta property="article:published_time" content="{created}"/>
-        <meta property="article:modified_time" content="{updated}"/>
+        <meta property='article:author' content='{author}'/>
+        <meta property='article:published_time' content='{created}'/>
+        <meta property='article:modified_time' content='{updated}'/>
         {}
     "#, ctx.args.extra_head};
     let settings = PageSettings::new(&title, is_logged_in, false, Top::GoHome, &extra_head);
