@@ -131,6 +131,8 @@ pre code {
 .bottom {
     text-align: center;
     margin-top: auto;
+    padding-top: 30px;
+    font-size: 0.8rem;
 }
 
 .unstyled-link {
