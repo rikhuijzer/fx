@@ -101,16 +101,16 @@ pre code {
     margin: 8px 0px;
 }
 
-.content {
-    font-size: var(--text-font-size);
-}
-
 .post-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     font-size: 12px;
     color: var(--gray);
+}
+
+.post-content {
+    font-size: var(--text-font-size);
 }
 
 .top {

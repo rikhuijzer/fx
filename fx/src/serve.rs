@@ -142,6 +142,14 @@ async fn get_style(State(ctx): State<ServerContext>) -> Response<Body> {
     response(StatusCode::OK, headers, body, &ctx)
 }
 
+async fn get_script(State(ctx): State<ServerContext>) -> Response<Body> {
+    let body = include_str!("static/script.js");
+    let mut headers = HeaderMap::new();
+    content_type(&mut headers, "text/javascript");
+    cache_control(&mut headers);
+    response(StatusCode::OK, headers, body, &ctx)
+}
+
 fn truncate(text: &str) -> String {
     let max_length = 40;
     let mut text = text.to_string();
@@ -488,6 +496,7 @@ pub fn app(ctx: ServerContext) -> Router {
         // Need to put behind /post/<ID> otherwise /<WRONG LINK> will not be a 404.
         .route("/post/{id}", get(get_post))
         .route("/static/style.css", get(get_style))
+        .route("/static/script.js", get(get_script))
         .route("/.well-known/webfinger", get(get_webfinger))
         .fallback(not_found)
         .with_state(ctx)

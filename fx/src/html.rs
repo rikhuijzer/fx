@@ -33,20 +33,24 @@ pub fn post_to_html(post: &Post, is_preview: bool) -> String {
     // Not wrapping the full post in a `href` because that prevents text
     // selection. I've tried all kinds of workarounds with putting a `position:
     // relative` object in front of the link with `z-index`, but that didn't
-    // work. I guess it's easiest to just have the date and optionally title be
-    // links and the rest as normal. Then, links in the content also don't have
-    // to be removed (since nested links are not allowed in html).
-    let md = turn_title_into_link(post, &post.content);
+    // work. Either the area was clickable or the text was selectable but not
+    // both.
+    let md = if is_preview {
+        turn_title_into_link(post, &post.content)
+    } else {
+        post.content.clone()
+    };
     let html = crate::md::to_html(&md);
     let style = if is_preview { &border_style(1) } else { "" };
     let updated = if post.created == post.updated {
         ""
     } else {
         &format!(
-            "div class='updated'>last update: {}</div>",
+            "<div class='updated'>last update: {}</div>",
             show_date(&post.updated)
         )
     };
+    let post_preview_class = if is_preview { "post-preview" } else { "" };
     indoc::formatdoc! {"
     <div class='post' style='{style}'>
         <a href='/post/{}' class='unstyled-link'>
@@ -55,9 +59,9 @@ pub fn post_to_html(post: &Post, is_preview: bool) -> String {
                 {updated}
             </div>
         </a>
-        <div class='content'>{html}</div>
+        <div data-post-id='{}' class='post-content {post_preview_class}'>{html}</div>
     </div>
-    ", post.id, show_date(&post.created)}
+    ", post.id, show_date(&post.created), post.id}
 }
 
 pub enum Top {
@@ -227,6 +231,7 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <link rel="stylesheet" href="/static/style.css">
+            <script src="/static/script.js" defer></script>
             <title>{full_title}</title>
             <meta property="og:site_name" content="{title}"/>
             {extra_head}
