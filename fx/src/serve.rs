@@ -191,9 +191,11 @@ async fn get_edit(
         Ok(post) => post,
         Err(_) => return not_found(State(ctx)).await,
     };
+    let title = crate::md::extract_html_title(&post);
+    let title = format!("Edit '{title}'");
     let body = crate::html::edit_post_form(&post);
     let settings = PageSettings::new(
-        &post.content,
+        &title,
         is_logged_in,
         false,
         Top::GoBack,

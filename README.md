@@ -16,9 +16,9 @@ I think this is a sad development since links are an essential part of the inter
 
 ## Features
 
-- Small footprint (requires less than 100 MB of RAM)
-- Mobile-friendly interface for writing and publishing posts from your phone
-- Markdown support
+- Small footprint (requires only a few MB of memory).
+- Mobile-friendly interface to allow publishing posts from mobile devices.
+- Markdown support.
 
 ## Installation
 

@@ -147,6 +147,8 @@ fn add_post_form() -> &'static str {
 pub fn edit_post_form(post: &Post) -> String {
     let id = post.id;
     let content = &post.content;
+    // Otherwise newlines in the HTML are ignored by the browser.
+    let content = content.replace("\n", "&#10;");
     format!(
         "
     <form style='width: 100%;' action='/post/edit/{id}' method='post'>
@@ -165,7 +167,7 @@ pub fn edit_post_form(post: &Post) -> String {
     )
 }
 
-/// Return formatted HTML/CSS that is smal and readable.
+/// Return formatted HTML/CSS that is small and readable.
 pub fn minify(page: &str) -> String {
     page.lines()
         .map(|line| line.trim())

@@ -168,7 +168,8 @@ pub fn extract_html_title(post: &Post) -> String {
         title
     };
     let title = remove_urls(title);
-    let max_length = 40;
+    // Better a bit too long than too short. Google truncates anyway.
+    let max_length = 60;
     if title.len() <= max_length {
         title
     } else {
