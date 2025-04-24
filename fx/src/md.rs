@@ -207,9 +207,19 @@ mod test {
 /// News and Lobsters do this too.
 pub fn auto_autolink(content: &str) -> String {
     // Characters such as < are not allowed in URLs (should be percent encoded).
-    let re = r#"https?://[^\s<>"{}|\\^`\(\)]+"#;
+    let re = r#"<?https?://[^\s<>"{}|\\^`\(\)]+"#;
     let re = regex::Regex::new(re).unwrap();
-    re.replace_all(content, "<$0>").to_string()
+    fn handle(caps: &regex::Captures) -> String {
+        let url = caps.get(0).unwrap().as_str();
+        // Cannot use look-around, so manually avoiding double wrapping autolink
+        // inside autolink.
+        if url.starts_with("<") {
+            url.to_string()
+        } else {
+            format!("<{url}>")
+        }
+    }
+    re.replace_all(content, handle).to_string()
 }
 
 #[test]
@@ -231,6 +241,11 @@ fn test_auto_autolink() {
 
     let content = "<p>Lorem (https://example.com)</p>";
     let expected = "<p>Lorem (<https://example.com>)</p>";
+    let actual = auto_autolink(content);
+    assert_eq!(actual, expected);
+
+    let content = "<p>Lorem <https://example.com></p>";
+    let expected = "<p>Lorem <https://example.com></p>";
     let actual = auto_autolink(content);
     assert_eq!(actual, expected);
 }
