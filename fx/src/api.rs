@@ -12,6 +12,10 @@ use axum::http::header::HeaderValue;
 use axum::routing::get;
 use axum_extra::extract::CookieJar;
 use serde_json::json;
+use std::io::Cursor;
+use std::io::Write;
+use tar::Builder;
+use tar::Header;
 
 async fn get_api(State(ctx): State<ServerContext>) -> Response<Body> {
     let domain = &ctx.args.domain;
@@ -88,7 +92,13 @@ async fn get_download_all(State(ctx): State<ServerContext>, jar: CookieJar) -> R
             "failed to list posts",
         );
     };
-    let body: Vec<u8> = vec![];
+    let mut header = Header::new_gnu();
+    let mut ar = Builder::new(Cursor::new(Vec::new()));
+    let mut entry = ar.append_writer(&mut header, "post.md").unwrap();
+    entry.write_all(posts[1].content.as_bytes()).unwrap();
+    entry.finish().unwrap();
+    let body = ar.into_inner().unwrap();
+    let body: Vec<u8> = body.into_inner();
     let mut headers = HeaderMap::new();
     headers.insert(
         "Content-Type",
@@ -101,5 +111,5 @@ pub fn routes(router: &Router<ServerContext>) -> Router<ServerContext> {
     router
         .clone()
         .route("/api", get(get_api))
-        .route("/api/download/all", get(get_download_all))
+        .route("/api/download/all.tar.gz", get(get_download_all))
 }
