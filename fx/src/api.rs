@@ -33,32 +33,60 @@ async fn get_api(State(ctx): State<ServerContext>) -> Response<Body> {
     response_json(StatusCode::OK, body, &ctx)
 }
 
-fn is_authenticated(jar: &CookieJar) -> bool {
-    let Some(cookie) = jar.get("auth") else {
+fn is_authenticated(ctx: &ServerContext, jar: &CookieJar) -> bool {
+    let password = &ctx.args.password;
+    let password = if let Some(password) = password {
+        password
+    } else {
+        tracing::warn!("admin password not set");
         return false;
     };
-    todo!()
+    let cookie = if let Some(cookie) = jar.get("Authorization") {
+        cookie
+    } else {
+        return false;
+    };
+    let parts = cookie
+        .value()
+        .split_ascii_whitespace()
+        .collect::<Vec<&str>>();
+    if !parts.len() == 2 {
+        return false;
+    }
+    if parts[0] != "Bearer" {
+        return false;
+    }
+    let token = parts[1];
+    token == password
+}
+
+fn error(ctx: &ServerContext, status: StatusCode, message: &str) -> Response<Body> {
+    let body = json!({
+        "status": status.as_u16(),
+        "message": message,
+    })
+    .to_string();
+    response_json(status, body, &ctx)
+}
+
+fn unauthorized(ctx: &ServerContext) -> Response<Body> {
+    error(ctx, StatusCode::UNAUTHORIZED, "unauthorized")
 }
 
 async fn get_download_all(State(ctx): State<ServerContext>, jar: CookieJar) -> Response<Body> {
-    if !is_authenticated(&jar) {
-        return response_json(
-            StatusCode::UNAUTHORIZED,
-            json!({"status": "401"}).to_string(),
-            &ctx,
-        );
+    if !is_authenticated(&ctx, &jar) {
+        return unauthorized(&ctx);
     }
     let conn = ctx.conn_lock();
     let posts = Post::list(&conn);
     let posts = if let Ok(posts) = posts {
         posts
     } else {
-        let body = json!({
-            "status": "500",
-            "message": "failed to list posts",
-        })
-        .to_string();
-        return response_json(StatusCode::INTERNAL_SERVER_ERROR, body, &ctx);
+        return error(
+            &ctx,
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "failed to list posts",
+        );
     };
     let body: Vec<u8> = vec![];
     let mut headers = HeaderMap::new();
