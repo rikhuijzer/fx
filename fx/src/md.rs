@@ -8,9 +8,12 @@ fn without_links_core(node: &Node) -> String {
     let mut preview = String::new();
     match node {
         Node::Paragraph(paragraph) => {
+            preview.push_str("<p>");
             for child in paragraph.children.iter() {
-                preview.push_str(&without_links_core(child));
+                let text = without_links_core(child);
+                preview.push_str(&text);
             }
+            preview.push_str("</p>");
         }
         Node::Heading(heading) => {
             preview.push_str(&"#".repeat(heading.depth as usize));
@@ -88,7 +91,7 @@ fn test_keep_link() {
     let expected = indoc::indoc! {"
         # Title
 
-        Lorem ipsum <a href='https://example.com/foo'>foo</a> dolor sit amet
+        <p>Lorem ipsum <a href='https://example.com/foo'>foo</a> dolor sit amet</p>
     "};
     assert_eq!(post.content, expected.trim());
 }
@@ -125,8 +128,9 @@ fn test_sanitize_preview() {
         updated: Utc::now(),
     };
     sanitize_preview(&mut post);
-    println!("post: {}", post.content);
+    println!("post:\n{}", post.content);
     assert!(post.content.contains("Show more"));
+    assert!(post.content.contains("<p>Lorem"));
 }
 
 fn remove_urls(md: &str) -> String {

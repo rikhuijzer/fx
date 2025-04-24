@@ -89,8 +89,14 @@ async fn test_metadata() {
     let (status, body) = request_body("/post/1").await;
     assert_eq!(status, StatusCode::OK);
     let lines = body.lines().collect::<Vec<_>>();
-    let head_start = lines.iter().position(|line| line.contains("<head>")).unwrap();
-    let head_end = lines.iter().position(|line| line.contains("</head>")).unwrap();
+    let head_start = lines
+        .iter()
+        .position(|line| line.contains("<head>"))
+        .unwrap();
+    let head_end = lines
+        .iter()
+        .position(|line| line.contains("</head>"))
+        .unwrap();
     let head = lines[head_start..head_end + 1].join("\n");
     println!("head:\n{head}");
     assert!(body.contains("<!DOCTYPE html>"));
