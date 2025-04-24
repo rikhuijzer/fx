@@ -58,14 +58,13 @@ pub fn sanitize_preview(post: &mut Post) {
     let max_length = 600;
     for node in tree.children().unwrap() {
         if max_length < preview.len() {
-            // Not adding a link because a preview is already a link.
-            let expand = indoc::indoc! {"
-                \\
-                <span style='text-decoration: underline; font-size: 0.8rem;'>
+            let expand = indoc::formatdoc! {"
+                <br>
+                <a href='/post/{}' style='text-decoration: underline; font-size: 0.8rem;'>
                     Show more
-                </span>
-            "};
-            preview.push_str(expand);
+                </a>
+            ", post.id};
+            preview.push_str(&expand);
             break;
         }
         preview.push_str(&without_links_core(node));
