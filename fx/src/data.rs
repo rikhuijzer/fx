@@ -118,7 +118,7 @@ impl Post {
         created: DateTime<Utc>,
         updated: DateTime<Utc>,
         content: &str,
-    ) -> Result<usize> {
+    ) -> Result<i64> {
         let stmt = "
             INSERT INTO posts (created, updated, content)
             VALUES (?, ?, ?);
@@ -126,7 +126,9 @@ impl Post {
         let created = created.to_sqlite();
         let updated = updated.to_sqlite();
         let content = content.to_string();
-        conn.execute(stmt, [created, updated, content])
+        conn.execute(stmt, [created, updated, content])?;
+        let id = conn.last_insert_rowid();
+        Ok(id)
     }
     pub fn list(conn: &Connection) -> Result<Vec<Post>> {
         let stmt = "

@@ -133,7 +133,8 @@ fn test_sanitize_preview() {
 }
 
 fn remove_urls(md: &str) -> String {
-    // This will break on nested links, but is good enough for now.
+    // This will break on nested links, but commonmark does not support nested
+    // links according to <https://spec.commonmark.org/0.31.2/#links>.
     let re = regex::Regex::new(r"\[(.*?)\]\(https?://.*?\)").unwrap();
     re.replace_all(md, "$1").to_string()
 }
@@ -195,4 +196,33 @@ mod test {
         let title = extract_html_title(&post);
         assert_eq!(title, "Title");
     }
+}
+
+/// Automatically turn URLs into CommonMark autolinks.
+///
+/// Turns `http://example.com` into `<http://example.com>`. Sites like Hacker
+/// News and Lobsters do this too.
+pub fn auto_autolink(content: &str) -> String {
+    // Characters such as < are not allowed in URLs (should be percent encoded).
+    let re = r#"https?://[^\s<>"{}|\\^`]+"#;
+    let re = regex::Regex::new(re).unwrap();
+    re.replace_all(content, "<$0>").to_string()
+}
+
+#[test]
+fn test_auto_autolink() {
+    let content = "Foo http://example.com bar";
+    let expected = "Foo <http://example.com> bar";
+    let actual = auto_autolink(content);
+    assert_eq!(actual, expected);
+
+    let content = "https://example.com";
+    let expected = "<https://example.com>";
+    let actual = auto_autolink(content);
+    assert_eq!(actual, expected);
+
+    let content = "<p>Lorem https://example.com</p>";
+    let expected = "<p>Lorem <https://example.com></p>";
+    let actual = auto_autolink(content);
+    assert_eq!(actual, expected);
 }

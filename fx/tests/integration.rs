@@ -196,7 +196,7 @@ async fn test_login() {
     assert!(body.contains("Invalid username or password"));
 }
 
-async fn request_body_logged_in(uri: &str) -> (StatusCode, Vec<u8>) {
+async fn request_cookie() -> (ServerContext, String) {
     let args = ServeArgs::test_default();
     let conn = Connection::test_default();
     let salt = fx_auth::generate_salt();
@@ -221,9 +221,11 @@ async fn request_body_logged_in(uri: &str) -> (StatusCode, Vec<u8>) {
     assert!(cookie.contains("Secure"));
     let cookie = cookie.split(";").next().unwrap();
     let auth = cookie.split("=").nth(1).unwrap();
-    println!("auth: {auth}");
+    (ctx, auth.to_string())
+}
 
-    // With valid cookie.
+async fn request_body_logged_in(uri: &str) -> (StatusCode, Vec<u8>) {
+    let (ctx, auth) = request_cookie().await;
     let req = Request::builder()
         .method("GET")
         .uri(uri)
@@ -264,4 +266,33 @@ async fn test_backup() {
     let (status, body) = request_body_logged_in("/backup").await;
     assert_eq!(status, StatusCode::OK);
     assert!(body.len() > 0);
+}
+
+#[tokio::test]
+async fn test_post_add() {
+    let (ctx, auth) = request_cookie().await;
+    println!("auth: {auth}");
+    let form = fx::serve::AddPostForm {
+        content: "Lorem https://example.com".to_string(),
+    };
+    let form_data = serde_urlencoded::to_string(&form).unwrap();
+    let req = Request::builder()
+        .method("POST")
+        .uri("/post/add")
+        .header("Cookie", format!("auth={auth}"))
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .body(Body::from(form_data))
+        .unwrap();
+    let response = app(ctx.clone()).oneshot(req).await.unwrap();
+    let status = response.status();
+    let body = response.into_body().collect().await.unwrap();
+    let body: Vec<u8> = body.to_bytes().into();
+    let body = String::from_utf8(body).unwrap();
+    println!("body:\n{body}");
+    assert_eq!(status, StatusCode::OK);
+    assert!(body.contains("example.com"), "redirect to the new post");
+    assert!(
+        body.contains(r#"<a href="https://example.com">"#),
+        "auto autolink"
+    );
 }

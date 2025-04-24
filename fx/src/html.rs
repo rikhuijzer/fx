@@ -69,7 +69,9 @@ pub fn post_to_html(post: &Post, is_preview: bool) -> String {
                 {updated}
             </div>
         {post_link_end}
-        <div data-post-id='{}' class='post-content {post_preview_class}'>{html}</div>
+        <div data-post-id='{}' class='post-content {post_preview_class}'>
+        {html}
+        </div>
     </div>
     ", show_date(&post.created), post.id}
 }

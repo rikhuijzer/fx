@@ -357,17 +357,18 @@ async fn post_edit(
         .unwrap()
         .to_bytes();
     let bytes = bytes.to_vec();
-    let content = String::from_utf8(bytes).unwrap();
-    let publish = content.contains("publish=Publish");
-    let form = serde_urlencoded::from_str::<EditPostForm>(&content).unwrap();
+    let input = String::from_utf8(bytes).unwrap();
+    let publish = input.contains("publish=Publish");
+    let form = serde_urlencoded::from_str::<EditPostForm>(&input).unwrap();
+    let content = crate::md::auto_autolink(&form.content);
+    let post = Post {
+        id,
+        created: SqliteDateTime::from_sqlite(&form.created),
+        updated: SqliteDateTime::from_sqlite(&form.updated),
+        content,
+    };
     if publish {
         let conn = ctx.conn.lock().unwrap();
-        let post = Post {
-            id,
-            created: SqliteDateTime::from_sqlite(&form.created),
-            updated: SqliteDateTime::from_sqlite(&form.updated),
-            content: form.content,
-        };
         let post = post.update(&conn);
         if post.is_err() {
             return response(
@@ -381,12 +382,6 @@ async fn post_edit(
         headers.insert("Location", HeaderValue::from_str("/").unwrap());
         response(StatusCode::SEE_OTHER, headers, "", &ctx)
     } else {
-        let post = Post {
-            id: 0,
-            created: SqliteDateTime::from_sqlite(&form.created),
-            updated: SqliteDateTime::from_sqlite(&form.updated),
-            content: form.content,
-        };
         let preview = crate::html::post_to_html(&post, false);
         let body = page(&ctx, &settings, &preview);
         response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
@@ -423,14 +418,17 @@ async fn post_add(
         .unwrap()
         .to_bytes();
     let bytes = bytes.to_vec();
-    let content = String::from_utf8(bytes).unwrap();
-    let publish = content.contains("publish=Publish");
-    let form = serde_urlencoded::from_str::<AddPostForm>(&content).unwrap();
+    let input = String::from_utf8(bytes).unwrap();
+    let publish = input.contains("publish=Publish");
+    let form = serde_urlencoded::from_str::<AddPostForm>(&input).unwrap();
+    let content = crate::md::auto_autolink(&form.content);
     if publish {
         let now = Utc::now();
         let conn = ctx.conn.lock().unwrap();
-        let post = Post::insert(&conn, now, now, &form.content);
-        if post.is_err() {
+        let post_id = Post::insert(&conn, now, now, &content);
+        let post_id = if let Ok(post_id) = post_id {
+            post_id
+        } else {
             return response(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 HeaderMap::new(),
@@ -439,14 +437,15 @@ async fn post_add(
             );
         };
         let mut headers = HeaderMap::new();
-        headers.insert("Location", HeaderValue::from_str("/").unwrap());
+        let url = format!("/post/{}", post_id);
+        headers.insert("Location", HeaderValue::from_str(&url).unwrap());
         response(StatusCode::SEE_OTHER, headers, "", &ctx)
     } else {
         let post = Post {
             id: 0,
             created: Utc::now(),
             updated: Utc::now(),
-            content: form.content,
+            content,
         };
         let preview = crate::html::post_to_html(&post, false);
         let body = page(&ctx, &settings, &preview);
