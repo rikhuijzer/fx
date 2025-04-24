@@ -41,11 +41,15 @@ impl TestDefault for Connection {
     }
 }
 
-pub async fn request_body(uri: &str) -> (StatusCode, String) {
+pub fn server_context() -> ServerContext {
     let args = ServeArgs::test_default();
     let conn = Connection::test_default();
     let salt = fx_auth::generate_salt();
-    let ctx = ServerContext::new(args, conn, salt);
+    ServerContext::new(args, conn, salt)
+}
+
+pub async fn request_body(uri: &str) -> (StatusCode, String) {
+    let ctx = server_context();
     let app = app(ctx);
     let req = Request::builder().uri(uri).body(Body::empty()).unwrap();
     let response = app.oneshot(req).await.unwrap();

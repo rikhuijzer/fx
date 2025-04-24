@@ -37,7 +37,7 @@ async fn get_api(State(ctx): State<ServerContext>) -> Response<Body> {
     response_json(StatusCode::OK, body, &ctx)
 }
 
-fn is_authenticated(ctx: &ServerContext, jar: &CookieJar) -> bool {
+fn is_authenticated(ctx: &ServerContext, headers: &HeaderMap) -> bool {
     let password = &ctx.args.password;
     let password = if let Some(password) = password {
         password
@@ -45,13 +45,14 @@ fn is_authenticated(ctx: &ServerContext, jar: &CookieJar) -> bool {
         tracing::warn!("admin password not set");
         return false;
     };
-    let cookie = if let Some(cookie) = jar.get("Authorization") {
+    let header = if let Some(cookie) = headers.get("Authorization") {
         cookie
     } else {
         return false;
     };
-    let parts = cookie
-        .value()
+    let parts = header
+        .to_str()
+        .unwrap()
         .split_ascii_whitespace()
         .collect::<Vec<&str>>();
     if !parts.len() == 2 {
@@ -77,8 +78,8 @@ fn unauthorized(ctx: &ServerContext) -> Response<Body> {
     error(ctx, StatusCode::UNAUTHORIZED, "unauthorized")
 }
 
-async fn get_download_all(State(ctx): State<ServerContext>, jar: CookieJar) -> Response<Body> {
-    if !is_authenticated(&ctx, &jar) {
+async fn get_download_all(State(ctx): State<ServerContext>, headers: HeaderMap) -> Response<Body> {
+    if !is_authenticated(&ctx, &headers) {
         return unauthorized(&ctx);
     }
     let conn = ctx.conn_lock();
