@@ -98,14 +98,12 @@ async fn get_download_all(State(ctx): State<ServerContext>, headers: HeaderMap) 
     for post in posts {
         let mut header = Header::new_gnu();
         header.set_size(post.content.len() as u64);
-        header.set_path(format!("{}.md", post.id)).unwrap();
-
-        ar.append_data(
-            &mut header,
-            format!("{}.md", post.id),
-            post.content.as_bytes(),
-        )
-        .unwrap();
+        let path = format!("post/{}.md", post.id);
+        header.set_path(&path).unwrap();
+        // Without this, the file is not even readable by the user.
+        header.set_mode(0o644);
+        ar.append_data(&mut header, &path, post.content.as_bytes())
+            .unwrap();
     }
 
     let body = ar.into_inner().unwrap();
