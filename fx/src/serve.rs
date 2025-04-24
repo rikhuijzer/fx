@@ -51,7 +51,7 @@ impl ServerContext {
     }
 }
 
-fn response<D: Sized>(
+pub fn response<D: Sized>(
     status: StatusCode,
     headers: HeaderMap,
     body: D,
@@ -469,7 +469,7 @@ async fn get_webfinger(State(ctx): State<ServerContext>) -> Response<Body> {
 }
 
 pub fn app(ctx: ServerContext) -> Router {
-    Router::new()
+    let router = Router::new()
         .route("/", get(get_posts))
         .route("/backup", get(get_backup))
         .route("/post/delete/{id}", get(get_delete))
@@ -484,9 +484,10 @@ pub fn app(ctx: ServerContext) -> Router {
         .route("/post/{id}", get(get_post))
         .route("/static/style.css", get(get_style))
         .route("/static/script.js", get(get_script))
-        .route("/.well-known/webfinger", get(get_webfinger))
-        .fallback(not_found)
-        .with_state(ctx)
+        .route("/.well-known/webfinger", get(get_webfinger));
+    let router = router.fallback(not_found);
+    let router = crate::api::routes(&router);
+    router.with_state(ctx)
 }
 
 /// Return the salt by either generating a new one or reading it from the db.
