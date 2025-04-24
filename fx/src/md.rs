@@ -168,7 +168,6 @@ pub fn extract_html_title(post: &Post) -> String {
         title
     };
     let title = remove_urls(title);
-    println!("title: {}", title);
     let max_length = 40;
     if title.len() <= max_length {
         title

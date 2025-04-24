@@ -1,5 +1,4 @@
 use crate::data::Post;
-use crate::data::SqliteDateTime;
 use crate::serve::ServerContext;
 use chrono::DateTime;
 
@@ -42,7 +41,7 @@ pub fn post_to_html(post: &Post, is_preview: bool) -> String {
     };
     let html = crate::md::to_html(&md);
     let style = if is_preview { &border_style(1) } else { "" };
-    let updated = if post.created == post.updated {
+    let updated = if post.created == post.updated || is_preview {
         ""
     } else {
         &format!(
@@ -148,15 +147,9 @@ fn add_post_form() -> &'static str {
 pub fn edit_post_form(post: &Post) -> String {
     let id = post.id;
     let content = &post.content;
-    let created = post.created.to_sqlite();
-    let updated = post.updated.to_sqlite();
     format!(
         "
     <form style='width: 100%;' action='/post/edit/{id}' method='post'>
-        <label style='font-size: 0.8rem;' for='created'>Created (UTC)</label>
-        <input name='created' value='{created}'><br>
-        <label style='font-size: 0.8rem;' for='updated'>Updated (UTC)</label>
-        <input name='updated' value='{updated}'>
         <textarea \
           style='display: block; width: 100%; height: 60vh; margin-top: 10px;' \
           class='boxsizing-border' \

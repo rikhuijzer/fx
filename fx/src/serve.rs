@@ -1,6 +1,6 @@
 use crate::ServeArgs;
 use crate::data;
-use crate::data::SqliteDateTime;
+use crate::data::Post;
 use crate::html::PageSettings;
 use crate::html::Top;
 use crate::html::page;
@@ -21,7 +21,6 @@ use axum::routing::get;
 use axum::routing::post;
 use axum_extra::extract::CookieJar;
 use chrono::Utc;
-use data::Post;
 use fx_auth::Login;
 use fx_auth::Salt;
 use http_body_util::BodyExt;
@@ -30,6 +29,7 @@ use serde::Deserialize;
 use serde::Serialize;
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::sync::MutexGuard;
 
 #[derive(Clone)]
 pub struct ServerContext {
@@ -45,6 +45,9 @@ impl ServerContext {
             conn: Arc::new(Mutex::new(conn)),
             salt,
         }
+    }
+    pub fn conn_lock(&self) -> MutexGuard<Connection> {
+        self.conn.lock().unwrap()
     }
 }
 
@@ -86,10 +89,7 @@ fn is_logged_in(ctx: &ServerContext, jar: &CookieJar) -> bool {
 }
 
 fn list_posts(ctx: &ServerContext, _is_logged_in: bool) -> String {
-    let mut posts = {
-        let conn = ctx.conn.lock().unwrap();
-        Post::list(&conn).unwrap()
-    };
+    let mut posts = { Post::list(&ctx.conn_lock()).unwrap() };
     posts
         .iter_mut()
         .map(|p| {
@@ -105,8 +105,7 @@ async fn get_backup(State(ctx): State<ServerContext>, jar: CookieJar) -> Respons
     if !is_logged_in {
         return not_found(State(ctx)).await;
     }
-    let conn = ctx.conn.lock().unwrap();
-    let backup = data::backup(&conn).unwrap();
+    let backup = data::backup(&ctx.conn_lock()).unwrap();
     let mut headers = HeaderMap::new();
     headers.insert(
         "Content-Type",
@@ -159,7 +158,7 @@ async fn get_delete(
     if !is_logged_in {
         return not_found(State(ctx.clone())).await;
     }
-    let post = Post::get(&ctx.conn.lock().unwrap(), id);
+    let post = Post::get(&ctx.conn_lock(), id);
     let post = match post {
         Ok(post) => post,
         Err(_) => return not_found(State(ctx.clone())).await,
@@ -187,7 +186,7 @@ async fn get_edit(
     jar: CookieJar,
 ) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
-    let post = Post::get(&ctx.conn.lock().unwrap(), id);
+    let post = Post::get(&ctx.conn_lock(), id);
     let post = match post {
         Ok(post) => post,
         Err(_) => return not_found(State(ctx)).await,
@@ -210,13 +209,12 @@ async fn get_post(
     jar: CookieJar,
 ) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
-    let post = Post::get(&ctx.conn.lock().unwrap(), id);
+    let post = Post::get(&ctx.conn_lock(), id);
     let post = match post {
         Ok(post) => post,
         Err(_) => return not_found(State(ctx)).await,
     };
     let title = crate::md::extract_html_title(&post);
-    println!("title: {}", title);
     let author = &ctx.args.full_name;
     let created = &post.created;
     let updated = &post.updated;
@@ -319,15 +317,12 @@ async fn post_delete(
             &ctx,
         ));
     }
-    let conn = ctx.conn.lock().unwrap();
-    Post::delete(&conn, id).unwrap();
+    Post::delete(&ctx.conn_lock(), id).unwrap();
     Ok(Redirect::to("/"))
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct EditPostForm {
-    pub created: String,
-    pub updated: String,
     pub content: String,
 }
 
@@ -361,15 +356,18 @@ async fn post_edit(
     let publish = input.contains("publish=Publish");
     let form = serde_urlencoded::from_str::<EditPostForm>(&input).unwrap();
     let content = crate::md::auto_autolink(&form.content);
+    let created = match Post::get(&ctx.conn_lock(), id) {
+        Ok(post) => post.created,
+        Err(_) => Utc::now(),
+    };
     let post = Post {
         id,
-        created: SqliteDateTime::from_sqlite(&form.created),
-        updated: SqliteDateTime::from_sqlite(&form.updated),
+        created,
+        updated: Utc::now(),
         content,
     };
     if publish {
-        let conn = ctx.conn.lock().unwrap();
-        let post = post.update(&conn);
+        let post = post.update(&ctx.conn_lock());
         if post.is_err() {
             return response(
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -424,8 +422,7 @@ async fn post_add(
     let content = crate::md::auto_autolink(&form.content);
     if publish {
         let now = Utc::now();
-        let conn = ctx.conn.lock().unwrap();
-        let post_id = Post::insert(&conn, now, now, &content);
+        let post_id = Post::insert(&ctx.conn_lock(), now, now, &content);
         let post_id = if let Ok(post_id) = post_id {
             post_id
         } else {

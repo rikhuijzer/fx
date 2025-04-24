@@ -93,7 +93,7 @@ fn decrypt_login(salt: &Salt, password: &str, auth: &Ciphertext) -> Option<Strin
         Err(e) => {
             // This can occur when the salt is incorrect. Should not happen in
             // production I think. Time will tell.
-            println!("failed to decrypt login: {}", e);
+            tracing::warn!("failed to decrypt login: {}", e);
             return None;
         }
     };
