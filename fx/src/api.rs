@@ -10,7 +10,6 @@ use axum::http::StatusCode;
 use axum::http::header::HeaderMap;
 use axum::http::header::HeaderValue;
 use axum::routing::get;
-use axum_extra::extract::CookieJar;
 use serde_json::json;
 use std::io::Cursor;
 use std::io::Write;
@@ -93,17 +92,31 @@ async fn get_download_all(State(ctx): State<ServerContext>, headers: HeaderMap) 
             "failed to list posts",
         );
     };
-    let mut header = Header::new_gnu();
-    let mut ar = Builder::new(Cursor::new(Vec::new()));
-    let mut entry = ar.append_writer(&mut header, "post.md").unwrap();
-    entry.write_all(posts[1].content.as_bytes()).unwrap();
-    entry.finish().unwrap();
+
+    let mut ar = Builder::new(Vec::new());
+
+    for post in posts {
+        let mut header = Header::new_gnu();
+        header.set_size(post.content.len() as u64);
+        header.set_path(format!("{}.md", post.id)).unwrap();
+
+        ar.append_data(
+            &mut header,
+            format!("{}.md", post.id),
+            post.content.as_bytes(),
+        )
+        .unwrap();
+    }
+
     let body = ar.into_inner().unwrap();
-    let body: Vec<u8> = body.into_inner();
     let mut headers = HeaderMap::new();
     headers.insert(
         "Content-Type",
-        HeaderValue::from_static("application/octet-stream"),
+        HeaderValue::from_static("application/x-tar"),
+    );
+    headers.insert(
+        "Content-Disposition",
+        HeaderValue::from_static("attachment; filename=\"posts.tar\""),
     );
     response::<Vec<u8>>(StatusCode::OK, headers, body, &ctx)
 }

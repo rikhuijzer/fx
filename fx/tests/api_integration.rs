@@ -1,16 +1,16 @@
 mod common;
 
-use axum::http::StatusCode;
 use axum::body::Body;
+use axum::extract::Request;
+use axum::http::StatusCode;
+use common::*;
+use fx::serve::app;
+use http_body_util::BodyExt;
 use std::fs::File;
 use std::io::Write;
 use tar::Archive;
-use axum::extract::Request;
-use fx::serve::app;
-use http_body_util::BodyExt;
-use tower::util::ServiceExt;
-use common::*;
 use tempfile::tempdir;
+use tower::util::ServiceExt;
 
 #[tokio::test]
 async fn test_api() {
@@ -38,6 +38,8 @@ pub async fn request_body_authenticated(uri: &str) -> (StatusCode, Vec<u8>) {
 #[tokio::test]
 async fn test_download_all() {
     let (status, body) = request_body_authenticated("/api/download/all.tar.gz").await;
+    assert!(serde_json::from_slice::<serde_json::Value>(&body).is_err());
+    println!("body: {body:?}");
     assert_eq!(status, StatusCode::OK);
 
     let temp_dir = tempdir().unwrap();
