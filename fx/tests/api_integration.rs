@@ -43,5 +43,7 @@ async fn test_download_all() {
     let entries = ar.entries().unwrap();
     let entries = entries.collect::<Vec<_>>();
     assert_eq!(entries.len(), 2);
-    assert!(entries[0].unwrap().path().unwrap().display().to_string().contains("post/1.md"));
+    // SQLite is 1-indexed.
+    assert!(entries[0].as_ref().unwrap().path().unwrap().to_str().unwrap().contains("post/1.md"));
+    assert!(entries[1].as_ref().unwrap().path().unwrap().to_str().unwrap().contains("post/2.md"));
 }
