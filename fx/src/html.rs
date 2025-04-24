@@ -155,7 +155,8 @@ pub fn edit_post_form(post: &Post) -> String {
         <textarea \
           style='display: block; width: 100%; height: 60vh; margin-top: 10px;' \
           class='boxsizing-border' \
-          id='content' name='content' placeholder='Your text..'>{content}</textarea>
+          id='content' name='content' placeholder='Your text..'>
+          {content}
         </textarea>
         <br>
         <div style='display: flex; justify-content: flex-end;'>
