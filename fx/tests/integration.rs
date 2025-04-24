@@ -100,7 +100,7 @@ async fn test_metadata() {
     let head = lines[head_start..head_end + 1].join("\n");
     println!("head:\n{head}");
     assert!(body.contains("<!DOCTYPE html>"));
-    assert!(body.contains("<title>Lorem ipsum ut enim ad minim veniam sit... - site-name</title>"));
+    assert!(body.contains("<title>Lorem ipsum ut enim ad minim veniam sit amet ipsum lorem con... - site-name</title>"));
     assert!(body.contains("<meta property='og:site_name' content='site-name'/>"));
     assert!(body.contains("<meta property='article:author' content='Test Admin'/>"));
 }
