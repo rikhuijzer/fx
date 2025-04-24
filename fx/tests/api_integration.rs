@@ -6,10 +6,8 @@ use axum::http::StatusCode;
 use common::*;
 use fx::serve::app;
 use http_body_util::BodyExt;
-use std::fs::File;
-use std::io::Write;
+use std::io::Cursor;
 use tar::Archive;
-use tempfile::tempdir;
 use tower::util::ServiceExt;
 
 #[tokio::test]
@@ -38,19 +36,12 @@ pub async fn request_body_authenticated(uri: &str) -> (StatusCode, Vec<u8>) {
 #[tokio::test]
 async fn test_download_all() {
     let (status, body) = request_body_authenticated("/api/download/all.tar.gz").await;
-    assert!(serde_json::from_slice::<serde_json::Value>(&body).is_err());
     assert_eq!(status, StatusCode::OK);
 
-    let temp_dir = tempdir().unwrap();
-
-    let archive_path = temp_dir.path().join("archive.tar.gz");
-    let mut file = File::create(archive_path).unwrap();
-    file.write_all(&body).unwrap();
-    let mut ar = Archive::new(file);
-    for entry in ar.entries().unwrap() {
-        let entry = entry.unwrap();
-        let path = entry.path().unwrap();
-        println!("{}", path.display());
-    }
-    assert!(false);
+    let cursor = Cursor::new(body);
+    let mut ar = Archive::new(cursor);
+    let entries = ar.entries().unwrap();
+    let entries = entries.collect::<Vec<_>>();
+    assert_eq!(entries.len(), 2);
+    assert!(entries[0].unwrap().path().unwrap().display().to_string().contains("post/1.md"));
 }
