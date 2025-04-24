@@ -73,6 +73,16 @@ where
     response
 }
 
+pub fn response_json<D: Sized>(status: StatusCode, body: D, ctx: &ServerContext) -> Response<Body>
+where
+    D: serde::Serialize,
+    Body: From<D>,
+{
+    let mut headers = HeaderMap::new();
+    headers.insert("Content-Type", HeaderValue::from_static("application/json"));
+    response(status, headers, body, ctx)
+}
+
 fn is_logged_in(ctx: &ServerContext, jar: &CookieJar) -> bool {
     let password = match &ctx.args.password {
         Some(password) => password,
