@@ -112,11 +112,7 @@ async fn get_download_all(State(ctx): State<ServerContext>, headers: HeaderMap) 
     let mut headers = HeaderMap::new();
     headers.insert(
         "Content-Type",
-        HeaderValue::from_static("application/x-tar"),
-    );
-    headers.insert(
-        "Content-Disposition",
-        HeaderValue::from_static("attachment; filename=\"posts.tar\""),
+        HeaderValue::from_static("application/octet-stream"),
     );
     response::<Vec<u8>>(StatusCode::OK, headers, body, &ctx)
 }

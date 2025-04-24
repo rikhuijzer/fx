@@ -39,7 +39,6 @@ pub async fn request_body_authenticated(uri: &str) -> (StatusCode, Vec<u8>) {
 async fn test_download_all() {
     let (status, body) = request_body_authenticated("/api/download/all.tar.gz").await;
     assert!(serde_json::from_slice::<serde_json::Value>(&body).is_err());
-    println!("body: {body:?}");
     assert_eq!(status, StatusCode::OK);
 
     let temp_dir = tempdir().unwrap();
