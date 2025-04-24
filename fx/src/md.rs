@@ -58,12 +58,15 @@ pub fn sanitize_preview(post: &mut Post) {
     let max_length = 600;
     for node in tree.children().unwrap() {
         if max_length < preview.len() {
-            let expand = indoc::formatdoc! {"
-                <br>
-                <a href='/post/{}' style='text-decoration: underline; font-size: 0.8rem;'>
+            let id = post.id;
+            let style = "text-decoration: underline; font-size: 0.8rem;";
+            let expand = format!(
+                "
+                <a href='/post/{id}' style='{style}'>
                     Show more
                 </a>
-            ", post.id};
+                "
+            );
             preview.push_str(&expand);
             break;
         }
