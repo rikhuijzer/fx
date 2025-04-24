@@ -4,13 +4,16 @@ use markdown::ParseOptions;
 use markdown::mdast::Node;
 use markdown::to_mdast;
 
-fn without_links_core(node: &Node) -> String {
+/// Convert a Markdown AST node back to a `String` with the same structure.
+///
+/// The default `to_string()` method only returns text.
+fn md_to_string(node: &Node) -> String {
     let mut preview = String::new();
     match node {
         Node::Paragraph(paragraph) => {
             preview.push_str("<p>");
             for child in paragraph.children.iter() {
-                let text = without_links_core(child);
+                let text = md_to_string(child);
                 preview.push_str(&text);
             }
             preview.push_str("</p>");
@@ -19,14 +22,14 @@ fn without_links_core(node: &Node) -> String {
             preview.push_str(&"#".repeat(heading.depth as usize));
             preview.push(' ');
             for child in heading.children.iter() {
-                preview.push_str(&without_links_core(child));
+                preview.push_str(&md_to_string(child));
             }
             preview.push_str("\n\n");
         }
         Node::Text(text) => preview.push_str(&text.value),
         Node::Html(html) => preview.push_str(&html.value),
         Node::Link(link) => {
-            let text = without_links_core(link.children.first().unwrap());
+            let text = md_to_string(link.children.first().unwrap());
             let url = &link.url;
             preview.push_str(&format!("<a href='{url}'>{text}</a>"));
         }
@@ -70,7 +73,7 @@ pub fn sanitize_preview(post: &mut Post) {
             preview.push_str(&expand);
             break;
         }
-        preview.push_str(&without_links_core(node));
+        preview.push_str(&md_to_string(node));
     }
     post.content = preview;
 }
