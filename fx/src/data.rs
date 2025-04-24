@@ -225,7 +225,8 @@ pub fn init(args: &ServeArgs, conn: &Connection) {
             ```rust
             x = 1
             ```
-        "};
+        "}
+        .trim();
         Post::insert(conn, now, now, content).unwrap();
     }
 }

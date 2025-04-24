@@ -100,7 +100,9 @@ async fn test_metadata() {
     let head = lines[head_start..head_end + 1].join("\n");
     println!("head:\n{head}");
     assert!(body.contains("<!DOCTYPE html>"));
-    assert!(body.contains("<title>Lorem ipsum ut enim ad minim veniam sit amet ipsum lorem con... - site-name</title>"));
+    assert!(body.contains(
+        "<title>Lorem ipsum ut enim ad minim veniam sit amet ipsum lorem con... - site-name</title>"
+    ));
     assert!(body.contains("<meta property='og:site_name' content='site-name'/>"));
     assert!(body.contains("<meta property='article:author' content='Test Admin'/>"));
 }
@@ -271,7 +273,6 @@ async fn test_backup() {
 #[tokio::test]
 async fn test_post_add() {
     let (ctx, auth) = request_cookie().await;
-    println!("auth: {auth}");
     let form = fx::serve::AddPostForm {
         content: "Lorem https://example.com".to_string(),
     };
@@ -295,4 +296,41 @@ async fn test_post_add() {
         body.contains(r#"<a href="https://example.com">"#),
         "auto autolink"
     );
+}
+
+#[tokio::test]
+async fn test_get_edit() {
+    let (status, body) = request_body_logged_in("/post/edit/2").await;
+    let body = String::from_utf8(body).unwrap();
+    assert_eq!(status, StatusCode::OK);
+    println!("body:\n{body}");
+    assert!(
+        body.contains("# Code\n\nDolor sit"),
+        "textarea content might be minified"
+    );
+}
+
+#[tokio::test]
+async fn test_post_edit() {
+    let (ctx, auth) = request_cookie().await;
+    let form = fx::serve::EditPostForm {
+        content: "Lorem https://example.com".to_string(),
+    };
+    let form_data = serde_urlencoded::to_string(&form).unwrap();
+    let req = Request::builder()
+        .method("POST")
+        .uri("/post/edit/2")
+        .header("Cookie", format!("auth={auth}"))
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .body(Body::from(form_data))
+        .unwrap();
+    let response = app(ctx.clone()).oneshot(req).await.unwrap();
+    let status = response.status();
+    let body = response.into_body().collect().await.unwrap();
+    let body: Vec<u8> = body.to_bytes().into();
+    let body = String::from_utf8(body).unwrap();
+    println!("body:\n{body}");
+    assert_eq!(status, StatusCode::OK);
+    assert!(!body.contains("# Code"), "text not updated");
+    assert!(body.contains("https://example.com"), "text not updated");
 }

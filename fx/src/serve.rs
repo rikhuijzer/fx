@@ -379,7 +379,8 @@ async fn post_edit(
             );
         };
         let mut headers = HeaderMap::new();
-        headers.insert("Location", HeaderValue::from_str("/").unwrap());
+        let url = format!("/post/{}", id);
+        headers.insert("Location", HeaderValue::from_str(&url).unwrap());
         response(StatusCode::SEE_OTHER, headers, "", &ctx)
     } else {
         let preview = crate::html::post_to_html(&post, false);

@@ -147,16 +147,13 @@ fn add_post_form() -> &'static str {
 pub fn edit_post_form(post: &Post) -> String {
     let id = post.id;
     let content = &post.content;
-    // Otherwise newlines in the HTML are ignored by the browser.
-    let content = content.replace("\n", "&#10;");
     format!(
         "
     <form style='width: 100%;' action='/post/edit/{id}' method='post'>
         <textarea \
           style='display: block; width: 100%; height: 60vh; margin-top: 10px;' \
           class='boxsizing-border' \
-          id='content' name='content' placeholder='Your text..'>
-          {content}
+          id='content' name='content' placeholder='Your text..'>\n{content}
         </textarea>
         <br>
         <div style='display: flex; justify-content: flex-end;'>
@@ -170,11 +167,30 @@ pub fn edit_post_form(post: &Post) -> String {
 
 /// Return formatted HTML/CSS that is small and readable.
 pub fn minify(page: &str) -> String {
-    page.lines()
-        .map(|line| line.trim())
-        .filter(|line| !line.is_empty())
-        .collect::<Vec<&str>>()
-        .join("\n")
+    let mut lines = Vec::new();
+    // Whether to minify the current line.
+    let mut minify = true;
+    for line in page.lines() {
+        let trimmed = line.trim();
+        // Don't minify the textarea content or it will effectively modify the
+        // post content on the editing page.
+        if trimmed.starts_with("<textarea style='display: block") {
+            minify = false;
+            lines.push(trimmed);
+            continue;
+        }
+        if trimmed.starts_with("</textarea>") {
+            minify = true;
+        }
+        if minify {
+            if !trimmed.is_empty() {
+                lines.push(trimmed);
+            }
+        } else {
+            lines.push(line);
+        }
+    }
+    lines.join("\n")
 }
 
 pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String {
