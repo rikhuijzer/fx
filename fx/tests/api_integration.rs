@@ -53,7 +53,7 @@ async fn test_download_all() {
     }
     let mut first = entries.next().unwrap().unwrap();
     // SQLite is 1-indexed.
-    assert!(path(&first).contains("post/1.md"));
+    assert!(path(&first).contains("posts/1.md"));
 
     let mut content = String::new();
     first.read_to_string(&mut content).unwrap();
@@ -68,6 +68,6 @@ async fn test_download_all() {
     assert!(lines[5].contains("Lorem"));
 
     let second = entries.next().unwrap().unwrap();
-    assert!(path(&second).contains("post/2.md"));
+    assert!(path(&second).contains("posts/2.md"));
     assert!(entries.next().is_none());
 }

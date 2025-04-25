@@ -86,7 +86,7 @@ fn create_archive(site_data: &SiteData) -> Vec<u8> {
 
     for post in site_data.posts {
         let mut header = Header::new_gnu();
-        let path = format!("post/{}.md", post.id);
+        let path = format!("posts/{}.md", post.id);
         header.set_path(&path).unwrap();
         // Without this, the file is not even readable by the user.
         header.set_mode(0o644);

@@ -23,12 +23,12 @@ async fn test_home() {
 }
 
 #[tokio::test]
-async fn test_post() {
-    let (status, body) = request_body("/post/1").await;
+async fn test_get_post() {
+    let (status, body) = request_body("/posts/1").await;
     assert_eq!(status, StatusCode::OK);
     assert!(body.contains("Lorem"));
 
-    let (status, body) = request_body("/post/2").await;
+    let (status, body) = request_body("/posts/2").await;
     assert_eq!(status, StatusCode::OK);
     assert!(body.contains("Dolor"));
 }
@@ -42,7 +42,7 @@ async fn test_style() {
 
 #[tokio::test]
 async fn test_metadata() {
-    let (status, body) = request_body("/post/1").await;
+    let (status, body) = request_body("/posts/1").await;
     assert_eq!(status, StatusCode::OK);
     let lines = body.lines().collect::<Vec<_>>();
     let head_start = lines
@@ -156,11 +156,11 @@ async fn test_login() {
 
 #[tokio::test]
 async fn test_delete_confirmation() {
-    let (status, body) = request_body("/post/delete/1").await;
+    let (status, body) = request_body("/posts/delete/1").await;
     assert_eq!(status, StatusCode::NOT_FOUND);
     assert!(!body.contains("Are you sure you want to delete this post?"));
 
-    let (status, body) = request_body_logged_in("/post/delete/1").await;
+    let (status, body) = request_body_logged_in("/posts/delete/1").await;
     assert_eq!(status, StatusCode::OK);
     let body = String::from_utf8(body).unwrap();
     assert!(body.contains("Are you sure you want to delete this post?"));
@@ -192,7 +192,7 @@ async fn test_post_add() {
     let form_data = serde_urlencoded::to_string(&form).unwrap();
     let req = Request::builder()
         .method("POST")
-        .uri("/post/add")
+        .uri("/posts/add")
         .header("Cookie", format!("auth={auth}"))
         .header("Content-Type", "application/x-www-form-urlencoded")
         .body(Body::from(form_data))
@@ -213,7 +213,7 @@ async fn test_post_add() {
 
 #[tokio::test]
 async fn test_get_edit() {
-    let (status, body) = request_body_logged_in("/post/edit/2").await;
+    let (status, body) = request_body_logged_in("/posts/edit/2").await;
     let body = String::from_utf8(body).unwrap();
     assert_eq!(status, StatusCode::OK);
     println!("body:\n{body}");
@@ -232,7 +232,7 @@ async fn test_post_edit() {
     let form_data = serde_urlencoded::to_string(&form).unwrap();
     let req = Request::builder()
         .method("POST")
-        .uri("/post/edit/2")
+        .uri("/posts/edit/2")
         .header("Cookie", format!("auth={auth}"))
         .header("Content-Type", "application/x-www-form-urlencoded")
         .body(Body::from(form_data))
