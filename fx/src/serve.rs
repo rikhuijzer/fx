@@ -83,7 +83,7 @@ where
     response(status, headers, body, ctx)
 }
 
-fn is_logged_in(ctx: &ServerContext, jar: &CookieJar) -> bool {
+pub fn is_logged_in(ctx: &ServerContext, jar: &CookieJar) -> bool {
     let password = match &ctx.args.password {
         Some(password) => password,
         None => {
@@ -481,6 +481,7 @@ pub fn app(ctx: ServerContext) -> Router {
         .route("/.well-known/webfinger", get(get_webfinger));
     let router = router.fallback(not_found);
     let router = crate::api::routes(&router);
+    let router = crate::settings::routes(&router);
     router.with_state(ctx)
 }
 

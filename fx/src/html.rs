@@ -196,7 +196,6 @@ pub fn minify(page: &str) -> String {
 fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
     let settings_button = if settings.is_logged_in {
         "
-
         <a href='/settings' class='unstyled-link' style='font-size: 0.8rem;'>
             ⚙️ Settings
         </a>
@@ -207,7 +206,7 @@ fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
     let container_style = "display: flex; justify-content: space-between;";
     let name_style = "font-size: 1.2rem; margin-bottom: 10px; font-weight: bold;";
     format!(
-    "
+        "
     <div class='introduction' style='padding: 10px; {}'>
         <div style='{container_style}'>
             <div class='full-name' \
@@ -307,15 +306,19 @@ pub fn login(ctx: &ServerContext, error: Option<&str>) -> String {
         Some(error) => format!("<div style='font-style: italic;'>{error}</div>"),
         None => "".to_string(),
     };
-    let body = indoc::formatdoc! {r#"
-        <form style="text-align: center; margin-top: 15vh;" method="post" action="/login">
-            <input style="font-size: 1rem;" id="username" name="username" type="text"
-               placeholder="username" required/><br>
-            <input style="font-size: 1rem;" id="password" name="password" type="password"
-               placeholder="password" required/><br>
+    let style = "text-align: center; margin-top: 15vh;";
+    let input_style = "font-size: 1rem;";
+    let body = format!(
+        "
+        <form style='{style}' method='post' action='/login'>
+            <input style='{input_style}' id='username' name='username' \
+              type='text' placeholder='username' required/><br>
+            <input style='{input_style}' id='password' name='password' \
+              type='password' placeholder='password' required/><br>
             {error}
-            <input style="font-size: 1rem;" type="submit" value="login"/>
+            <input style='{input_style}' type='submit' value='login'/>
         </form>
-    "#};
+    "
+    );
     page(ctx, &settings, &body)
 }

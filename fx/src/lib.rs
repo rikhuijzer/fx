@@ -1,9 +1,10 @@
 mod ap;
 mod api;
 pub mod data;
-pub mod html;
+mod html;
 mod md;
 pub mod serve;
+mod settings;
 
 use clap::Parser;
 
