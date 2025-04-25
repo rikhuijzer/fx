@@ -5,6 +5,7 @@ use crate::html::page;
 use crate::serve::ServerContext;
 use crate::serve::is_logged_in;
 use crate::serve::response;
+use axum::Form;
 use axum::Router;
 use axum::body::Body;
 use axum::extract::State;
@@ -12,6 +13,7 @@ use axum::http::HeaderMap;
 use axum::http::Response;
 use axum::http::StatusCode;
 use axum::routing::get;
+use axum::routing::post;
 use axum_extra::extract::CookieJar;
 use rusqlite::Connection;
 use serde::Deserialize;
@@ -71,7 +73,7 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
         </form>
         ",
         text_input(
-            "site-name",
+            "site_name",
             "Site name",
             &settings.site_name,
             "This is shown in the title of the page."
@@ -88,6 +90,24 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
     response(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
+async fn post_settings(
+    State(ctx): State<ServerContext>,
+    jar: CookieJar,
+    Form(form): Form<Settings>,
+) -> Response<Body> {
+    let is_logged_in = is_logged_in(&ctx, &jar);
+    if !is_logged_in {
+        return crate::serve::unauthorized(&ctx);
+    }
+    let conn = &ctx.conn_lock();
+    Kv::insert(conn, "site_name", form.site_name.as_bytes()).unwrap();
+    Kv::insert(conn, "about", form.about.as_bytes()).unwrap();
+    crate::serve::see_other(&ctx, "/")
+}
+
 pub fn routes(router: &Router<ServerContext>) -> Router<ServerContext> {
-    router.clone().route("/settings", get(get_settings))
+    router
+        .clone()
+        .route("/settings", get(get_settings))
+        .route("/settings", post(post_settings))
 }

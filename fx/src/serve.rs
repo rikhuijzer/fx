@@ -197,7 +197,7 @@ async fn get_delete(
     let title = crate::md::extract_html_title(&post);
     let settings = PageSettings::new(&title, false, false, Top::GoHome, extra_head);
     let delete_button = indoc::formatdoc! {r#"
-        <div class='center medium-text' style='font-weight: bold;'>
+        <div class='medium-text' style='text-align: center; font-weight: bold;'>
             <p>Are you sure you want to delete this post? This action cannot be undone.</p>
             <form action='/posts/delete/{id}' method='post'>
                 <button type='submit'>delete</button>
@@ -358,6 +358,18 @@ pub struct EditPostForm {
     pub content: String,
 }
 
+/// Return a 303 redirect to the given url.
+///
+/// This is used after a `POST` request to indicate that the resource has been
+/// updated and the client should fetch the updated resource with a `GET`
+/// request.
+pub fn see_other(ctx: &ServerContext, url: &str) -> Response<Body> {
+    let mut headers = HeaderMap::new();
+    let dst = HeaderValue::from_str(url).unwrap();
+    headers.insert("Location", dst);
+    response(StatusCode::SEE_OTHER, headers, "", ctx)
+}
+
 async fn post_edit(
     State(ctx): State<ServerContext>,
     jar: CookieJar,
@@ -408,10 +420,8 @@ async fn post_edit(
                 &ctx,
             );
         };
-        let mut headers = HeaderMap::new();
         let url = format!("/posts/{}", id);
-        headers.insert("Location", HeaderValue::from_str(&url).unwrap());
-        response(StatusCode::SEE_OTHER, headers, "", &ctx)
+        see_other(&ctx, &url)
     } else {
         let preview = crate::html::post_to_html(&post, false);
         let body = page(&ctx, &settings, &preview);
@@ -466,10 +476,8 @@ async fn post_add(
                 &ctx,
             );
         };
-        let mut headers = HeaderMap::new();
         let url = format!("/posts/{}", post_id);
-        headers.insert("Location", HeaderValue::from_str(&url).unwrap());
-        response(StatusCode::SEE_OTHER, headers, "", &ctx)
+        see_other(&ctx, &url)
     } else {
         let post = Post {
             id: 0,

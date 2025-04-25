@@ -197,10 +197,8 @@ pub fn minify(page: &str) -> String {
         }
         if inside_textarea || inside_code {
             lines.push(line);
-        } else {
-            if !trimmed.is_empty() {
-                lines.push(trimmed);
-            }
+        } else if !trimmed.is_empty() {
+            lines.push(trimmed);
         }
     }
     lines.join("\n")

@@ -43,11 +43,17 @@ pub struct Kv {
 
 impl Kv {
     pub fn create_table(conn: &Connection) -> Result<usize> {
-        let stmt = "CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value BLOB)";
+        let stmt = "
+            CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value BLOB)
+        ";
         conn.execute(stmt, [])
     }
     pub fn insert(conn: &Connection, key: &str, value: &[u8]) -> Result<usize> {
-        let stmt = &format!("INSERT INTO kv (key, value) VALUES ('{key}', ?)");
+        let stmt = &format!(
+            "
+            INSERT OR REPLACE INTO kv (key, value) VALUES ('{key}', ?)
+        "
+        );
         conn.execute(stmt, [value])
     }
     pub fn get(conn: &Connection, key: &str) -> Result<Vec<u8>> {
