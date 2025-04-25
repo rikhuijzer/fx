@@ -165,7 +165,7 @@ async fn get_delete(
     let delete_button = indoc::formatdoc! {r#"
         <div class='center medium-text' style='font-weight: bold;'>
             <p>Are you sure you want to delete this post? This action cannot be undone.</p>
-            <form action='/post/delete/{id}' method='post'>
+            <form action='/posts/delete/{id}' method='post'>
                 <button type='submit'>delete</button>
             </form>
             <br>
@@ -375,7 +375,7 @@ async fn post_edit(
             );
         };
         let mut headers = HeaderMap::new();
-        let url = format!("/post/{}", id);
+        let url = format!("/posts/{}", id);
         headers.insert("Location", HeaderValue::from_str(&url).unwrap());
         response(StatusCode::SEE_OTHER, headers, "", &ctx)
     } else {
@@ -433,7 +433,7 @@ async fn post_add(
             );
         };
         let mut headers = HeaderMap::new();
-        let url = format!("/post/{}", post_id);
+        let url = format!("/posts/{}", post_id);
         headers.insert("Location", HeaderValue::from_str(&url).unwrap());
         response(StatusCode::SEE_OTHER, headers, "", &ctx)
     } else {
@@ -475,7 +475,6 @@ pub fn app(ctx: ServerContext) -> Router {
         .route("/login", get(get_login))
         .route("/login", post(post_login))
         .route("/logout", get(get_logout))
-        // Need to put behind /post/<ID> otherwise /<WRONG LINK> will not be a 404.
         .route("/posts/{id}", get(get_post))
         .route("/static/style.css", get(get_style))
         .route("/static/script.js", get(get_script))

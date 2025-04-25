@@ -20,7 +20,7 @@ fn turn_title_into_link(post: &Post, html: &str) -> String {
     if title.starts_with("# ") {
         let title = title.trim_start_matches("# ");
         format!(
-            "<a href='/post/{}' class='unstyled-link'><h1>{}</h1></a>\n{}",
+            "<a href='/posts/{}' class='unstyled-link'><h1>{}</h1></a>\n{}",
             post.id, title, rest
         )
     } else {
@@ -50,7 +50,7 @@ pub fn post_to_html(post: &Post, is_preview: bool) -> String {
         )
     };
     let post_link = if is_preview {
-        format!("<a href='/post/{}' class='unstyled-link'>", post.id)
+        format!("<a href='/posts/{}' class='unstyled-link'>", post.id)
     } else {
         "<span>".to_string()
     };
@@ -117,10 +117,10 @@ pub fn edit_post_buttons(_ctx: &ServerContext, post: &Post) -> String {
     let id = post.id;
     indoc::formatdoc! {r#"
     <div style="margin-left: auto; display: flex; align-items: center;">
-        <a class="button" href="/post/edit/{id}">
+        <a class="button" href="/posts/edit/{id}">
             edit
         </a>
-        <a class="button" href="/post/delete/{id}">
+        <a class="button" href="/posts/delete/{id}">
             delete
         </a>
     </div>
@@ -129,7 +129,7 @@ pub fn edit_post_buttons(_ctx: &ServerContext, post: &Post) -> String {
 
 fn add_post_form() -> &'static str {
     "
-    <form style='width: 100%;' action='/post/add' method='post'>
+    <form style='width: 100%;' action='/posts/add' method='post'>
         <textarea \
           style='display: block; width: 100%; height: 180px; margin-top: 10px;' \
           class='boxsizing-border' \
@@ -149,7 +149,7 @@ pub fn edit_post_form(post: &Post) -> String {
     let content = &post.content;
     format!(
         "
-    <form style='width: 100%;' action='/post/edit/{id}' method='post'>
+    <form style='width: 100%;' action='/posts/edit/{id}' method='post'>
         <textarea \
           style='display: block; width: 100%; height: 60vh; margin-top: 10px;' \
           class='boxsizing-border' \

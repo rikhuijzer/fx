@@ -13,7 +13,7 @@ function make_post_previews_clickable() {
                 return;
             }
             const post_id = post_preview.getAttribute("data-post-id");
-            window.location.href = `/post/${post_id}`;
+            window.location.href = `/posts/${post_id}`;
 
         });
         post_preview.style.cursor = "pointer";
