@@ -7,6 +7,7 @@ use common::*;
 use fx::serve::app;
 use http_body_util::BodyExt;
 use std::io::Cursor;
+use std::io::Read;
 use tar::Archive;
 use tar::Entry;
 use tower::util::ServiceExt;
@@ -43,15 +44,21 @@ async fn test_download_all() {
     let body = Cursor::new(body);
     let decompressed = XzDecoder::new(body);
     let mut ar = Archive::new(decompressed);
-    let entries = ar.entries().unwrap();
-    let entries = entries.collect::<Vec<_>>();
-    assert_eq!(entries.len(), 2);
+    // Do not collect the entries because it moves the stream pointer.
+    let mut entries = ar.entries().unwrap();
     fn path<T: std::io::Read>(entry: &Entry<T>) -> String {
         entry.path().unwrap().to_str().unwrap().to_string()
     }
-    let first = entries[0].as_ref().unwrap();
-    let second = entries[1].as_ref().unwrap();
+    let mut first = entries.next().unwrap().unwrap();
     // SQLite is 1-indexed.
-    assert!(path(first).contains("post/1.md"));
-    assert!(path(second).contains("post/2.md"));
+    assert!(path(&first).contains("post/1.md"));
+
+    let mut content = String::new();
+    first.read_to_string(&mut content).unwrap();
+    let lines = content.lines().collect::<Vec<_>>();
+    assert_eq!(lines[0], "+++");
+
+    let second = entries.next().unwrap().unwrap();
+    assert!(path(&second).contains("post/2.md"));
+    assert!(entries.next().is_none());
 }

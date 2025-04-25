@@ -73,7 +73,7 @@ where
     response
 }
 
-pub fn response_json<D: Sized>(status: StatusCode, body: D, ctx: &ServerContext) -> Response<Body>
+pub fn response_json<D>(status: StatusCode, body: D, ctx: &ServerContext) -> Response<Body>
 where
     D: serde::Serialize,
     Body: From<D>,

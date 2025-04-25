@@ -70,7 +70,7 @@ fn error(ctx: &ServerContext, status: StatusCode, message: &str) -> Response<Bod
         "message": message,
     })
     .to_string();
-    response_json(status, body, &ctx)
+    response_json(status, body, ctx)
 }
 
 fn unauthorized(ctx: &ServerContext) -> Response<Body> {
