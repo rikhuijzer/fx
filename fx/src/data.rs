@@ -212,7 +212,7 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
             nisi ut aliquip ex ea commodo consequat.
 
             ```rust
-            x = 1
+            x = 1;
 
             println!("{x}");
             ```

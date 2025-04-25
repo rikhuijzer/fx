@@ -170,28 +170,58 @@ pub fn edit_post_form(post: &Post) -> String {
 pub fn minify(page: &str) -> String {
     let mut lines = Vec::new();
     // Whether to minify the current line.
-    let mut minify = true;
+    let mut inside_textarea = false;
+    let mut inside_code = false;
     for line in page.lines() {
         let trimmed = line.trim();
         // Don't minify the textarea content or it will effectively modify the
         // post content on the editing page.
         if trimmed.starts_with("<textarea style='display: block") {
-            minify = false;
+            inside_textarea = true;
+            lines.push(trimmed);
+            continue;
+        }
+        // Don't minify code blocks.
+        if trimmed.starts_with("<pre><code") {
+            inside_code = true;
+            lines.push(trimmed);
+            continue;
+        }
+        if trimmed.starts_with("</code></pre>") {
+            inside_code = false;
             lines.push(trimmed);
             continue;
         }
         if trimmed.starts_with("</textarea>") {
-            minify = true;
+            inside_textarea = false;
         }
-        if minify {
+        if inside_textarea || inside_code {
+            lines.push(line);
+        } else {
             if !trimmed.is_empty() {
                 lines.push(trimmed);
             }
-        } else {
-            lines.push(line);
         }
     }
     lines.join("\n")
+}
+
+#[test]
+fn test_minify() {
+    let page = indoc::indoc! {r#"
+      <pre><code class="language-rust">x = 1;
+
+    println!("{x}");
+    </code></pre>
+    "#};
+    let expected = indoc::indoc! {r#"
+    <pre><code class="language-rust">x = 1;
+
+    println!("{x}");
+    </code></pre>
+    "#}
+    .trim();
+    assert_eq!(minify(page), expected);
 }
 
 fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
