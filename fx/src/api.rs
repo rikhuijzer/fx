@@ -2,19 +2,19 @@ use crate::data::Post;
 use crate::serve::ServerContext;
 use crate::serve::response;
 use crate::serve::response_json;
-use std::io::Read;
 use axum::Router;
 use axum::body::Body;
 use axum::extract::State;
-use xz2::read::XzEncoder;
 use axum::http::Response;
 use axum::http::StatusCode;
 use axum::http::header::HeaderMap;
 use axum::http::header::HeaderValue;
 use axum::routing::get;
 use serde_json::json;
+use std::io::Read;
 use tar::Builder;
 use tar::Header;
+use xz2::read::XzEncoder;
 
 async fn get_api(State(ctx): State<ServerContext>) -> Response<Body> {
     let domain = &ctx.args.domain;
@@ -77,6 +77,27 @@ fn unauthorized(ctx: &ServerContext) -> Response<Body> {
     error(ctx, StatusCode::UNAUTHORIZED, "unauthorized")
 }
 
+struct SiteData<'a> {
+    posts: &'a [Post],
+}
+
+fn create_archive(site_data: &SiteData) -> Vec<u8> {
+    let mut ar = Builder::new(Vec::new());
+
+    for post in site_data.posts {
+        let mut header = Header::new_gnu();
+        header.set_size(post.content.len() as u64);
+        let path = format!("post/{}.md", post.id);
+        header.set_path(&path).unwrap();
+        // Without this, the file is not even readable by the user.
+        header.set_mode(0o644);
+        ar.append_data(&mut header, &path, post.content.as_bytes())
+            .unwrap();
+    }
+
+    ar.into_inner().unwrap()
+}
+
 fn compress(data: &[u8]) -> Vec<u8> {
     let mut compressor = XzEncoder::new(data, 6);
     let mut compressed = Vec::new();
@@ -99,21 +120,8 @@ async fn get_download_all(State(ctx): State<ServerContext>, headers: HeaderMap) 
             "failed to list posts",
         );
     };
-
-    let mut ar = Builder::new(Vec::new());
-
-    for post in posts {
-        let mut header = Header::new_gnu();
-        header.set_size(post.content.len() as u64);
-        let path = format!("post/{}.md", post.id);
-        header.set_path(&path).unwrap();
-        // Without this, the file is not even readable by the user.
-        header.set_mode(0o644);
-        ar.append_data(&mut header, &path, post.content.as_bytes())
-            .unwrap();
-    }
-
-    let data = ar.into_inner().unwrap();
+    let site_data = SiteData { posts: &posts };
+    let data = create_archive(&site_data);
     let body = compress(&data);
     let mut headers = HeaderMap::new();
     headers.insert(
