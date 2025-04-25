@@ -14,6 +14,9 @@ fn show_date<Tz: chrono::TimeZone>(datetime: &DateTime<Tz>) -> String {
     datetime.date_naive().to_string()
 }
 
+const SET_LEAVE_CONFIRMATION: &str = "window.onbeforeunload = () => true;";
+const UNSET_LEAVE_CONFIRMATION: &str = "window.onbeforeunload = null;";
+
 fn turn_title_into_link(post: &Post, html: &str) -> String {
     let html = html.trim();
     let title = html.split("\n").next().unwrap();
@@ -128,21 +131,24 @@ pub fn edit_post_buttons(_ctx: &ServerContext, post: &Post) -> String {
     "#}
 }
 
-fn add_post_form() -> &'static str {
-    "
+fn add_post_form() -> String {
+    format!("
     <form style='width: 100%;' action='/posts/add' method='post'>
         <textarea \
           style='display: block; width: 100%; height: 180px; margin-top: 10px;' \
           class='boxsizing-border' \
+          onchange='{SET_LEAVE_CONFIRMATION}' \
           id='content' name='content' placeholder='Your text..'>
         </textarea>
         <br>
         <div style='display: flex; justify-content: flex-end;'>
-            <input type='submit' name='preview' value='Preview'/>
-            <input type='submit' name='publish' value='Publish'/>
+            <input type='submit' onclick='{UNSET_LEAVE_CONFIRMATION}' \
+              name='preview' value='Preview'/>
+            <input type='submit' onclick='{UNSET_LEAVE_CONFIRMATION}' \
+              name='publish' value='Publish'/>
         </div>
     </form>
-    "
+    ").to_string()
 }
 
 pub fn edit_post_form(post: &Post) -> String {
@@ -150,7 +156,8 @@ pub fn edit_post_form(post: &Post) -> String {
     let content = &post.content;
     format!(
         "
-    <form style='width: 100%;' action='/posts/edit/{id}' method='post'>
+    <form style='width: 100%;' action='/posts/edit/{id}' \
+      method='post' onchange='{SET_LEAVE_CONFIRMATION}'>
         <textarea \
           style='display: block; width: 100%; height: 60vh; margin-top: 10px;' \
           class='boxsizing-border' \
@@ -158,8 +165,10 @@ pub fn edit_post_form(post: &Post) -> String {
         </textarea>
         <br>
         <div style='display: flex; justify-content: flex-end;'>
-            <input type='submit' name='preview' value='Preview'/>
-            <input type='submit' name='publish' value='Publish'/>
+            <input type='submit' onclick='{UNSET_LEAVE_CONFIRMATION}' \
+              name='preview' value='Preview'/>
+            <input type='submit' onclick='{UNSET_LEAVE_CONFIRMATION}' \
+              name='publish' value='Publish'/>
         </div>
     </form>
     "
@@ -280,7 +289,7 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
     let top = match settings.top {
         Top::Homepage => {
             if settings.is_logged_in {
-                add_post_form()
+                &add_post_form()
             } else {
                 ""
             }
