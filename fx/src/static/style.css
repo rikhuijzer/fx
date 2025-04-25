@@ -70,8 +70,7 @@ a:visited {
 code {
     background-color: var(--code-background);
     border-radius: var(--radius);
-    font-size: 0.96rem;
-    padding: 0.2rem;
+    padding: 0.15rem;
 }
 
 pre code {

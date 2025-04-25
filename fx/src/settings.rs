@@ -74,7 +74,7 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
             "site-name",
             "Site name",
             &settings.site_name,
-            "This is shown in the title of the page and `og:site_name`."
+            "This is shown in the title of the page."
         ),
         text_input(
             "about",
