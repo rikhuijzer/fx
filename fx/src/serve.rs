@@ -85,7 +85,7 @@ pub fn error(ctx: &ServerContext, status: StatusCode, title: &str, msg: &str) ->
         </div>
         "
     );
-    let body = page(&ctx, &settings, &body);
+    let body = page(ctx, &settings, &body);
     response(status, headers, body, ctx)
 }
 
