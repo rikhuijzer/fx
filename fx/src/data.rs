@@ -202,7 +202,7 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
         minim veniam sit amet ipsum lorem consectetur adipiscing elit sed do eiusmod";
         Post::insert(conn, now, now, content).unwrap();
         let now = chrono::Utc::now();
-        let content = indoc::indoc! {"
+        let content = indoc::indoc! {r#"
             # Code
 
             Dolor sit amet, consectetur adipiscing elit, sed do
@@ -213,8 +213,10 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
 
             ```rust
             x = 1
+
+            println!("{x}");
             ```
-        "}
+        "#}
         .trim();
         Post::insert(conn, now, now, content).unwrap();
     }

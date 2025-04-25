@@ -21,7 +21,7 @@ fn turn_title_into_link(post: &Post, html: &str) -> String {
     if title.starts_with("# ") {
         let title = title.trim_start_matches("# ");
         format!(
-            "<a href='/posts/{}' class='unstyled-link'><h1>{}</h1></a>\n{}",
+            "<h1><a href='/posts/{}' class='unstyled-link'>{}</a></h1>\n{}",
             post.id, title, rest
         )
     } else {
