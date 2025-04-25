@@ -168,15 +168,6 @@ async fn test_delete_confirmation() {
 }
 
 #[tokio::test]
-async fn test_no_access() {
-    let endpoints = ["/backup"];
-    for endpoint in endpoints {
-        let (status, _body) = request_body(endpoint).await;
-        assert_eq!(status, StatusCode::NOT_FOUND);
-    }
-}
-
-#[tokio::test]
 async fn test_post_add() {
     let (ctx, auth) = request_cookie().await;
     let form = fx::serve::AddPostForm {

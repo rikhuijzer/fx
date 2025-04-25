@@ -20,6 +20,15 @@ async fn test_api() {
     assert_eq!(status, StatusCode::OK);
 }
 
+#[tokio::test]
+async fn test_no_access() {
+    let endpoints = ["/api/download/all.tar.xz"];
+    for endpoint in endpoints {
+        let (status, _body) = request_body(endpoint).await;
+        assert_eq!(status, StatusCode::UNAUTHORIZED);
+    }
+}
+
 #[allow(dead_code)]
 pub async fn request_body_authenticated(uri: &str) -> (StatusCode, Vec<u8>) {
     let ctx = server_context();
