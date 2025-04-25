@@ -65,9 +65,11 @@ pub fn sanitize_preview(post: &mut Post) {
             let style = "text-decoration: underline; font-size: 0.8rem;";
             let expand = format!(
                 "
-                <a href='/posts/{id}' style='{style}'>
-                    <p style='margin: 0;'>Show more</p>
-                </a>
+                <p>
+                    <a href='/posts/{id}' style='{style}'>
+                        Show more
+                    </a>
+                </p>
                 "
             );
             preview.push_str(&expand);
