@@ -110,20 +110,6 @@ fn list_posts(ctx: &ServerContext, _is_logged_in: bool) -> String {
         .join("\n")
 }
 
-async fn get_backup(State(ctx): State<ServerContext>, jar: CookieJar) -> Response<Body> {
-    let is_logged_in = is_logged_in(&ctx, &jar);
-    if !is_logged_in {
-        return not_found(State(ctx)).await;
-    }
-    let backup = data::backup(&ctx.conn_lock()).unwrap();
-    let mut headers = HeaderMap::new();
-    headers.insert(
-        "Content-Type",
-        HeaderValue::from_static("application/octet-stream"),
-    );
-    response::<Vec<u8>>(StatusCode::OK, headers, backup, &ctx)
-}
-
 async fn get_posts(State(ctx): State<ServerContext>, jar: CookieJar) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
     let extra_head = &ctx.args.extra_head;
@@ -481,7 +467,6 @@ async fn get_webfinger(State(ctx): State<ServerContext>) -> Response<Body> {
 pub fn app(ctx: ServerContext) -> Router {
     let router = Router::new()
         .route("/", get(get_posts))
-        .route("/backup", get(get_backup))
         .route("/posts/delete/{id}", get(get_delete))
         .route("/posts/delete/{id}", post(post_delete))
         .route("/posts/edit/{id}", get(get_edit))

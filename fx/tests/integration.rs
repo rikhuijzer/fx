@@ -177,13 +177,6 @@ async fn test_no_access() {
 }
 
 #[tokio::test]
-async fn test_backup() {
-    let (status, body) = request_body_logged_in("/backup").await;
-    assert_eq!(status, StatusCode::OK);
-    assert!(body.len() > 0);
-}
-
-#[tokio::test]
 async fn test_post_add() {
     let (ctx, auth) = request_cookie().await;
     let form = fx::serve::AddPostForm {

@@ -23,21 +23,6 @@ impl SqliteDateTime for DateTime<Utc> {
     }
 }
 
-pub fn backup(conn: &Connection) -> Result<Vec<u8>> {
-    let timestamp = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_nanos()
-        .to_string();
-    let tmp_dir = std::env::temp_dir();
-    let tmp_path = tmp_dir.join(timestamp);
-    let stmt = format!("VACUUM INTO '{}'", &tmp_path.display());
-    conn.execute(&stmt, [])?;
-    let backup = std::fs::read(&tmp_path).unwrap();
-    std::fs::remove_file(&tmp_path).unwrap();
-    Ok(backup)
-}
-
 #[test]
 fn test_sqlite_datetime() {
     let dt = Utc.with_ymd_and_hms(2025, 1, 1, 0, 0, 0).unwrap();
