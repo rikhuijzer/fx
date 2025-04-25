@@ -73,6 +73,40 @@ where
     response
 }
 
+pub fn error(ctx: &ServerContext, status: StatusCode, title: &str, msg: &str) -> Response<Body> {
+    let body = msg.to_string();
+    let headers = HeaderMap::new();
+    let settings = PageSettings::new(title, true, false, Top::GoHome, "");
+    let body = format!(
+        "
+        <div style='text-align: center;'>
+            <h1>{title}</h1>
+            <p>{body}</p>
+        </div>
+        "
+    );
+    let body = page(ctx, &settings, &body);
+    response(status, headers, body, ctx)
+}
+
+pub fn internal_server_error(ctx: &ServerContext, msg: &str) -> Response<Body> {
+    error(
+        ctx,
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "Internal Server Error",
+        msg,
+    )
+}
+
+pub fn unauthorized(ctx: &ServerContext) -> Response<Body> {
+    error(
+        ctx,
+        StatusCode::UNAUTHORIZED,
+        "Unauthorized",
+        "Not logged in",
+    )
+}
+
 pub fn response_json<D>(status: StatusCode, body: D, ctx: &ServerContext) -> Response<Body>
 where
     D: serde::Serialize,
@@ -83,7 +117,7 @@ where
     response(status, headers, body, ctx)
 }
 
-fn is_logged_in(ctx: &ServerContext, jar: &CookieJar) -> bool {
+pub fn is_logged_in(ctx: &ServerContext, jar: &CookieJar) -> bool {
     let password = match &ctx.args.password {
         Some(password) => password,
         None => {
@@ -163,7 +197,7 @@ async fn get_delete(
     let title = crate::md::extract_html_title(&post);
     let settings = PageSettings::new(&title, false, false, Top::GoHome, extra_head);
     let delete_button = indoc::formatdoc! {r#"
-        <div class='center medium-text' style='font-weight: bold;'>
+        <div class='medium-text' style='text-align: center; font-weight: bold;'>
             <p>Are you sure you want to delete this post? This action cannot be undone.</p>
             <form action='/posts/delete/{id}' method='post'>
                 <button type='submit'>delete</button>
@@ -324,6 +358,18 @@ pub struct EditPostForm {
     pub content: String,
 }
 
+/// Return a 303 redirect to the given url.
+///
+/// This is used after a `POST` request to indicate that the resource has been
+/// updated and the client should fetch the updated resource with a `GET`
+/// request.
+pub fn see_other(ctx: &ServerContext, url: &str) -> Response<Body> {
+    let mut headers = HeaderMap::new();
+    let dst = HeaderValue::from_str(url).unwrap();
+    headers.insert("Location", dst);
+    response(StatusCode::SEE_OTHER, headers, "", ctx)
+}
+
 async fn post_edit(
     State(ctx): State<ServerContext>,
     jar: CookieJar,
@@ -374,10 +420,8 @@ async fn post_edit(
                 &ctx,
             );
         };
-        let mut headers = HeaderMap::new();
         let url = format!("/posts/{}", id);
-        headers.insert("Location", HeaderValue::from_str(&url).unwrap());
-        response(StatusCode::SEE_OTHER, headers, "", &ctx)
+        see_other(&ctx, &url)
     } else {
         let preview = crate::html::post_to_html(&post, false);
         let body = page(&ctx, &settings, &preview);
@@ -432,10 +476,8 @@ async fn post_add(
                 &ctx,
             );
         };
-        let mut headers = HeaderMap::new();
         let url = format!("/posts/{}", post_id);
-        headers.insert("Location", HeaderValue::from_str(&url).unwrap());
-        response(StatusCode::SEE_OTHER, headers, "", &ctx)
+        see_other(&ctx, &url)
     } else {
         let post = Post {
             id: 0,
@@ -481,6 +523,7 @@ pub fn app(ctx: ServerContext) -> Router {
         .route("/.well-known/webfinger", get(get_webfinger));
     let router = router.fallback(not_found);
     let router = crate::api::routes(&router);
+    let router = crate::settings::routes(&router);
     router.with_state(ctx)
 }
 
@@ -492,7 +535,7 @@ fn obtain_salt(args: &ServeArgs, conn: &Connection) -> Salt {
     if args.production {
         let salt = data::Kv::get(conn, "salt");
         match salt {
-            Ok(salt) => salt.value.try_into().unwrap(),
+            Ok(salt) => salt.try_into().unwrap(),
             Err(_) => {
                 let salt = fx_auth::generate_salt();
                 data::Kv::insert(conn, "salt", &salt).unwrap();

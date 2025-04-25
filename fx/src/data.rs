@@ -43,22 +43,25 @@ pub struct Kv {
 
 impl Kv {
     pub fn create_table(conn: &Connection) -> Result<usize> {
-        let stmt = "CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value BLOB)";
+        let stmt = "
+            CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value BLOB)
+        ";
         conn.execute(stmt, [])
     }
     pub fn insert(conn: &Connection, key: &str, value: &[u8]) -> Result<usize> {
-        let stmt = &format!("INSERT INTO kv (key, value) VALUES ('{key}', ?)");
+        let stmt = &format!(
+            "
+            INSERT OR REPLACE INTO kv (key, value) VALUES ('{key}', ?)
+        "
+        );
         conn.execute(stmt, [value])
     }
-    pub fn get(conn: &Connection, key: &str) -> Result<Kv> {
+    pub fn get(conn: &Connection, key: &str) -> Result<Vec<u8>> {
         let stmt = "SELECT key, value FROM kv WHERE key = ?";
-        let kv: Kv = conn.prepare(stmt)?.query_row([key], |row| {
-            Ok(Kv {
-                key: row.get("key")?,
-                value: row.get("value")?,
-            })
-        })?;
-        Ok(kv)
+        let value: Vec<u8> = conn
+            .prepare(stmt)?
+            .query_row([key], |row| row.get("value"))?;
+        Ok(value)
     }
 }
 
@@ -70,13 +73,12 @@ fn test_kv() {
     let value = b"value";
     Kv::insert(&conn, key, value).unwrap();
     let kv = Kv::get(&conn, key).unwrap();
-    assert_eq!(kv.value, value);
+    assert_eq!(kv, value);
 }
 
 #[derive(Clone, Debug)]
 pub struct Post {
     /// The id of the post.
-    #[allow(dead_code)]
     pub id: i64,
     /// The date and time the post was created.
     pub created: chrono::DateTime<chrono::Utc>,
@@ -189,8 +191,16 @@ fn init_tables(conn: &Connection) {
     Kv::create_table(conn).expect("Failed to create kv table");
 }
 
-pub fn init(args: &ServeArgs, conn: &Connection) {
-    init_tables(conn);
+fn init_kv(conn: &Connection, key: &str, value: &[u8]) {
+    if Kv::get(conn, key).is_err() {
+        Kv::insert(conn, key, value).unwrap();
+    }
+}
+
+fn init_data(args: &ServeArgs, conn: &Connection) {
+    init_kv(conn, "site_name", b"My Weblog");
+    let about = if args.production { "" } else { "About" };
+    init_kv(conn, "about", about.as_bytes());
 
     if !args.production {
         let now = chrono::Utc::now();
@@ -198,7 +208,7 @@ pub fn init(args: &ServeArgs, conn: &Connection) {
         minim veniam sit amet ipsum lorem consectetur adipiscing elit sed do eiusmod";
         Post::insert(conn, now, now, content).unwrap();
         let now = chrono::Utc::now();
-        let content = indoc::indoc! {"
+        let content = indoc::indoc! {r#"
             # Code
 
             Dolor sit amet, consectetur adipiscing elit, sed do
@@ -208,10 +218,17 @@ pub fn init(args: &ServeArgs, conn: &Connection) {
             nisi ut aliquip ex ea commodo consequat.
 
             ```rust
-            x = 1
+            x = 1;
+
+            println!("{x}");
             ```
-        "}
+        "#}
         .trim();
         Post::insert(conn, now, now, content).unwrap();
     }
+}
+
+pub fn init(args: &ServeArgs, conn: &Connection) {
+    init_tables(conn);
+    init_data(args, conn);
 }

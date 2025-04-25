@@ -1,3 +1,4 @@
+use crate::data::Kv;
 use crate::data::Post;
 use crate::serve::ServerContext;
 use chrono::DateTime;
@@ -20,7 +21,7 @@ fn turn_title_into_link(post: &Post, html: &str) -> String {
     if title.starts_with("# ") {
         let title = title.trim_start_matches("# ");
         format!(
-            "<a href='/posts/{}' class='unstyled-link'><h1>{}</h1></a>\n{}",
+            "<h1><a href='/posts/{}' class='unstyled-link'>{}</a></h1>\n{}",
             post.id, title, rest
         )
     } else {
@@ -169,52 +170,105 @@ pub fn edit_post_form(post: &Post) -> String {
 pub fn minify(page: &str) -> String {
     let mut lines = Vec::new();
     // Whether to minify the current line.
-    let mut minify = true;
+    let mut inside_textarea = false;
+    let mut inside_code = false;
     for line in page.lines() {
         let trimmed = line.trim();
         // Don't minify the textarea content or it will effectively modify the
         // post content on the editing page.
         if trimmed.starts_with("<textarea style='display: block") {
-            minify = false;
+            inside_textarea = true;
+            lines.push(trimmed);
+            continue;
+        }
+        // Don't minify code blocks.
+        if trimmed.starts_with("<pre><code") {
+            inside_code = true;
+            lines.push(trimmed);
+            continue;
+        }
+        if trimmed.starts_with("</code></pre>") {
+            inside_code = false;
             lines.push(trimmed);
             continue;
         }
         if trimmed.starts_with("</textarea>") {
-            minify = true;
+            inside_textarea = false;
         }
-        if minify {
-            if !trimmed.is_empty() {
-                lines.push(trimmed);
-            }
-        } else {
+        if inside_textarea || inside_code {
             lines.push(line);
+        } else if !trimmed.is_empty() {
+            lines.push(trimmed);
         }
     }
     lines.join("\n")
 }
 
+#[test]
+fn test_minify() {
+    let page = indoc::indoc! {r#"
+      <pre><code class="language-rust">x = 1;
+
+    println!("{x}");
+    </code></pre>
+    "#};
+    let expected = indoc::indoc! {r#"
+    <pre><code class="language-rust">x = 1;
+
+    println!("{x}");
+    </code></pre>
+    "#}
+    .trim();
+    assert_eq!(minify(page), expected);
+}
+
+fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
+    let about = Kv::get(&ctx.conn_lock(), "about").unwrap();
+    let about = String::from_utf8(about).unwrap();
+    let style = "font-size: 0.8rem; padding-top: 0.1rem;";
+    let settings_button = if settings.is_logged_in {
+        &format!(
+            "
+        <a href='/settings' class='unstyled-link' style='{style}'>
+            ⚙️ Settings
+        </a>
+        "
+        )
+    } else {
+        ""
+    };
+    let container_style = "display: flex; justify-content: space-between;";
+    let name_style = "font-size: 1.2rem; margin-bottom: 10px; font-weight: bold;";
+    format!(
+        "
+    <div class='introduction' style='padding: 10px; {}'>
+        <div style='{container_style}'>
+            <div class='full-name' \
+                style='{name_style}'>
+                {}
+            </div>
+            <div>
+                {settings_button}
+            </div>
+        </div>
+        <div class='about' style='font-size: 0.9rem;'>{about}</div>
+    </div>
+    ",
+        border_style(2),
+        ctx.args.full_name,
+    )
+}
+
 pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String {
-    let site_name = &ctx.args.site_name;
+    let site_name = Kv::get(&ctx.conn_lock(), "site_name").unwrap();
+    let site_name = String::from_utf8(site_name).unwrap();
     let full_title = if settings.title.is_empty() {
         site_name.clone()
     } else {
         format!("{} - {site_name}", settings.title)
     };
     let about = if settings.show_about {
-        format!(
-            "
-        <div class='introduction' style='padding: 10px; {}'>
-            <div class='full-name' \
-              style='font-size: 1.2rem; margin-bottom: 10px; font-weight: bold;'>
-                {}
-            </div>
-            <div class='about' style='font-size: 0.9rem;'>{}</div>
-        </div>
-        ",
-            border_style(2),
-            ctx.args.full_name,
-            ctx.args.about
-        )
+        about(ctx, settings)
     } else {
         "".to_string()
     };
@@ -249,26 +303,26 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
     let page = indoc::formatdoc! {
         r#"
         <!DOCTYPE html>
-        <html lang="{html_lang}">
+        <html lang='{html_lang}'>
         <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <link rel="stylesheet" href="/static/style.css">
-            <script src="/static/script.js" defer></script>
+            <meta charset='UTF-8'>
+            <meta name='viewport' content='width=device-width, initial-scale=1'>
+            <link rel='stylesheet' href='/static/style.css'>
+            <script src='/static/script.js' defer></script>
             <title>{full_title}</title>
             <meta property='og:site_name' content='{site_name}'/>
             {extra_head}
         </head>
         <body>
-            <div class="container">
-                <div class="middle">
+            <div class='container'>
+                <div class='middle'>
                     {about}
-                    <div class="top">
+                    <div class='top'>
                         {top}
                     </div>
                     {body}
-                    <div class="bottom">
-                        <a class="unstyled-link menu-space" href="https://github.com/rikhuijzer/fx"><u>Running fx</u> version: {version}</a>
+                    <div class='bottom'>
+                        <a class='unstyled-link menu-space' href='https://github.com/rikhuijzer/fx'><u>Running fx</u> version: {version}</a>
                         {loginout}
                     </div>
                 </div>
@@ -286,15 +340,19 @@ pub fn login(ctx: &ServerContext, error: Option<&str>) -> String {
         Some(error) => format!("<div style='font-style: italic;'>{error}</div>"),
         None => "".to_string(),
     };
-    let body = indoc::formatdoc! {r#"
-        <form style="text-align: center; margin-top: 15vh;" method="post" action="/login">
-            <input style="font-size: 1rem;" id="username" name="username" type="text"
-               placeholder="username" required/><br>
-            <input style="font-size: 1rem;" id="password" name="password" type="password"
-               placeholder="password" required/><br>
+    let style = "text-align: center; margin-top: 15vh;";
+    let input_style = "font-size: 1rem;";
+    let body = format!(
+        "
+        <form style='{style}' method='post' action='/login'>
+            <input style='{input_style}' id='username' name='username' \
+              type='text' placeholder='username' required/><br>
+            <input style='{input_style}' id='password' name='password' \
+              type='password' placeholder='password' required/><br>
             {error}
-            <input style="font-size: 1rem;" type="submit" value="login"/>
+            <input style='{input_style}' type='submit' value='login'/>
         </form>
-    "#};
+    "
+    );
     page(ctx, &settings, &body)
 }

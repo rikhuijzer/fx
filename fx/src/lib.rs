@@ -1,9 +1,10 @@
 mod ap;
 mod api;
 pub mod data;
-pub mod html;
+mod html;
 mod md;
 pub mod serve;
+mod settings;
 
 use clap::Parser;
 
@@ -21,9 +22,6 @@ pub struct ServeArgs {
     /// The password for the admin interface.
     #[arg(long, env = "FX_PASSWORD")]
     pub password: Option<String>,
-    /// The website name used in the title suffix and og:site_name.
-    #[arg(long, env = "FX_SITE_NAME", default_value = "fx")]
-    pub site_name: String,
     /// The website domain name, for example "example.com".
     ///
     /// Required for WebFinger.
@@ -32,9 +30,6 @@ pub struct ServeArgs {
     /// The full name that is shown on top of the main page.
     #[arg(long, env = "FX_FULL_NAME", default_value = "John Doe")]
     pub full_name: String,
-    /// The about text that is shown below the full name on the front page.
-    #[arg(long, env = "FX_ABOUT", default_value = "")]
-    pub about: String,
     /// The language of the website.
     #[arg(long, env = "FX_HTML_LANG", default_value = "en")]
     pub html_lang: String,
