@@ -33,8 +33,8 @@ services:
     image: 'rikhuijzer/fx:main'
     container_name: 'fx'
     environment:
-      FX_PRODUCTION: 'true'
-      FX_USERNAME: 'rik'
+      # The username for the admin interface as well as for WebFinger.
+      FX_USERNAME: 'john'
       FX_TITLE_SUFFIX: 'My Weblog'
       FX_FULL_NAME: 'John Doe'
       FX_ABOUT: 'Running a web server'
@@ -43,7 +43,6 @@ services:
       # Put `FX_PASSWORD="<PASSWORD>"` in this file where `<PASSWORD>` is the
       # password for the admin user.
       - 'FX_PASSWORD.env'
-    working_dir: '/app'
     ports:
       - '3000:3000'
     volumes:
@@ -62,7 +61,7 @@ set -euxo pipefail
 
 ARCHIVE_PATH="all.tar.xz"
 
-curl --proto '=https' --tlsv1.2 -sSf \
+curl --proto "=https" --tlsv1.2 -sSf \
   -H "Authorization: Bearer $FX_PASSWORD" \
   https://$DOMAIN/api/download/all.tar.xz > "$ARCHIVE_PATH"
 
@@ -106,4 +105,4 @@ jobs:
 
 ```
 
-This will backup your site every 6 hours and push the changes to the `main` branch.
+This will backup your site every 6 hours.
