@@ -60,14 +60,14 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
             return crate::serve::internal_server_error(&ctx, msg);
         }
     };
-    let style = "margin-top: 5vh; width: 80%; \
-      margin-left: auto; margin-right: auto;";
+    let style = "margin-top: 5vh; width: 80%;";
     let body = format!(
         "
-        <form style='{style}' method='post' action='/settings'>
+        <form class='margin-auto' style='{style}' \
+          method='post' action='/settings'>
             {}
             {}
-            <input type='submit' value='Save'/>
+            <input style='margin-left: 0;' type='submit' value='Save'/>
         </form>
         ",
         text_input(
