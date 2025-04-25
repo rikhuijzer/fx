@@ -208,7 +208,7 @@ textarea {
     padding: 7px;
     /* Too small size will cause browser to zoom on mobile. */
     /* Being bigger on big screens is also not too bad. */
-    font-size: 18px;
+    font-size: 17px;
 }
 
 a.button {

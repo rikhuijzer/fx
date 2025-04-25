@@ -131,7 +131,7 @@ fn add_post_form() -> &'static str {
     "
     <form style='width: 100%;' action='/post/add' method='post'>
         <textarea \
-          style='display: block; width: 100%; height: 100px; margin-top: 10px;' \
+          style='display: block; width: 100%; height: 180px; margin-top: 10px;' \
           class='boxsizing-border' \
           id='content' name='content' placeholder='Your text..'>
         </textarea>
