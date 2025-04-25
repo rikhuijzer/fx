@@ -214,7 +214,7 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
         let content = indoc::indoc! {r#"
             # Code
 
-            Dolor sit amet, consectetur adipiscing elit, sed do
+            `Dolor sit amet`, consectetur adipiscing elit, sed do
             eiusmod tempor incididunt ut `labore` et dolore magna aliqua.
 
             Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris
