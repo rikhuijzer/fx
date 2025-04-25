@@ -36,4 +36,4 @@ release:
 serve:
     #!{{shebang}}
 
-    cargo watch -x "run -- serve --domain=localhost --password=test-password --about=About"
+    cargo watch -x "run -- serve --domain=localhost --password=test-password"

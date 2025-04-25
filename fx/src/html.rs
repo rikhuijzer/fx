@@ -1,3 +1,4 @@
+use crate::data::Kv;
 use crate::data::Post;
 use crate::serve::ServerContext;
 use chrono::DateTime;
@@ -194,12 +195,17 @@ pub fn minify(page: &str) -> String {
 }
 
 fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
+    let about = Kv::get(&ctx.conn_lock(), "about").unwrap();
+    let about = String::from_utf8(about).unwrap();
+    let style = "font-size: 0.8rem; padding-top: 0.1rem;";
     let settings_button = if settings.is_logged_in {
-        "
-        <a href='/settings' class='unstyled-link' style='font-size: 0.8rem;'>
+        &format!(
+            "
+        <a href='/settings' class='unstyled-link' style='{style}'>
             ⚙️ Settings
         </a>
         "
+        )
     } else {
         ""
     };
@@ -217,17 +223,17 @@ fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
                 {settings_button}
             </div>
         </div>
-        <div class='about' style='font-size: 0.9rem;'>{}</div>
+        <div class='about' style='font-size: 0.9rem;'>{about}</div>
     </div>
     ",
         border_style(2),
         ctx.args.full_name,
-        ctx.args.about
     )
 }
 
 pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String {
-    let site_name = &ctx.args.site_name;
+    let site_name = Kv::get(&ctx.conn_lock(), "site_name").unwrap();
+    let site_name = String::from_utf8(site_name).unwrap();
     let full_title = if settings.title.is_empty() {
         site_name.clone()
     } else {

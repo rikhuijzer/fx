@@ -69,18 +69,18 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
             {}
             <input type='submit' value='Save'/>
         </form>
-    ",
+        ",
         text_input(
             "site-name",
             "Site name",
             &settings.site_name,
-            "This is shown in the title of the page."
+            "This is shown in the title of the page and `og:site_name`."
         ),
         text_input(
             "about",
             "About",
             &settings.about,
-            "This is shown on top of the homepage."
+            "This is shown below the full name on the front page."
         )
     );
     let page_settings = PageSettings::new("Settings", is_logged_in, false, Top::GoHome, "");

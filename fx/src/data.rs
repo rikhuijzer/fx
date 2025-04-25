@@ -193,7 +193,8 @@ fn init_kv(conn: &Connection, key: &str, value: &[u8]) {
 
 fn init_data(args: &ServeArgs, conn: &Connection) {
     init_kv(conn, "site_name", b"My Weblog");
-    init_kv(conn, "about", b"");
+    let about = if args.production { "" } else { "About" };
+    init_kv(conn, "about", about.as_bytes());
 
     if !args.production {
         let now = chrono::Utc::now();
