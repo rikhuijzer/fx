@@ -84,6 +84,7 @@ pre code {
     overflow: auto;
     white-space: pre;
     word-wrap: normal;
+    line-height: 110%;
 }
 
 .container {
