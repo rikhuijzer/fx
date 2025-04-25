@@ -193,6 +193,40 @@ pub fn minify(page: &str) -> String {
     lines.join("\n")
 }
 
+fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
+    let settings_button = if settings.is_logged_in {
+        "
+
+        <a href='/settings' class='unstyled-link' style='font-size: 0.8rem;'>
+            ⚙️ Settings
+        </a>
+        "
+    } else {
+        ""
+    };
+    let container_style = "display: flex; justify-content: space-between;";
+    let name_style = "font-size: 1.2rem; margin-bottom: 10px; font-weight: bold;";
+    format!(
+    "
+    <div class='introduction' style='padding: 10px; {}'>
+        <div style='{container_style}'>
+            <div class='full-name' \
+                style='{name_style}'>
+                {}
+            </div>
+            <div>
+                {settings_button}
+            </div>
+        </div>
+        <div class='about' style='font-size: 0.9rem;'>{}</div>
+    </div>
+    ",
+        border_style(2),
+        ctx.args.full_name,
+        ctx.args.about
+    )
+}
+
 pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String {
     let site_name = &ctx.args.site_name;
     let full_title = if settings.title.is_empty() {
@@ -201,20 +235,7 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
         format!("{} - {site_name}", settings.title)
     };
     let about = if settings.show_about {
-        format!(
-            "
-        <div class='introduction' style='padding: 10px; {}'>
-            <div class='full-name' \
-              style='font-size: 1.2rem; margin-bottom: 10px; font-weight: bold;'>
-                {}
-            </div>
-            <div class='about' style='font-size: 0.9rem;'>{}</div>
-        </div>
-        ",
-            border_style(2),
-            ctx.args.full_name,
-            ctx.args.about
-        )
+        about(ctx, settings)
     } else {
         "".to_string()
     };
