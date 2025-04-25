@@ -5,7 +5,7 @@
 [docker svg]: https://img.shields.io/badge/docker-%230db7ed.svg?logo=docker&logoColor=white
 [docker]: https://hub.docker.com/repository/docker/rikhuijzer/fx
 
-A simple (micro)blogging server that you can self-host.
+A (micro)blogging server that you can self-host.
 
 ## Features
 

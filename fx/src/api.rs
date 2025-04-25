@@ -86,7 +86,6 @@ fn create_archive(site_data: &SiteData) -> Vec<u8> {
 
     for post in site_data.posts {
         let mut header = Header::new_gnu();
-        header.set_size(post.content.len() as u64);
         let path = format!("post/{}.md", post.id);
         header.set_path(&path).unwrap();
         // Without this, the file is not even readable by the user.
@@ -101,6 +100,8 @@ fn create_archive(site_data: &SiteData) -> Vec<u8> {
             {}
         ", post.created, post.updated, post.content};
         let data = content.as_bytes();
+        header.set_size(data.len() as u64);
+        header.set_cksum();
         ar.append_data(&mut header, &path, data).unwrap();
     }
 
