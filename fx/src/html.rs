@@ -268,7 +268,7 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
                     </div>
                     {body}
                     <div class="bottom">
-                        <a class="unstyled-link menu-space" href="https://github.com/rikhuijzer/fx">Running fx version: {version}</a>
+                        <a class="unstyled-link menu-space" href="https://github.com/rikhuijzer/fx"><u>Running fx</u> version: {version}</a>
                         {loginout}
                     </div>
                 </div>
