@@ -2,9 +2,11 @@ use crate::data::Post;
 use crate::serve::ServerContext;
 use crate::serve::response;
 use crate::serve::response_json;
+use std::io::Read;
 use axum::Router;
 use axum::body::Body;
 use axum::extract::State;
+use xz2::read::XzEncoder;
 use axum::http::Response;
 use axum::http::StatusCode;
 use axum::http::header::HeaderMap;
@@ -75,6 +77,13 @@ fn unauthorized(ctx: &ServerContext) -> Response<Body> {
     error(ctx, StatusCode::UNAUTHORIZED, "unauthorized")
 }
 
+fn compress(data: &[u8]) -> Vec<u8> {
+    let mut compressor = XzEncoder::new(data, 6);
+    let mut compressed = Vec::new();
+    compressor.read_to_end(&mut compressed).unwrap();
+    compressed
+}
+
 async fn get_download_all(State(ctx): State<ServerContext>, headers: HeaderMap) -> Response<Body> {
     if !is_authenticated(&ctx, &headers) {
         return unauthorized(&ctx);
@@ -104,7 +113,8 @@ async fn get_download_all(State(ctx): State<ServerContext>, headers: HeaderMap) 
             .unwrap();
     }
 
-    let body = ar.into_inner().unwrap();
+    let data = ar.into_inner().unwrap();
+    let body = compress(&data);
     let mut headers = HeaderMap::new();
     headers.insert(
         "Content-Type",
@@ -117,5 +127,5 @@ pub fn routes(router: &Router<ServerContext>) -> Router<ServerContext> {
     router
         .clone()
         .route("/api", get(get_api))
-        .route("/api/download/all.tar.gz", get(get_download_all))
+        .route("/api/download/all.tar.xz", get(get_download_all))
 }

@@ -27,6 +27,7 @@ tokio = { version = "1.44", features = ["rt-multi-thread", "macros"] }
 tower = "0.5"
 tracing = "0.1"
 tracing-subscriber = "0.3"
+xz2 = "0.1"
 
 [dev-dependencies]
 pretty_assertions = "1"

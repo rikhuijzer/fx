@@ -6,6 +6,7 @@ use axum::http::StatusCode;
 use common::*;
 use fx::serve::app;
 use http_body_util::BodyExt;
+use xz2::read::XzDecoder;
 use std::io::Cursor;
 use tar::Archive;
 use tower::util::ServiceExt;
@@ -35,11 +36,12 @@ pub async fn request_body_authenticated(uri: &str) -> (StatusCode, Vec<u8>) {
 
 #[tokio::test]
 async fn test_download_all() {
-    let (status, body) = request_body_authenticated("/api/download/all.tar.gz").await;
+    let (status, body) = request_body_authenticated("/api/download/all.tar.xz").await;
     assert_eq!(status, StatusCode::OK);
 
-    let cursor = Cursor::new(body);
-    let mut ar = Archive::new(cursor);
+    let body = Cursor::new(body);
+    let decompressed = XzDecoder::new(body);
+    let mut ar = Archive::new(decompressed);
     let entries = ar.entries().unwrap();
     let entries = entries.collect::<Vec<_>>();
     assert_eq!(entries.len(), 2);
