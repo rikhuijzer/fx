@@ -57,13 +57,14 @@ async fn test_download_all() {
 
     let mut content = String::new();
     first.read_to_string(&mut content).unwrap();
+    println!("content:\n{content}");
     let lines = content.lines().collect::<Vec<_>>();
-    assert_eq!(lines[0], "+++");
+    assert_eq!(lines[0], "---");
     let today = Utc::now().format("%Y-%m-%d").to_string();
-    assert!(lines[1].contains(&format!("created = {today}")));
-    assert!(lines[2].contains(&format!("updated = {today}")));
-    assert_eq!(lines[3], "+++");
-    assert_eq!(lines[4], "");
+    assert!(lines[1].contains(&format!("created: '{today}")));
+    assert!(lines[2].contains(&format!("updated: '{today}")));
+    assert_eq!(lines[3], "---");
+    assert!(lines[4].is_empty());
     assert!(lines[5].contains("Lorem"));
 
     let second = entries.next().unwrap().unwrap();

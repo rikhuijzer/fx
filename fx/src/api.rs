@@ -90,12 +90,14 @@ fn create_archive(site_data: &SiteData) -> Vec<u8> {
         header.set_path(&path).unwrap();
         // Without this, the file is not even readable by the user.
         header.set_mode(0o644);
-        // Using `+++` for the frontmatter because that is toml in Hugo.
+        // Using `---` for the frontmatter because that is yaml and the GitHub
+        // Markdown renderer supports it. `+++` is toml in Hugo but not
+        // supported by the GitHub renderer.
         let content = indoc::formatdoc! {"
-            +++
-            created = {}
-            updated = {}
-            +++
+            ---
+            created: '{}'
+            updated: '{}'
+            ---
 
             {}
         ", post.created, post.updated, post.content};
