@@ -275,26 +275,26 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
     let page = indoc::formatdoc! {
         r#"
         <!DOCTYPE html>
-        <html lang="{html_lang}">
+        <html lang='{html_lang}'>
         <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <link rel="stylesheet" href="/static/style.css">
-            <script src="/static/script.js" defer></script>
+            <meta charset='UTF-8'>
+            <meta name='viewport' content='width=device-width, initial-scale=1'>
+            <link rel='stylesheet' href='/static/style.css'>
+            <script src='/static/script.js' defer></script>
             <title>{full_title}</title>
             <meta property='og:site_name' content='{site_name}'/>
             {extra_head}
         </head>
         <body>
-            <div class="container">
-                <div class="middle">
+            <div class='container'>
+                <div class='middle'>
                     {about}
-                    <div class="top">
+                    <div class='top'>
                         {top}
                     </div>
                     {body}
-                    <div class="bottom">
-                        <a class="unstyled-link menu-space" href="https://github.com/rikhuijzer/fx"><u>Running fx</u> version: {version}</a>
+                    <div class='bottom'>
+                        <a class='unstyled-link menu-space' href='https://github.com/rikhuijzer/fx'><u>Running fx</u> version: {version}</a>
                         {loginout}
                     </div>
                 </div>
