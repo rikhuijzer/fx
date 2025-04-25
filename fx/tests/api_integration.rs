@@ -3,6 +3,7 @@ mod common;
 use axum::body::Body;
 use axum::extract::Request;
 use axum::http::StatusCode;
+use chrono::Utc;
 use common::*;
 use fx::serve::app;
 use http_body_util::BodyExt;
@@ -38,7 +39,8 @@ pub async fn request_body_authenticated(uri: &str) -> (StatusCode, Vec<u8>) {
 
 #[tokio::test]
 async fn test_download_all() {
-    let (status, body) = request_body_authenticated("/api/download/all.tar.xz").await;
+    let uri = "/api/download/all.tar.xz";
+    let (status, body) = request_body_authenticated(uri).await;
     assert_eq!(status, StatusCode::OK);
 
     let body = Cursor::new(body);
@@ -57,6 +59,12 @@ async fn test_download_all() {
     first.read_to_string(&mut content).unwrap();
     let lines = content.lines().collect::<Vec<_>>();
     assert_eq!(lines[0], "+++");
+    let today = Utc::now().format("%Y-%m-%d").to_string();
+    assert!(lines[1].contains(&format!("created = {today}")));
+    assert!(lines[2].contains(&format!("updated = {today}")));
+    assert_eq!(lines[3], "+++");
+    assert_eq!(lines[4], "");
+    assert!(lines[5].contains("Lorem"));
 
     let second = entries.next().unwrap().unwrap();
     assert!(path(&second).contains("post/2.md"));

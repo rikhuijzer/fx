@@ -97,6 +97,7 @@ fn create_archive(site_data: &SiteData) -> Vec<u8> {
             created = {}
             updated = {}
             +++
+
             {}
         ", post.created, post.updated, post.content};
         let data = content.as_bytes();
