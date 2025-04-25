@@ -67,7 +67,7 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
         <form style='{style}' method='post' action='/settings'>
             {}
             {}
-            <input type='submit' value='save'/>
+            <input type='submit' value='Save'/>
         </form>
     ",
         text_input(
