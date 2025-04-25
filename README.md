@@ -33,15 +33,9 @@ services:
     image: 'rikhuijzer/fx:main'
     container_name: 'fx'
     environment:
-      # The username for the admin interface as well as for WebFinger.
       FX_USERNAME: 'john'
-      FX_TITLE_SUFFIX: 'My Weblog'
-      FX_FULL_NAME: 'John Doe'
-      FX_ABOUT: 'Running a web server'
-      FX_DOMAIN: 'example.com'
     env_file:
-      # Put `FX_PASSWORD="<PASSWORD>"` in this file where `<PASSWORD>` is the
-      # password for the admin user.
+      # Contains `FX_PASSWORD="<PASSWORD>"`.
       - 'FX_PASSWORD.env'
     ports:
       - '3000:3000'

@@ -1,5 +1,6 @@
 use crate::ServeArgs;
 use crate::data;
+use crate::data::Kv;
 use crate::data::Post;
 use crate::html::PageSettings;
 use crate::html::Top;
@@ -247,7 +248,8 @@ async fn get_post(
         Err(_) => return not_found(State(ctx)).await,
     };
     let title = crate::md::extract_html_title(&post);
-    let author = &ctx.args.full_name;
+    let author = Kv::get(&ctx.conn_lock(), "author_name").unwrap();
+    let author = String::from_utf8(author).unwrap();
     let created = &post.created;
     let updated = &post.updated;
     let extra_head = indoc::formatdoc! {r#"

@@ -132,7 +132,8 @@ pub fn edit_post_buttons(_ctx: &ServerContext, post: &Post) -> String {
 }
 
 fn add_post_form() -> String {
-    format!("
+    format!(
+        "
     <form style='width: 100%;' action='/posts/add' method='post'>
         <textarea \
           style='display: block; width: 100%; height: 180px; margin-top: 10px;' \
@@ -148,7 +149,9 @@ fn add_post_form() -> String {
               name='publish' value='Publish'/>
         </div>
     </form>
-    ").to_string()
+    "
+    )
+    .to_string()
 }
 
 pub fn edit_post_form(post: &Post) -> String {
@@ -234,6 +237,8 @@ fn test_minify() {
 fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
     let about = Kv::get(&ctx.conn_lock(), "about").unwrap();
     let about = String::from_utf8(about).unwrap();
+    let author_name = Kv::get(&ctx.conn_lock(), "author_name").unwrap();
+    let author_name = String::from_utf8(author_name).unwrap();
     let style = "font-size: 0.8rem; padding-top: 0.1rem;";
     let settings_button = if settings.is_logged_in {
         &format!(
@@ -254,7 +259,7 @@ fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
         <div style='{container_style}'>
             <div class='full-name' \
                 style='{name_style}'>
-                {}
+                {author_name}
             </div>
             <div>
                 {settings_button}
@@ -264,7 +269,6 @@ fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
     </div>
     ",
         border_style(2),
-        ctx.args.full_name,
     )
 }
 

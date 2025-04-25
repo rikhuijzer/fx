@@ -22,14 +22,6 @@ pub struct ServeArgs {
     /// The password for the admin interface.
     #[arg(long, env = "FX_PASSWORD")]
     pub password: Option<String>,
-    /// The website domain name, for example "example.com".
-    ///
-    /// Required for WebFinger.
-    #[arg(long, env = "FX_DOMAIN")]
-    pub domain: Option<String>,
-    /// The full name that is shown on top of the main page.
-    #[arg(long, env = "FX_FULL_NAME", default_value = "John Doe")]
-    pub full_name: String,
     /// The language of the website.
     #[arg(long, env = "FX_HTML_LANG", default_value = "en")]
     pub html_lang: String,

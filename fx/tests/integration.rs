@@ -60,7 +60,7 @@ async fn test_metadata() {
         "<title>Lorem ipsum ut enim ad minim veniam sit amet ipsum lorem con... - My Weblog</title>"
     ));
     assert!(body.contains("<meta property='og:site_name' content='My Weblog'/>"));
-    assert!(body.contains("<meta property='article:author' content='Test Admin'/>"));
+    assert!(body.contains("<meta property='article:author' content='John'/>"));
 }
 
 #[tokio::test]

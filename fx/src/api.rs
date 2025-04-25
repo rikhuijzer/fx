@@ -1,3 +1,4 @@
+use crate::data::Kv;
 use crate::data::Post;
 use crate::serve::ServerContext;
 use crate::serve::response;
@@ -17,12 +18,8 @@ use tar::Header;
 use xz2::read::XzEncoder;
 
 async fn get_api(State(ctx): State<ServerContext>) -> Response<Body> {
-    let domain = &ctx.args.domain;
-    let domain = if let Some(domain) = domain {
-        domain
-    } else {
-        ""
-    };
+    let domain = Kv::get(&ctx.conn_lock(), "domain").unwrap();
+    let domain = String::from_utf8(domain).unwrap();
     let port = ctx.args.port;
     let domain = if domain == "localhost" {
         format!("http://localhost:{port}")

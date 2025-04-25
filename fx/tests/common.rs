@@ -21,8 +21,6 @@ impl TestDefault for ServeArgs {
             port: 3000,
             database_path: "".to_string(),
             username: "test-admin".to_string(),
-            domain: Some("example.com".to_string()),
-            full_name: "Test Admin".to_string(),
             html_lang: "en".to_string(),
             password: Some("test-password".to_string()),
             extra_head: "<meta property='test' content='test'>".to_string(),
