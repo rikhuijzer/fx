@@ -62,10 +62,10 @@ You can backup your site to plain text files with
 set -eux pipefail
 
 curl -L \
-  -H "Authorization: Bearer <PASSWORD>" \
-  https://<DOMAIN>/api/download/all.tar.xz > all.tar.xz
+  -H "Authorization: Bearer $PASSWORD" \
+  https://$DOMAIN/api/download/all.tar.xz > all.tar.xz
 
 tar -xvf all.tar.xz
 ```
 
-where `<PASSWORD>` is the `FX_PASSWORD` environment variable and `<DOMAIN>` is the domain of your site (for example, `example.com`).
+where `$PASSWORD` is the admin password (as set via the `FX_PASSWORD` environment variable) and `$DOMAIN` is the domain of your site (for example, `example.com`).
