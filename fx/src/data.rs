@@ -50,15 +50,12 @@ impl Kv {
         let stmt = &format!("INSERT INTO kv (key, value) VALUES ('{key}', ?)");
         conn.execute(stmt, [value])
     }
-    pub fn get(conn: &Connection, key: &str) -> Result<Kv> {
+    pub fn get(conn: &Connection, key: &str) -> Result<Vec<u8>> {
         let stmt = "SELECT key, value FROM kv WHERE key = ?";
-        let kv: Kv = conn.prepare(stmt)?.query_row([key], |row| {
-            Ok(Kv {
-                key: row.get("key")?,
-                value: row.get("value")?,
-            })
-        })?;
-        Ok(kv)
+        let value: Vec<u8> = conn
+            .prepare(stmt)?
+            .query_row([key], |row| row.get("value"))?;
+        Ok(value)
     }
 }
 
@@ -70,13 +67,12 @@ fn test_kv() {
     let value = b"value";
     Kv::insert(&conn, key, value).unwrap();
     let kv = Kv::get(&conn, key).unwrap();
-    assert_eq!(kv.value, value);
+    assert_eq!(kv, value);
 }
 
 #[derive(Clone, Debug)]
 pub struct Post {
     /// The id of the post.
-    #[allow(dead_code)]
     pub id: i64,
     /// The date and time the post was created.
     pub created: chrono::DateTime<chrono::Utc>,

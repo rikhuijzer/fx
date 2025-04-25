@@ -73,6 +73,40 @@ where
     response
 }
 
+pub fn error(ctx: &ServerContext, status: StatusCode, title: &str, msg: &str) -> Response<Body> {
+    let body = msg.to_string();
+    let headers = HeaderMap::new();
+    let settings = PageSettings::new(title, true, false, Top::GoHome, "");
+    let body = format!(
+        "
+        <div style='text-align: center;'>
+            <h1>{title}</h1>
+            <p>{body}</p>
+        </div>
+        "
+    );
+    let body = page(&ctx, &settings, &body);
+    response(status, headers, body, ctx)
+}
+
+pub fn internal_server_error(ctx: &ServerContext, msg: &str) -> Response<Body> {
+    error(
+        ctx,
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "Internal Server Error",
+        msg,
+    )
+}
+
+pub fn unauthorized(ctx: &ServerContext) -> Response<Body> {
+    error(
+        ctx,
+        StatusCode::UNAUTHORIZED,
+        "Unauthorized",
+        "Not logged in",
+    )
+}
+
 pub fn response_json<D>(status: StatusCode, body: D, ctx: &ServerContext) -> Response<Body>
 where
     D: serde::Serialize,
@@ -493,7 +527,7 @@ fn obtain_salt(args: &ServeArgs, conn: &Connection) -> Salt {
     if args.production {
         let salt = data::Kv::get(conn, "salt");
         match salt {
-            Ok(salt) => salt.value.try_into().unwrap(),
+            Ok(salt) => salt.try_into().unwrap(),
             Err(_) => {
                 let salt = fx_auth::generate_salt();
                 data::Kv::insert(conn, "salt", &salt).unwrap();

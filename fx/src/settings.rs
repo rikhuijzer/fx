@@ -1,3 +1,4 @@
+use crate::data::Kv;
 use crate::html::PageSettings;
 use crate::html::Top;
 use crate::html::page;
@@ -12,12 +13,25 @@ use axum::http::Response;
 use axum::http::StatusCode;
 use axum::routing::get;
 use axum_extra::extract::CookieJar;
+use rusqlite::Connection;
 use serde::Deserialize;
 use serde::Serialize;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Settings {
-    pub about: String,
+    pub title_suffix: String,
+    pub full_name: String,
+}
+
+impl Settings {
+    fn from_db(conn: &Connection) -> rusqlite::Result<Self> {
+        let title_suffix = Kv::get(conn, "title_suffix")?;
+        let full_name = Kv::get(conn, "full_name")?;
+        Ok(Self {
+            title_suffix: String::from_utf8(title_suffix).unwrap(),
+            full_name: String::from_utf8(full_name).unwrap(),
+        })
+    }
 }
 
 fn text_input(name: &str, label: &str, placeholder: &str, description: &str) -> String {
@@ -35,6 +49,17 @@ fn text_input(name: &str, label: &str, placeholder: &str, description: &str) -> 
 
 async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
+    if !is_logged_in {
+        return crate::serve::unauthorized(&ctx);
+    }
+    let settings = match Settings::from_db(&ctx.conn_lock()) {
+        Ok(settings) => settings,
+        Err(e) => {
+            let msg = "Could not get settings from database";
+            tracing::error!("{msg}: {e}");
+            return crate::serve::internal_server_error(&ctx, msg);
+        }
+    };
     let style = "margin-top: 5vh; width: 80%; \
       margin-left: auto; margin-right: auto;";
     let body = format!(
