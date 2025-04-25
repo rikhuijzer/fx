@@ -91,8 +91,16 @@ fn create_archive(site_data: &SiteData) -> Vec<u8> {
         header.set_path(&path).unwrap();
         // Without this, the file is not even readable by the user.
         header.set_mode(0o644);
-        ar.append_data(&mut header, &path, post.content.as_bytes())
-            .unwrap();
+        // Using `+++` for the frontmatter because that is toml in Hugo.
+        let content = indoc::formatdoc! {"
+            +++
+            created = {}
+            updated = {}
+            +++
+            {}
+        ", post.created, post.updated, post.content};
+        let data = content.as_bytes();
+        ar.append_data(&mut header, &path, data).unwrap();
     }
 
     ar.into_inner().unwrap()

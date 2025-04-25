@@ -8,6 +8,7 @@ use fx::serve::app;
 use http_body_util::BodyExt;
 use std::io::Cursor;
 use tar::Archive;
+use tar::Entry;
 use tower::util::ServiceExt;
 use xz2::read::XzDecoder;
 
@@ -45,25 +46,12 @@ async fn test_download_all() {
     let entries = ar.entries().unwrap();
     let entries = entries.collect::<Vec<_>>();
     assert_eq!(entries.len(), 2);
+    fn path<T: std::io::Read>(entry: &Entry<T>) -> String {
+        entry.path().unwrap().to_str().unwrap().to_string()
+    }
+    let first = entries[0].as_ref().unwrap();
+    let second = entries[1].as_ref().unwrap();
     // SQLite is 1-indexed.
-    assert!(
-        entries[0]
-            .as_ref()
-            .unwrap()
-            .path()
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .contains("post/1.md")
-    );
-    assert!(
-        entries[1]
-            .as_ref()
-            .unwrap()
-            .path()
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .contains("post/2.md")
-    );
+    assert!(path(first).contains("post/1.md"));
+    assert!(path(second).contains("post/2.md"));
 }

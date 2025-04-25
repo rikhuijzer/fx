@@ -12,6 +12,7 @@ A simple (micro)blogging server that you can self-host.
 - 🚀 Small footprint (requires only a few MB of memory).
 - 📱 Mobile-friendly interface to allow publishing posts from mobile devices.
 - 📝 Markdown support.
+- 🔒 Backup your site as plain text files (to have useful diffs in Git).
 
 ## Background
 
@@ -50,3 +51,21 @@ services:
       - './data:/data:rw'
     restart: 'unless-stopped'
 ```
+
+## Backup
+
+You can backup your site to plain text files with
+
+```bash
+#!/usr/bin/env bash
+
+set -eux pipefail
+
+curl -L \
+  -H "Authorization: Bearer <PASSWORD>" \
+  https://<DOMAIN>/api/download/all.tar.xz > all.tar.xz
+
+tar -xvf all.tar.xz
+```
+
+where `<PASSWORD>` is the `FX_PASSWORD` environment variable and `<DOMAIN>` is the domain of your site (for example, `example.com`).
