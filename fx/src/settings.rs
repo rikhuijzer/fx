@@ -19,28 +19,28 @@ use serde::Serialize;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Settings {
-    pub title_suffix: String,
-    pub full_name: String,
+    pub site_name: String,
+    pub about: String,
 }
 
 impl Settings {
     fn from_db(conn: &Connection) -> rusqlite::Result<Self> {
-        let title_suffix = Kv::get(conn, "title_suffix")?;
-        let full_name = Kv::get(conn, "full_name")?;
+        let site_name = Kv::get(conn, "site_name")?;
+        let about = Kv::get(conn, "about")?;
         Ok(Self {
-            title_suffix: String::from_utf8(title_suffix).unwrap(),
-            full_name: String::from_utf8(full_name).unwrap(),
+            site_name: String::from_utf8(site_name).unwrap(),
+            about: String::from_utf8(about).unwrap(),
         })
     }
 }
 
-fn text_input(name: &str, label: &str, placeholder: &str, description: &str) -> String {
+fn text_input(name: &str, label: &str, value: &str, description: &str) -> String {
     format!(
         "
     <label for='{name}'>{label}</label><br>
     <input id='{name}' name='{name}' \
       style='width: 100%; margin-top: 0.5rem; margin-bottom: 0.2rem;' \
-      type='text' placeholder='{placeholder}' required/><br>
+      type='text' value='{value}' required/><br>
     <span style='font-size: 0.8rem;'>{description}</span><br>
     <br>
     "
@@ -71,12 +71,17 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
         </form>
     ",
         text_input(
-            "title-suffix",
-            "Title suffix",
-            "unset",
-            "For example, 'My Blog'"
+            "site-name",
+            "Site name",
+            &settings.site_name,
+            "This is shown in the title of the page."
         ),
-        text_input("full-name", "Full name", "unset", "For example, 'John Doe'")
+        text_input(
+            "about",
+            "About",
+            &settings.about,
+            "This is shown on top of the homepage."
+        )
     );
     let page_settings = PageSettings::new("Settings", is_logged_in, false, Top::GoHome, "");
     let body = page(&ctx, &page_settings, &body);

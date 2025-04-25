@@ -185,8 +185,15 @@ fn init_tables(conn: &Connection) {
     Kv::create_table(conn).expect("Failed to create kv table");
 }
 
-pub fn init(args: &ServeArgs, conn: &Connection) {
-    init_tables(conn);
+fn init_kv(conn: &Connection, key: &str, value: &[u8]) {
+    if Kv::get(conn, key).is_err() {
+        Kv::insert(conn, key, value).unwrap();
+    }
+}
+
+fn init_data(args: &ServeArgs, conn: &Connection) {
+    init_kv(conn, "site_name", b"My Weblog");
+    init_kv(conn, "about", b"");
 
     if !args.production {
         let now = chrono::Utc::now();
@@ -210,4 +217,9 @@ pub fn init(args: &ServeArgs, conn: &Connection) {
         .trim();
         Post::insert(conn, now, now, content).unwrap();
     }
+}
+
+pub fn init(args: &ServeArgs, conn: &Connection) {
+    init_tables(conn);
+    init_data(args, conn);
 }
