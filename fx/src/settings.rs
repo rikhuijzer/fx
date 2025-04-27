@@ -42,15 +42,42 @@ impl Settings {
     }
 }
 
-fn text_input(name: &str, label: &str, value: &str, description: &str) -> String {
+enum InputType {
+    Text,
+    Textarea,
+}
+
+fn text_input(
+    input_type: InputType,
+    name: &str,
+    label: &str,
+    value: &str,
+    description: &str,
+    required: bool,
+) -> String {
+    let required = if required { "required" } else { "" };
+    let input = match input_type {
+        InputType::Text => format!(
+            "
+        <input id='{name}' name='{name}' \
+        style='width: 100%; margin-top: 0.5rem; margin-bottom: 0.2rem;' \
+        type='text' value='{value}' {required}/><br>
+        "
+        ),
+        InputType::Textarea => format!(
+            "
+        <textarea id='{name}' name='{name}' rows='7' \
+        style='width: 100%; margin-top: 0.5rem; margin-bottom: 0.2rem;' \
+        {required}>{value}</textarea><br>
+        "
+        ),
+    };
     format!(
         "
-    <label for='{name}'>{label}</label><br>
-    <input id='{name}' name='{name}' \
-      style='width: 100%; margin-top: 0.5rem; margin-bottom: 0.2rem;' \
-      type='text' value='{value}' required/><br>
-    <span style='font-size: 0.8rem;'>{description}</span><br>
-    <br>
+        <label for='{name}'>{label}</label><br>
+        {input}
+        <span style='font-size: 0.8rem;'>{description}</span><br>
+        <br>
     "
     )
 }
@@ -81,28 +108,36 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
         </form>
         ",
         text_input(
+            InputType::Text,
             "domain",
             "Domain",
             &settings.domain,
-            "This is used at various places including for the sitemap and at /api."
+            "This is used at various places including for the sitemap and at /api.",
+            true,
         ),
         text_input(
+            InputType::Text,
             "site_name",
             "Site Name",
             &settings.site_name,
-            "This is shown in the title of the page."
+            "This is shown in the title of the page.",
+            true,
         ),
         text_input(
+            InputType::Text,
             "author_name",
             "Author Name",
             &settings.author_name,
-            "This is shown at the homepage and in some other places."
+            "This is shown at the homepage and in some other places.",
+            true,
         ),
         text_input(
+            InputType::Textarea,
             "about",
             "About",
             &settings.about,
-            "This is shown below the author name on the front page."
+            "This is shown below the author name on the front page.",
+            false,
         )
     );
     let page_settings = PageSettings::new("Settings", is_logged_in, false, Top::GoHome, "");
