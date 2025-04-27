@@ -60,6 +60,7 @@ curl --proto "=https" --tlsv1.2 -sSf \
   https://$DOMAIN/api/download/all.tar.xz > "$ARCHIVE_PATH"
 
 tar --verbose -xf "$ARCHIVE_PATH"
+rm "$ARCHIVE_PATH"
 ```
 
 where `$FX_PASSWORD` is the admin password (as set via the `FX_PASSWORD` environment variable) and `$DOMAIN` is the domain of your site (for example, `example.com`).
