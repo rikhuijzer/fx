@@ -59,17 +59,17 @@ fn text_input(
     let input = match input_type {
         InputType::Text => format!(
             "
-        <input id='{name}' name='{name}' \
-        style='width: 100%; margin-top: 0.5rem; margin-bottom: 0.2rem;' \
-        type='text' value='{value}' {required}/><br>
-        "
+            <input id='{name}' name='{name}' \
+            style='width: 100%; margin-top: 0.5rem; margin-bottom: 0.2rem;' \
+            type='text' value='{value}' {required}/><br>
+            "
         ),
         InputType::Textarea => format!(
             "
-        <textarea id='{name}' name='{name}' rows='7' \
-        style='width: 100%; margin-top: 0.5rem; margin-bottom: 0.2rem;' \
-        {required}>{value}</textarea><br>
-        "
+            <textarea id='{name}' name='{name}' rows='7' \
+            style='width: 100%; margin-top: 0.5rem; margin-bottom: 0.2rem;' \
+            {required}>{value}</textarea><br>
+            "
         ),
     };
     format!(
@@ -78,7 +78,7 @@ fn text_input(
         {input}
         <span style='font-size: 0.8rem;'>{description}</span><br>
         <br>
-    "
+        "
     )
 }
 
@@ -158,7 +158,8 @@ async fn post_settings(
     Kv::insert(conn, "domain", form.domain.as_bytes()).unwrap();
     Kv::insert(conn, "site_name", form.site_name.as_bytes()).unwrap();
     Kv::insert(conn, "author_name", form.author_name.as_bytes()).unwrap();
-    Kv::insert(conn, "about", form.about.as_bytes()).unwrap();
+    let about = crate::md::to_html(&form.about);
+    Kv::insert(conn, "about", about.as_bytes()).unwrap();
     crate::serve::see_other(&ctx, "/")
 }
 
