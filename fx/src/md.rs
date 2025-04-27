@@ -33,9 +33,24 @@ fn md_to_string(node: &Node) -> String {
             let url = &link.url;
             preview.push_str(&format!("<a href='{url}'>{text}</a>"));
         }
+        Node::List(list) => {
+            let tag = if list.ordered { "ol" } else { "ul" };
+            preview.push_str(&format!("<{tag}>"));
+            for child in list.children.iter() {
+                preview.push_str(&md_to_string(child));
+            }
+            preview.push_str(&format!("</{tag}>"));
+        }
+        Node::ListItem(list_item) => {
+            preview.push_str("<li>");
+            for child in list_item.children.iter() {
+                preview.push_str(&md_to_string(child));
+            }
+            preview.push_str("</li>");
+        }
         Node::Code(code) => {
             let lang = code.lang.clone().unwrap_or("".to_string());
-            preview.push_str(&format!("\n\n```{}\n{}\n```\n", lang, code.value));
+            preview.push_str(&format!("\n\n```{lang}\n{}\n```\n", code.value));
         }
         Node::InlineCode(inline_code) => {
             preview.push_str(&format!("`{}`", inline_code.value));

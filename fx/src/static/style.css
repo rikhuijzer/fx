@@ -67,6 +67,11 @@ a:visited {
     color: hsl(270, 60%, 60%);
 }
 
+li {
+    margin-bottom: 0.2rem;
+    line-height: 1.2;
+}
+
 code {
     background-color: var(--code-background);
     border-radius: var(--radius);
