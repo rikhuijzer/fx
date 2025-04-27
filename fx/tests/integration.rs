@@ -202,7 +202,7 @@ async fn test_get_edit() {
     assert_eq!(status, StatusCode::OK);
     println!("body:\n{body}");
     assert!(
-        body.contains("# Code\n\nDolor sit"),
+        body.contains("# Code\n\n`Dolor sit"),
         "textarea content might be minified"
     );
 }

@@ -37,6 +37,9 @@ fn md_to_string(node: &Node) -> String {
             let lang = code.lang.clone().unwrap_or("".to_string());
             preview.push_str(&format!("\n\n```{}\n{}\n```\n", lang, code.value));
         }
+        Node::InlineCode(inline_code) => {
+            preview.push_str(&format!("`{}`", inline_code.value));
+        }
         _ => {}
     }
     preview
