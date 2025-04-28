@@ -1,4 +1,6 @@
 use crate::ServeArgs;
+use crate::files::File;
+use bytes::Bytes;
 use chrono::DateTime;
 use chrono::NaiveDateTime;
 use chrono::TimeZone;
@@ -189,6 +191,7 @@ pub fn connect(args: &ServeArgs) -> Result<Connection> {
 fn init_tables(conn: &Connection) {
     Post::create_table(conn).expect("Failed to create posts table");
     Kv::create_table(conn).expect("Failed to create kv table");
+    File::create_table(conn).expect("Failed to create files table");
 }
 
 fn init_kv(conn: &Connection, key: &str, value: &[u8]) {
@@ -234,6 +237,15 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
         "#}
         .trim();
         Post::insert(conn, now, now, content).unwrap();
+
+        let sha = "541e4f9eaca3f34ee865f81fc663e4839cb84d6253f71a372cd855b0a7283213";
+        let file = File {
+            sha: sha.to_string(),
+            mime_type: "text/plain".to_string(),
+            filename: "example.txt".to_string(),
+            data: Bytes::from_static(b"example"),
+        };
+        File::insert(conn, &file).unwrap();
     }
 }
 

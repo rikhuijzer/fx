@@ -1,6 +1,7 @@
 mod ap;
 mod api;
 pub mod data;
+mod files;
 mod html;
 mod md;
 pub mod serve;

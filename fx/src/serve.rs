@@ -9,6 +9,7 @@ use crate::html::post_to_html;
 use axum::Form;
 use axum::Router;
 use axum::body::Body;
+use axum::extract::DefaultBodyLimit;
 use axum::extract::Path;
 use axum::extract::Request;
 use axum::extract::State;
@@ -154,21 +155,22 @@ async fn get_posts(State(ctx): State<ServerContext>, jar: CookieJar) -> Response
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
-fn content_type(headers: &mut HeaderMap, content_type: &str) {
+pub fn content_type(headers: &mut HeaderMap, content_type: &str) {
     let val = HeaderValue::from_str(content_type).unwrap();
     headers.insert("Content-Type", val);
 }
 
-fn cache_control(headers: &mut HeaderMap) {
-    let val = HeaderValue::from_static("public, max-age=600");
-    headers.insert("Cache-Control", val);
+pub fn enable_caching(headers: &mut HeaderMap, max_age: u32) {
+    let src = format!("public, max-age={max_age}");
+    let val = HeaderValue::from_str(&src).unwrap();
+    headers.insert(hyper::header::CACHE_CONTROL, val);
 }
 
 async fn get_style(State(ctx): State<ServerContext>) -> Response<Body> {
     let body = crate::html::minify(include_str!("static/style.css"));
     let mut headers = HeaderMap::new();
     content_type(&mut headers, "text/css");
-    cache_control(&mut headers);
+    enable_caching(&mut headers, 600);
     response(StatusCode::OK, headers, body, &ctx)
 }
 
@@ -176,7 +178,7 @@ async fn get_script(State(ctx): State<ServerContext>) -> Response<Body> {
     let body = crate::html::minify(include_str!("static/script.js"));
     let mut headers = HeaderMap::new();
     content_type(&mut headers, "text/javascript");
-    cache_control(&mut headers);
+    enable_caching(&mut headers, 600);
     response(StatusCode::OK, headers, body, &ctx)
 }
 
@@ -267,7 +269,7 @@ async fn get_post(
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
-async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
+pub async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &CookieJar::new());
     let body = indoc::indoc! {"
         <div style='text-align: center; margin-top: 100px;'>
@@ -524,7 +526,10 @@ pub fn app(ctx: ServerContext) -> Router {
     let router = router.fallback(not_found);
     let router = crate::api::routes(&router);
     let router = crate::settings::routes(&router);
-    router.with_state(ctx)
+    let router = crate::files::routes(&router);
+    // Files larger than this will be rejected during upload.
+    let limit = 15 * 1024 * 1024;
+    router.with_state(ctx).layer(DefaultBodyLimit::max(limit))
 }
 
 /// Return the salt by either generating a new one or reading it from the db.
