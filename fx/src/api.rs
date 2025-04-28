@@ -11,6 +11,7 @@ use axum::http::Response;
 use axum::http::StatusCode;
 use axum::http::header::HeaderMap;
 use axum::http::header::HeaderValue;
+use crate::files::File;
 use axum::routing::get;
 use serde_json::json;
 use std::io::Read;
@@ -78,6 +79,7 @@ fn unauthorized(ctx: &ServerContext) -> Response<Body> {
 struct SiteData<'a> {
     posts: &'a [Post],
     settings: &'a Settings,
+    files: &'a [File],
 }
 
 fn create_archive(site_data: &SiteData) -> Vec<u8> {
@@ -116,6 +118,17 @@ fn create_archive(site_data: &SiteData) -> Vec<u8> {
     header.set_cksum();
     ar.append_data(&mut header, path, data).unwrap();
 
+    for file in site_data.files {
+        let mut header = Header::new_gnu();
+        let path = format!("files/{}", file.filename);
+        header.set_path(&path).unwrap();
+        header.set_mode(0o644);
+        let data = file.data.as_ref();
+        header.set_size(data.len() as u64);
+        header.set_cksum();
+        ar.append_data(&mut header, &path, data).unwrap();
+    }
+
     ar.into_inner().unwrap()
 }
 
@@ -130,18 +143,17 @@ async fn get_download_all(State(ctx): State<ServerContext>, headers: HeaderMap) 
     if !is_authenticated(&ctx, &headers) {
         return unauthorized(&ctx);
     }
-    let conn = ctx.conn_lock();
-    let posts = Post::list(&conn);
+    let posts = Post::list(&ctx.conn_lock());
     let posts = if let Ok(posts) = posts {
         posts
     } else {
         return error(
             &ctx,
             StatusCode::INTERNAL_SERVER_ERROR,
-            "failed to list posts",
+            "failed to get posts",
         );
     };
-    let settings = Settings::from_db(&conn);
+    let settings = Settings::from_db(&ctx.conn_lock());
     let settings = if let Ok(settings) = settings {
         settings
     } else {
@@ -151,9 +163,16 @@ async fn get_download_all(State(ctx): State<ServerContext>, headers: HeaderMap) 
             "failed to get settings",
         );
     };
+    let files = File::list(&ctx.conn_lock());
+    let files = if let Ok(files) = files {
+        files
+    } else {
+        return error(&ctx, StatusCode::INTERNAL_SERVER_ERROR, "failed to get files");
+    };
     let site_data = SiteData {
         posts: &posts,
         settings: &settings,
+        files: &files,
     };
     let data = create_archive(&site_data);
     let body = compress(&data);
