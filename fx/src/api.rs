@@ -1,5 +1,6 @@
 use crate::data::Kv;
 use crate::data::Post;
+use crate::files::File;
 use crate::serve::ServerContext;
 use crate::serve::response;
 use crate::serve::response_json;
@@ -11,7 +12,6 @@ use axum::http::Response;
 use axum::http::StatusCode;
 use axum::http::header::HeaderMap;
 use axum::http::header::HeaderValue;
-use crate::files::File;
 use axum::routing::get;
 use serde_json::json;
 use std::io::Read;
@@ -167,7 +167,11 @@ async fn get_download_all(State(ctx): State<ServerContext>, headers: HeaderMap) 
     let files = if let Ok(files) = files {
         files
     } else {
-        return error(&ctx, StatusCode::INTERNAL_SERVER_ERROR, "failed to get files");
+        return error(
+            &ctx,
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "failed to get files",
+        );
     };
     let site_data = SiteData {
         posts: &posts,

@@ -341,6 +341,7 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
             <meta charset='UTF-8'>
             <meta name='viewport' content='width=device-width, initial-scale=1'>
             <link rel='stylesheet' href='/static/style.css'>
+            <script src='/static/nodefer.js'></script>
             <script src='/static/script.js' defer></script>
             <title>{full_title}</title>
             <meta property='og:site_name' content='{site_name}'/>

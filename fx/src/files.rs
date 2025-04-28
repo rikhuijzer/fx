@@ -150,10 +150,12 @@ fn show_file(file: &File) -> String {
                 🗑️ Delete
             </a><br>
             <span style='font-size: var(--ui-font-size);'>
-                Markdown link:
+                Markdown link
+                (<a id='copy-{sha}' href='javascript:void(0)' \
+                  onclick='copyCode(\"{sha}\")'>click to copy</a>):
             </span><br>
             <pre style='margin-top: 6px; margin-bottom: 0px;'>
-                <code class='language-md'>{}</code>
+                <code id='code-{sha}' class='language-md'>{}</code>
             </pre>
         </div>
         ",

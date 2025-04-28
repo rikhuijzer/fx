@@ -182,6 +182,14 @@ async fn get_script(State(ctx): State<ServerContext>) -> Response<Body> {
     response(StatusCode::OK, headers, body, &ctx)
 }
 
+async fn get_nodefer(State(ctx): State<ServerContext>) -> Response<Body> {
+    let body = crate::html::minify(include_str!("static/nodefer.js"));
+    let mut headers = HeaderMap::new();
+    content_type(&mut headers, "text/javascript");
+    enable_caching(&mut headers, 600);
+    response(StatusCode::OK, headers, body, &ctx)
+}
+
 async fn get_delete(
     State(ctx): State<ServerContext>,
     Path(id): Path<i64>,
@@ -522,6 +530,7 @@ pub fn app(ctx: ServerContext) -> Router {
         .route("/posts/{id}", get(get_post))
         .route("/static/style.css", get(get_style))
         .route("/static/script.js", get(get_script))
+        .route("/static/nodefer.js", get(get_nodefer))
         .route("/.well-known/webfinger", get(get_webfinger));
     let router = router.fallback(not_found);
     let router = crate::api::routes(&router);
