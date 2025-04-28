@@ -10,6 +10,10 @@ fn border_style(width: u64) -> String {
     )
 }
 
+pub fn escape_single_quote(s: &str) -> String {
+    s.replace('\'', "&#39;")
+}
+
 fn show_date<Tz: chrono::TimeZone>(datetime: &DateTime<Tz>) -> String {
     datetime.date_naive().to_string()
 }
@@ -237,6 +241,7 @@ fn test_minify() {
 fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
     let about = Kv::get(&ctx.conn_lock(), "about").unwrap();
     let about = String::from_utf8(about).unwrap();
+    let about = crate::md::content_to_html(&about);
     let author_name = Kv::get(&ctx.conn_lock(), "author_name").unwrap();
     let author_name = String::from_utf8(author_name).unwrap();
     let style = "font-size: 0.8rem; padding-top: 0.1rem;";
@@ -275,6 +280,7 @@ fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
 pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String {
     let site_name = Kv::get(&ctx.conn_lock(), "site_name").unwrap();
     let site_name = String::from_utf8(site_name).unwrap();
+    let site_name = escape_single_quote(&site_name);
     let full_title = if settings.title.is_empty() {
         site_name.clone()
     } else {

@@ -198,8 +198,12 @@ fn init_kv(conn: &Connection, key: &str, value: &[u8]) {
 }
 
 fn init_data(args: &ServeArgs, conn: &Connection) {
-    init_kv(conn, "site_name", b"My Weblog");
-    let about = if args.production { "" } else { "About" };
+    init_kv(conn, "site_name", b"John's Weblog");
+    let about = if args.production {
+        ""
+    } else {
+        "About [example](https://example.com)"
+    };
     init_kv(conn, "about", about.as_bytes());
     init_kv(conn, "author_name", b"John");
     let domain = if args.production { "" } else { "localhost" };

@@ -4,6 +4,10 @@ use markdown::ParseOptions;
 use markdown::mdast::Node;
 use markdown::to_mdast;
 
+pub fn markdown_link() -> &'static str {
+    "<a href='https://www.markdownguide.org/'>Markdown</a>"
+}
+
 /// Convert a Markdown AST node back to a `String` with the same structure.
 ///
 /// The default `to_string()` method only returns text.

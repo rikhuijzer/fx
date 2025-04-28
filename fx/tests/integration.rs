@@ -57,9 +57,9 @@ async fn test_metadata() {
     println!("head:\n{head}");
     assert!(body.contains("<!DOCTYPE html>"));
     assert!(body.contains(
-        "<title>Lorem ipsum ut enim ad minim veniam sit amet ipsum lorem con... - My Weblog</title>"
+        "<title>Lorem ipsum ut enim ad minim veniam sit amet ipsum lorem con... - John&#39;s Weblog</title>"
     ));
-    assert!(body.contains("<meta property='og:site_name' content='My Weblog'/>"));
+    assert!(body.contains("<meta property='og:site_name' content='John&#39;s Weblog'/>"));
     assert!(body.contains("<meta property='article:author' content='John'/>"));
 }
 

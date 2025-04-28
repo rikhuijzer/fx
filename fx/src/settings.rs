@@ -76,7 +76,9 @@ fn text_input(
         "
         <label for='{name}'>{label}</label><br>
         {input}
-        <span style='font-size: 0.8rem;'>{description}</span><br>
+        <span style='font-size: 0.8rem; line-height: 1.2; display: inline-block;'>
+            {description}
+        </span><br>
         <br>
         "
     )
@@ -96,6 +98,12 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
         }
     };
     let style = "margin-top: 5vh; width: 80%;";
+    let site_name = &settings.site_name;
+    let site_name = crate::html::escape_single_quote(site_name);
+    let about_description = format!(
+        "This is shown below the author name on the front page. This field supports {}.",
+        crate::md::markdown_link()
+    );
     let body = format!(
         "
         <form class='margin-auto' style='{style}' \
@@ -119,7 +127,7 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
             InputType::Text,
             "site_name",
             "Site Name",
-            &settings.site_name,
+            &site_name,
             "This is shown in the title of the page.",
             true,
         ),
@@ -136,7 +144,7 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
             "about",
             "About",
             &settings.about,
-            "This is shown below the author name on the front page.",
+            &about_description,
             false,
         )
     );
@@ -158,8 +166,7 @@ async fn post_settings(
     Kv::insert(conn, "domain", form.domain.as_bytes()).unwrap();
     Kv::insert(conn, "site_name", form.site_name.as_bytes()).unwrap();
     Kv::insert(conn, "author_name", form.author_name.as_bytes()).unwrap();
-    let about = crate::md::content_to_html(&form.about);
-    Kv::insert(conn, "about", about.as_bytes()).unwrap();
+    Kv::insert(conn, "about", form.about.as_bytes()).unwrap();
     crate::serve::see_other(&ctx, "/")
 }
 
