@@ -1,12 +1,13 @@
 use crate::html::PageSettings;
-use crate::serve::not_found;
 use crate::html::Top;
 use crate::html::page;
 use crate::serve::ServerContext;
 use crate::serve::is_logged_in;
+use crate::serve::not_found;
 use crate::serve::response;
 use axum::Router;
 use axum::body::Body;
+use axum::extract::Form;
 use axum::extract::Multipart;
 use axum::extract::Path;
 use axum::extract::State;
@@ -73,7 +74,7 @@ impl File {
                 data: blob_to_bytes(row.get("data")?),
             })
         })?;
-        Ok(files.collect::<Result<Vec<_>, _>>()?)
+        files.collect::<Result<Vec<_>, _>>()
     }
     pub fn insert(conn: &Connection, file: &Self) -> rusqlite::Result<usize> {
         // We can safely use `INSERT OR REPLACE` because the sha is the primary
@@ -119,6 +120,10 @@ impl File {
         let sql = "DELETE FROM files WHERE sha = ?";
         conn.execute(sql, [sha])
     }
+    pub fn rename(conn: &Connection, sha: &str, filename: &str) -> rusqlite::Result<usize> {
+        let sql = "UPDATE files SET filename = ? WHERE sha = ?";
+        conn.execute(sql, [filename, sha])
+    }
 }
 
 fn md_link(file: &File) -> String {
@@ -135,7 +140,11 @@ fn show_file(file: &File) -> String {
         "
         <div style='padding: 10px; padding-bottom: 0px; padding-top: 16px; \
           border-bottom: 1px solid var(--border);'>
-            <a href='/files/{sha}'>{}</a>
+            <a href='/files/{sha}'>{}</a>&nbsp;&nbsp;
+            <a class='unstyled-link' href='/files/rename/{sha}' \
+              style='font-size: 0.8rem; padding-top: 0.1rem;'>
+                ✏️ Rename
+            </a>&nbsp;
             <a class='unstyled-link' href='/files/delete/{sha}' \
               style='font-size: 0.8rem; padding-top: 0.1rem;'>
                 🗑️ Delete
@@ -277,6 +286,62 @@ async fn post_delete(
     crate::serve::see_other(&ctx, "/files")
 }
 
+async fn get_rename(
+    State(ctx): State<ServerContext>,
+    Path(sha): Path<String>,
+    jar: CookieJar,
+) -> Response<Body> {
+    let is_logged_in = is_logged_in(&ctx, &jar);
+    if !is_logged_in {
+        return crate::serve::unauthorized(&ctx);
+    }
+    let file = File::get(&ctx.conn_lock(), &sha);
+    let file = match file {
+        Ok(file) => file,
+        Err(_) => return not_found(State(ctx.clone())).await,
+    };
+    let extra_head = &ctx.args.extra_head;
+    let title = format!("Rename: {}", file.filename);
+    let settings = PageSettings::new(&title, false, false, Top::GoHome, extra_head);
+    let body = indoc::formatdoc! {r#"
+        <div class='medium-text' style='text-align: center;'>
+            <p>Rename file: <code>{}</code></p>
+            <form action='/files/rename/{sha}' method='post'>
+                <div>
+                    <label for='filename'>New filename:</label>
+                    <input type='text' id='filename' name='filename' value='{}' />
+                </div>
+                <div style='margin-top: 10px;'>
+                    <button type='submit'>Change</button>
+                </div>
+            </form>
+            <br>
+        </div>
+    "#, file.filename, file.filename};
+    let body = page(&ctx, &settings, &body);
+    response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
+}
+
+#[derive(Debug, Deserialize)]
+struct RenameForm {
+    filename: String,
+}
+
+async fn post_rename(
+    State(ctx): State<ServerContext>,
+    Path(sha): Path<String>,
+    jar: CookieJar,
+    Form(rename_form): Form<RenameForm>,
+) -> Response<Body> {
+    let is_logged_in = is_logged_in(&ctx, &jar);
+    if !is_logged_in {
+        return crate::serve::unauthorized(&ctx);
+    }
+    let filename = rename_form.filename;
+    File::rename(&ctx.conn_lock(), &sha, &filename).unwrap();
+    crate::serve::see_other(&ctx, "/files")
+}
+
 pub fn routes(router: &Router<ServerContext>) -> Router<ServerContext> {
     router
         .clone()
@@ -285,4 +350,6 @@ pub fn routes(router: &Router<ServerContext>) -> Router<ServerContext> {
         .route("/files/add", post(post_file))
         .route("/files/delete/{sha}", get(get_delete))
         .route("/files/delete/{sha}", post(post_delete))
+        .route("/files/rename/{sha}", get(get_rename))
+        .route("/files/rename/{sha}", post(post_rename))
 }
