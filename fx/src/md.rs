@@ -56,6 +56,11 @@ fn node_to_html(node: &Node) -> String {
             let lang = code.lang.clone().unwrap_or("".to_string());
             preview.push_str(&format!("\n\n```{lang}\n{}\n```\n", code.value));
         }
+        Node::Image(image) => {
+            let url = &image.url;
+            let alt = &image.alt;
+            preview.push_str(&format!("<img src='{url}' alt='{alt}' />"));
+        }
         Node::InlineCode(inline_code) => {
             preview.push_str(&format!("<code>{}</code>", inline_code.value));
         }
