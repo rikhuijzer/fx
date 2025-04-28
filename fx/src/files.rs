@@ -1,4 +1,5 @@
 use crate::html::PageSettings;
+use crate::serve::not_found;
 use crate::html::Top;
 use crate::html::page;
 use crate::serve::ServerContext;
@@ -114,6 +115,10 @@ impl File {
         };
         Ok(file)
     }
+    pub fn delete(conn: &Connection, sha: &str) -> rusqlite::Result<usize> {
+        let sql = "DELETE FROM files WHERE sha = ?";
+        conn.execute(sql, [sha])
+    }
 }
 
 fn md_link(file: &File) -> String {
@@ -125,11 +130,16 @@ fn md_link(file: &File) -> String {
 }
 
 fn show_file(file: &File) -> String {
+    let sha = &file.sha;
     format!(
         "
         <div style='padding: 10px; padding-bottom: 0px; padding-top: 16px; \
           border-bottom: 1px solid var(--border);'>
-            <a href='/files/{}'>{}</a><br>
+            <a href='/files/{sha}'>{}</a>
+            <a class='unstyled-link' href='/files/delete/{sha}' \
+              style='font-size: 0.8rem; padding-top: 0.1rem;'>
+                🗑️ Delete
+            </a><br>
             <span style='font-size: var(--ui-font-size);'>
                 Markdown link:
             </span><br>
@@ -138,7 +148,6 @@ fn show_file(file: &File) -> String {
             </pre>
         </div>
         ",
-        file.sha,
         file.filename,
         md_link(file)
     )
@@ -225,10 +234,42 @@ async fn post_file(
     crate::serve::see_other(&ctx, "/files")
 }
 
+async fn get_delete(
+    State(ctx): State<ServerContext>,
+    Path(sha): Path<String>,
+    jar: CookieJar,
+) -> Response<Body> {
+    let is_logged_in = is_logged_in(&ctx, &jar);
+    if !is_logged_in {
+        return crate::serve::unauthorized(&ctx);
+    }
+    let file = File::get(&ctx.conn_lock(), &sha);
+    let file = match file {
+        Ok(file) => file,
+        Err(_) => return not_found(State(ctx.clone())).await,
+    };
+    let extra_head = &ctx.args.extra_head;
+    let title = format!("Delete: {}", file.filename);
+    let settings = PageSettings::new(&title, false, false, Top::GoHome, extra_head);
+    let body = indoc::formatdoc! {r#"
+        <div class='medium-text' style='text-align: center; font-weight: bold;'>
+            <p>Are you sure you want to delete <code>{}</code>? This action cannot be undone.</p>
+            <form action='/files/delete/{sha}' method='post'>
+                <button type='submit'>Delete</button>
+            </form>
+            <br>
+        </div>
+    "#, file.filename};
+    let body = page(&ctx, &settings, &body);
+    response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
+}
+
 pub fn routes(router: &Router<ServerContext>) -> Router<ServerContext> {
     router
         .clone()
         .route("/files", get(get_files))
         .route("/files/{sha}", get(get_file))
         .route("/files/add", post(post_file))
+        .route("/files/delete/{sha}", get(get_delete))
+        .route("/files/delete/{sha}", post(post_delete))
 }

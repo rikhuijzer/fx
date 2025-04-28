@@ -2,6 +2,7 @@ use crate::ServeArgs;
 use crate::files::File;
 use chrono::DateTime;
 use chrono::NaiveDateTime;
+use bytes::Bytes;
 use chrono::TimeZone;
 use chrono::Utc;
 use rusqlite::Connection;
@@ -236,6 +237,14 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
         "#}
         .trim();
         Post::insert(conn, now, now, content).unwrap();
+
+        let file = File {
+            sha: "sha".to_string(),
+            mime_type: "image/png".to_string(),
+            filename: "example.png".to_string(),
+            data: Bytes::from_static(b"example"),
+        };
+        File::insert(conn, &file).unwrap();
     }
 }
 

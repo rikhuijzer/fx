@@ -269,7 +269,7 @@ async fn get_post(
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
-async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
+pub async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &CookieJar::new());
     let body = indoc::indoc! {"
         <div style='text-align: center; margin-top: 100px;'>
