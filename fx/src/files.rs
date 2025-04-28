@@ -7,6 +7,7 @@ use crate::serve::response;
 use axum::Router;
 use axum::body::Body;
 use axum::extract::Multipart;
+use axum::extract::Path;
 use axum::extract::State;
 use axum::http::HeaderMap;
 use axum::http::Response;
@@ -85,7 +86,7 @@ impl File {
         let stmt = "
             SELECT sha, mime_type, filename, data
             FROM files
-            WHERE name = ?;
+            WHERE sha = ?;
             ";
         let mut stmt = conn.prepare(stmt)?;
         let file = stmt.query_row([name], |row| {
@@ -120,9 +121,12 @@ fn show_file(file: &File) -> String {
     format!(
         "
         <div style='padding: 10px; padding-bottom: 0px; \
-          border-bottom: 1px solid var(--border);'>
+          border-bottom: 1px solid var(--border); padding-top: 16px;'>
             <a href='/files/{}'>{}</a><br>
-            <pre style='margin-top: 10px; margin-bottom: 0px;'>
+            <span style='font-size: var(--ui-font-size);'>
+                Markdown link:
+            </span><br>
+            <pre style='margin-top: 6px; margin-bottom: 0px;'>
                 <code class='language-md'>{}</code>
             </pre>
         </div>
@@ -156,7 +160,7 @@ async fn get_files(State(ctx): State<ServerContext>, jar: CookieJar) -> Response
                     <input type='file' id='file' name='file' multiple />
                 </div>
                 <div>
-                    <button>Submit</button>
+                    <button>Upload</button>
                 </div>
             </form>
         </div>
@@ -170,6 +174,17 @@ async fn get_files(State(ctx): State<ServerContext>, jar: CookieJar) -> Response
     response(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
+async fn get_file(State(ctx): State<ServerContext>, Path(sha): Path<String>) -> Response<Body> {
+    let file = File::get(&ctx.conn_lock(), &sha).unwrap();
+    let mut headers = HeaderMap::new();
+    crate::serve::content_type(&mut headers, &file.mime_type);
+    // Setting this too high might make deleted files accessible for too long
+    // which could be confusing for the author.
+    let max_age = 60;
+    crate::serve::enable_caching(&mut headers, max_age);
+    response(StatusCode::OK, headers, file.data, &ctx)
+}
+
 async fn post_file(
     State(ctx): State<ServerContext>,
     jar: CookieJar,
@@ -181,6 +196,10 @@ async fn post_file(
     }
     while let Some(field) = multipart.next_field().await.unwrap() {
         let filename = field.file_name().unwrap().to_string();
+        if filename.is_empty() {
+            // This occurs when clicking "Upload" without selecting any files.
+            continue;
+        }
         let mime_type = field.content_type().unwrap().to_string();
         let data = field
             .bytes()
@@ -203,5 +222,6 @@ pub fn routes(router: &Router<ServerContext>) -> Router<ServerContext> {
     router
         .clone()
         .route("/files", get(get_files))
+        .route("/files/{sha}", get(get_file))
         .route("/files/add", post(post_file))
 }
