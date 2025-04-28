@@ -12,7 +12,8 @@ A (micro)blogging server that you can self-host.
 - 🚀 Low costs due to small footprint (only a few MB of memory are required).
 - 📝 Write posts in Markdown.
 - 📱 Publish and edit from mobile device.
-- 🔒 Backup your site to plain text files.
+- 📁 Upload files and images to embed them in posts.
+- 🔒 Automatically backup to plain text files, see [Backup](#backup).
 
 ## Background
 
