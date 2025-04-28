@@ -110,9 +110,9 @@ impl File {
 
 fn md_link(file: &File) -> String {
     if file.mime_type.starts_with("image/") {
-        format!("![{}](files/{})", file.filename, file.sha)
+        format!("![{}](/files/{})", file.filename, file.sha)
     } else {
-        format!("[{}](files/{})", file.filename, file.sha)
+        format!("[{}](/files/{})", file.filename, file.sha)
     }
 }
 
@@ -149,7 +149,8 @@ async fn get_files(State(ctx): State<ServerContext>, jar: CookieJar) -> Response
         <div>
             <form method='post' action='/files/add' \
               enctype='multipart/form-data' \
-              style='padding: 10px; border-bottom: 2px solid var(--border);'>
+              style='padding: 10px; text-align: center; \
+              border-bottom: 2px solid var(--border);'>
                 <div>
                     <label for='file'>Choose file(s) to upload (max 15MB)</label>
                     <input type='file' id='file' name='file' multiple />
@@ -179,7 +180,7 @@ async fn post_file(
         return crate::serve::unauthorized(&ctx);
     }
     while let Some(field) = multipart.next_field().await.unwrap() {
-        let filename = field.name().unwrap().to_string();
+        let filename = field.file_name().unwrap().to_string();
         let mime_type = field.content_type().unwrap().to_string();
         let data = field
             .bytes()
