@@ -401,7 +401,6 @@ async fn post_edit(
     let input = String::from_utf8(bytes).unwrap();
     let publish = input.contains("publish=Publish");
     let form = serde_urlencoded::from_str::<EditPostForm>(&input).unwrap();
-    let content = crate::md::auto_autolink(&form.content);
     let created = match Post::get(&ctx.conn_lock(), id) {
         Ok(post) => post.created,
         Err(_) => Utc::now(),
@@ -410,7 +409,7 @@ async fn post_edit(
         id,
         created,
         updated: Utc::now(),
-        content,
+        content: form.content,
     };
     if publish {
         let post = post.update(&ctx.conn_lock());
@@ -464,10 +463,9 @@ async fn post_add(
     let input = String::from_utf8(bytes).unwrap();
     let publish = input.contains("publish=Publish");
     let form = serde_urlencoded::from_str::<AddPostForm>(&input).unwrap();
-    let content = crate::md::auto_autolink(&form.content);
     if publish {
         let now = Utc::now();
-        let post_id = Post::insert(&ctx.conn_lock(), now, now, &content);
+        let post_id = Post::insert(&ctx.conn_lock(), now, now, &form.content);
         let post_id = if let Ok(post_id) = post_id {
             post_id
         } else {
@@ -485,7 +483,7 @@ async fn post_add(
             id: 0,
             created: Utc::now(),
             updated: Utc::now(),
-            content,
+            content: form.content,
         };
         let preview = crate::html::post_to_html(&post, false);
         let body = page(&ctx, &settings, &preview);

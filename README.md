@@ -34,6 +34,7 @@ services:
     container_name: 'fx'
     environment:
       FX_USERNAME: 'john'
+      FX_DOMAIN: 'example.com'
     env_file:
       # Contains `FX_PASSWORD="<PASSWORD>"`.
       - 'FX_PASSWORD.env'

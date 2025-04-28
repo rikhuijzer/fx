@@ -190,7 +190,10 @@ async fn test_post_add() {
     assert_eq!(status, StatusCode::OK);
     assert!(body.contains("example.com"), "redirect to the new post");
     assert!(
-        body.contains(r#"<a href="https://example.com">"#),
+        // Do not auto-detect the URL as a link because there is no way for the
+        // user to disable it. Furthermore, standard Markdown also does not
+        // auto-detect links.
+        body.contains("Lorem https://example.com"),
         "auto autolink"
     );
 }
