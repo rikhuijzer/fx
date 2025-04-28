@@ -7,29 +7,29 @@ use markdown::to_mdast;
 /// Convert a Markdown AST node back to a `String` with the same structure.
 ///
 /// The default `to_string()` method only returns text.
-fn md_to_string(node: &Node) -> String {
+fn node_to_html(node: &Node) -> String {
     let mut preview = String::new();
     match node {
         Node::Paragraph(paragraph) => {
             preview.push_str("<p>");
             for child in paragraph.children.iter() {
-                let text = md_to_string(child);
+                let text = node_to_html(child);
                 preview.push_str(&text);
             }
             preview.push_str("</p>");
         }
         Node::Heading(heading) => {
-            preview.push_str(&"#".repeat(heading.depth as usize));
-            preview.push(' ');
+            preview.push_str(&format!("<h{}>", heading.depth));
             for child in heading.children.iter() {
-                preview.push_str(&md_to_string(child));
+                preview.push_str(&node_to_html(child));
             }
+            preview.push_str(&format!("</h{}>", heading.depth));
             preview.push_str("\n\n");
         }
         Node::Text(text) => preview.push_str(&text.value),
         Node::Html(html) => preview.push_str(&html.value),
         Node::Link(link) => {
-            let text = md_to_string(link.children.first().unwrap());
+            let text = node_to_html(link.children.first().unwrap());
             let url = &link.url;
             preview.push_str(&format!("<a href='{url}'>{text}</a>"));
         }
@@ -37,14 +37,14 @@ fn md_to_string(node: &Node) -> String {
             let tag = if list.ordered { "ol" } else { "ul" };
             preview.push_str(&format!("<{tag}>"));
             for child in list.children.iter() {
-                preview.push_str(&md_to_string(child));
+                preview.push_str(&node_to_html(child));
             }
             preview.push_str(&format!("</{tag}>"));
         }
         Node::ListItem(list_item) => {
             preview.push_str("<li>");
             for child in list_item.children.iter() {
-                preview.push_str(&md_to_string(child));
+                preview.push_str(&node_to_html(child));
             }
             preview.push_str("</li>");
         }
@@ -53,7 +53,7 @@ fn md_to_string(node: &Node) -> String {
             preview.push_str(&format!("\n\n```{lang}\n{}\n```\n", code.value));
         }
         Node::InlineCode(inline_code) => {
-            preview.push_str(&format!("`{}`", inline_code.value));
+            preview.push_str(&format!("<code>{}</code>", inline_code.value));
         }
         _ => {}
     }
@@ -66,7 +66,7 @@ fn to_html_options() -> Options {
     options
 }
 
-pub fn to_html(content: &str) -> String {
+pub fn content_to_html(content: &str) -> String {
     let options = to_html_options();
     markdown::to_html_with_options(content, &options).unwrap()
 }
@@ -93,7 +93,7 @@ pub fn sanitize_preview(post: &mut Post) {
             preview.push_str(&expand);
             break;
         }
-        preview.push_str(&md_to_string(node));
+        preview.push_str(&node_to_html(node));
     }
     post.content = preview;
 }
@@ -114,7 +114,7 @@ fn test_keep_link() {
     };
     sanitize_preview(&mut post);
     let expected = indoc::indoc! {"
-        # Title
+        <h1>Title</h1>
 
         <p>Lorem ipsum <a href='https://example.com/foo'>foo</a> dolor sit amet</p>
     "};

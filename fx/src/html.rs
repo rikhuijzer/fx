@@ -43,7 +43,7 @@ pub fn post_to_html(post: &Post, is_preview: bool) -> String {
     } else {
         post.content.clone()
     };
-    let html = crate::md::to_html(&md);
+    let html = crate::md::content_to_html(&md);
     let style = if is_preview { &border_style(1) } else { "" };
     let updated = if post.created == post.updated || is_preview {
         ""

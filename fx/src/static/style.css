@@ -76,6 +76,7 @@ code {
     background-color: var(--code-background);
     border-radius: var(--radius);
     padding: 0.15rem;
+    font-size: 0.95em;
 }
 
 pre code {

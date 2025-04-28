@@ -158,7 +158,7 @@ async fn post_settings(
     Kv::insert(conn, "domain", form.domain.as_bytes()).unwrap();
     Kv::insert(conn, "site_name", form.site_name.as_bytes()).unwrap();
     Kv::insert(conn, "author_name", form.author_name.as_bytes()).unwrap();
-    let about = crate::md::to_html(&form.about);
+    let about = crate::md::content_to_html(&form.about);
     Kv::insert(conn, "about", about.as_bytes()).unwrap();
     crate::serve::see_other(&ctx, "/")
 }
