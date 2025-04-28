@@ -9,10 +9,10 @@ A (micro)blogging server that you can self-host.
 
 ## Features
 
-- 🚀 Small footprint (requires only a few MB of memory).
-- 📱 Mobile-friendly interface to allow publishing posts from mobile devices.
-- 📝 Markdown support.
-- 🔒 Backup your site as plain text files (to have useful diffs in Git).
+- 🚀 Low costs due to small footprint (only a few MB of memory are required).
+- 📝 Write posts in Markdown.
+- 📱 Publish and edit from mobile device.
+- 🔒 Backup your site to plain text files.
 
 ## Background
 
