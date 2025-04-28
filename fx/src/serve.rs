@@ -9,6 +9,7 @@ use crate::html::post_to_html;
 use axum::Form;
 use axum::Router;
 use axum::body::Body;
+use axum::extract::DefaultBodyLimit;
 use axum::extract::Path;
 use axum::extract::Request;
 use axum::extract::State;
@@ -525,7 +526,9 @@ pub fn app(ctx: ServerContext) -> Router {
     let router = crate::api::routes(&router);
     let router = crate::settings::routes(&router);
     let router = crate::files::routes(&router);
-    router.with_state(ctx)
+    // Files larger than this will be rejected during upload.
+    let limit = 15 * 1024 * 1024;
+    router.with_state(ctx).layer(DefaultBodyLimit::max(limit))
 }
 
 /// Return the salt by either generating a new one or reading it from the db.

@@ -1,13 +1,12 @@
-use crate::data::Kv;
 use crate::html::PageSettings;
 use crate::html::Top;
 use crate::html::page;
 use crate::serve::ServerContext;
 use crate::serve::is_logged_in;
 use crate::serve::response;
-use axum::Form;
 use axum::Router;
 use axum::body::Body;
+use axum::extract::Multipart;
 use axum::extract::State;
 use axum::http::HeaderMap;
 use axum::http::Response;
@@ -15,11 +14,13 @@ use axum::http::StatusCode;
 use axum::routing::get;
 use axum::routing::post;
 use axum_extra::extract::CookieJar;
+use bytes::Bytes;
 use rusqlite::Connection;
 use rusqlite::Result;
 use rusqlite::params;
 use serde::Deserialize;
 use serde::Serialize;
+use sha2::Digest;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct File {
@@ -32,14 +33,22 @@ pub struct File {
     pub mime_type: String,
     /// Filename is shown for easier identification.
     pub filename: String,
-    pub data: Vec<u8>,
+    pub data: Bytes,
+}
+
+fn bytes_to_blob(bytes: &Bytes) -> Vec<u8> {
+    bytes.to_vec()
+}
+
+fn blob_to_bytes(blob: Vec<u8>) -> Bytes {
+    Bytes::from(blob)
 }
 
 impl File {
     pub fn create_table(conn: &Connection) -> Result<usize> {
         let stmt = "
             CREATE TABLE IF NOT EXISTS files (
-                name TEXT PRIMARY KEY,
+                sha TEXT PRIMARY KEY,
                 mime_type TEXT NOT NULL,
                 filename TEXT NOT NULL,
                 data BLOB NOT NULL
@@ -58,7 +67,7 @@ impl File {
                 sha: row.get("sha")?,
                 mime_type: row.get("mime_type")?,
                 filename: row.get("filename")?,
-                data: row.get("data")?,
+                data: blob_to_bytes(row.get("data")?),
             })
         })?;
         Ok(files.collect::<Result<Vec<_>, _>>()?)
@@ -68,7 +77,8 @@ impl File {
             INSERT INTO files (sha, mime_type, filename, data)
             VALUES (?, ?, ?, ?);
             ";
-        let params = params![file.sha, file.mime_type, file.filename, file.data];
+        let data = bytes_to_blob(&file.data);
+        let params = params![file.sha, file.mime_type, file.filename, data];
         conn.execute(sql, params)
     }
     pub fn get(conn: &Connection, name: &str) -> rusqlite::Result<Self> {
@@ -83,7 +93,7 @@ impl File {
                 sha: row.get("sha")?,
                 mime_type: row.get("mime_type")?,
                 filename: row.get("filename")?,
-                data: row.get("data")?,
+                data: blob_to_bytes(row.get("data")?),
             })
         });
         let file = match file {
@@ -98,12 +108,62 @@ impl File {
     }
 }
 
+fn md_link(file: &File) -> String {
+    if file.mime_type.starts_with("image/") {
+        format!("![{}](files/{})", file.filename, file.sha)
+    } else {
+        format!("[{}](files/{})", file.filename, file.sha)
+    }
+}
+
+fn show_file(file: &File) -> String {
+    format!(
+        "
+        <div style='padding: 10px; padding-bottom: 0px; \
+          border-bottom: 1px solid var(--border);'>
+            <a href='/files/{}'>{}</a><br>
+            <pre style='margin-top: 10px; margin-bottom: 0px;'>
+                <code class='language-md'>{}</code>
+            </pre>
+        </div>
+        ",
+        file.sha,
+        file.filename,
+        md_link(file)
+    )
+}
+
 async fn get_files(State(ctx): State<ServerContext>, jar: CookieJar) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
     if !is_logged_in {
         return crate::serve::unauthorized(&ctx);
     }
-    let body = "foo";
+    let files = File::list(&ctx.conn_lock()).unwrap();
+    let files = files
+        .iter()
+        .map(show_file)
+        .collect::<Vec<String>>()
+        .join("");
+    let body = format!(
+        "
+        <div>
+            <form method='post' action='/files/add' \
+              enctype='multipart/form-data' \
+              style='padding: 10px; border-bottom: 2px solid var(--border);'>
+                <div>
+                    <label for='file'>Choose file(s) to upload (max 15MB)</label>
+                    <input type='file' id='file' name='file' multiple />
+                </div>
+                <div>
+                    <button>Submit</button>
+                </div>
+            </form>
+        </div>
+        <div>
+            {files}
+        </div>
+        "
+    );
     let page_settings = PageSettings::new("Files", is_logged_in, false, Top::GoHome, "");
     let body = page(&ctx, &page_settings, &body);
     response(StatusCode::OK, HeaderMap::new(), body, &ctx)
@@ -112,19 +172,35 @@ async fn get_files(State(ctx): State<ServerContext>, jar: CookieJar) -> Response
 async fn post_file(
     State(ctx): State<ServerContext>,
     jar: CookieJar,
-    Form(_form): Form<File>,
+    mut multipart: Multipart,
 ) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
     if !is_logged_in {
         return crate::serve::unauthorized(&ctx);
     }
-    // let conn = &ctx.conn_lock();
-    todo!()
+    while let Some(field) = multipart.next_field().await.unwrap() {
+        let filename = field.name().unwrap().to_string();
+        let mime_type = field.content_type().unwrap().to_string();
+        let data = field
+            .bytes()
+            .await
+            .expect("Failed to read file; the file could be too large.");
+        let sha = sha2::Sha256::digest(&data);
+        let sha = hex::encode(sha);
+        let file = File {
+            sha,
+            mime_type,
+            filename,
+            data,
+        };
+        File::insert(&ctx.conn_lock(), &file).unwrap();
+    }
+    crate::serve::see_other(&ctx, "/files")
 }
 
 pub fn routes(router: &Router<ServerContext>) -> Router<ServerContext> {
     router
         .clone()
         .route("/files", get(get_files))
-        .route("/file/add", post(post_file))
+        .route("/files/add", post(post_file))
 }
