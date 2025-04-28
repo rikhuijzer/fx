@@ -21,7 +21,6 @@ use serde::Serialize;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Settings {
-    pub domain: String,
     pub site_name: String,
     pub author_name: String,
     pub about: String,
@@ -29,12 +28,10 @@ pub struct Settings {
 
 impl Settings {
     pub fn from_db(conn: &Connection) -> rusqlite::Result<Self> {
-        let domain = Kv::get(conn, "domain")?;
         let site_name = Kv::get(conn, "site_name")?;
         let author_name = Kv::get(conn, "author_name")?;
         let about = Kv::get(conn, "about")?;
         Ok(Self {
-            domain: String::from_utf8(domain).unwrap(),
             site_name: String::from_utf8(site_name).unwrap(),
             author_name: String::from_utf8(author_name).unwrap(),
             about: String::from_utf8(about).unwrap(),
@@ -111,18 +108,9 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
             {}
             {}
             {}
-            {}
             <input style='margin-left: 0;' type='submit' value='Save'/>
         </form>
         ",
-        text_input(
-            InputType::Text,
-            "domain",
-            "Domain",
-            &settings.domain,
-            "This is used at various places including for the sitemap and at /api.",
-            true,
-        ),
         text_input(
             InputType::Text,
             "site_name",
@@ -163,7 +151,6 @@ async fn post_settings(
         return crate::serve::unauthorized(&ctx);
     }
     let conn = &ctx.conn_lock();
-    Kv::insert(conn, "domain", form.domain.as_bytes()).unwrap();
     Kv::insert(conn, "site_name", form.site_name.as_bytes()).unwrap();
     Kv::insert(conn, "author_name", form.author_name.as_bytes()).unwrap();
     Kv::insert(conn, "about", form.about.as_bytes()).unwrap();
