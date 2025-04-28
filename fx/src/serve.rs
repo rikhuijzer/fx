@@ -524,6 +524,7 @@ pub fn app(ctx: ServerContext) -> Router {
     let router = router.fallback(not_found);
     let router = crate::api::routes(&router);
     let router = crate::settings::routes(&router);
+    let router = crate::files::routes(&router);
     router.with_state(ctx)
 }
 

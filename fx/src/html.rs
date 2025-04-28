@@ -257,10 +257,15 @@ fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
     let settings_button = if settings.is_logged_in {
         &format!(
             "
-        <a href='/settings' class='unstyled-link' style='{style}'>
-            ⚙️ Settings
-        </a>
-        "
+            <span>
+                <a href='/files' class='unstyled-link' style='{style}'>
+                    📁 Files
+                </a>&nbsp;
+                <a href='/settings' class='unstyled-link' style='{style}'>
+                    ⚙️ Settings
+                </a>
+            </span>
+            "
         )
     } else {
         ""

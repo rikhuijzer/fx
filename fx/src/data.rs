@@ -1,4 +1,5 @@
 use crate::ServeArgs;
+use crate::files::File;
 use chrono::DateTime;
 use chrono::NaiveDateTime;
 use chrono::TimeZone;
@@ -189,6 +190,7 @@ pub fn connect(args: &ServeArgs) -> Result<Connection> {
 fn init_tables(conn: &Connection) {
     Post::create_table(conn).expect("Failed to create posts table");
     Kv::create_table(conn).expect("Failed to create kv table");
+    File::create_table(conn).expect("Failed to create files table");
 }
 
 fn init_kv(conn: &Connection, key: &str, value: &[u8]) {
