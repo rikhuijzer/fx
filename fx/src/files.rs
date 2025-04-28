@@ -264,6 +264,19 @@ async fn get_delete(
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
+async fn post_delete(
+    State(ctx): State<ServerContext>,
+    Path(sha): Path<String>,
+    jar: CookieJar,
+) -> Response<Body> {
+    let is_logged_in = is_logged_in(&ctx, &jar);
+    if !is_logged_in {
+        return crate::serve::unauthorized(&ctx);
+    }
+    File::delete(&ctx.conn_lock(), &sha).unwrap();
+    crate::serve::see_other(&ctx, "/files")
+}
+
 pub fn routes(router: &Router<ServerContext>) -> Router<ServerContext> {
     router
         .clone()

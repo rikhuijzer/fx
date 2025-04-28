@@ -238,10 +238,11 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
         .trim();
         Post::insert(conn, now, now, content).unwrap();
 
+        let sha = "541e4f9eaca3f34ee865f81fc663e4839cb84d6253f71a372cd855b0a7283213";
         let file = File {
-            sha: "sha".to_string(),
-            mime_type: "image/png".to_string(),
-            filename: "example.png".to_string(),
+            sha: sha.to_string(),
+            mime_type: "text/plain".to_string(),
+            filename: "example.txt".to_string(),
             data: Bytes::from_static(b"example"),
         };
         File::insert(conn, &file).unwrap();
