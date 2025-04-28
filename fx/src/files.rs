@@ -60,7 +60,8 @@ impl File {
     pub fn list(conn: &Connection) -> rusqlite::Result<Vec<Self>> {
         let stmt = "
             SELECT sha, mime_type, filename, data
-            FROM files;
+            FROM files
+            ORDER BY filename;
             ";
         let mut stmt = conn.prepare(stmt)?;
         let files = stmt.query_map([], |row| {
@@ -74,8 +75,14 @@ impl File {
         Ok(files.collect::<Result<Vec<_>, _>>()?)
     }
     pub fn insert(conn: &Connection, file: &Self) -> rusqlite::Result<usize> {
+        // We can safely use `INSERT OR REPLACE` because the sha is the primary
+        // key. In the "worse" case, it will only rename the filename. If the
+        // mime type is different, then it means that the extension was changed
+        // locally which probably is good to reflect in the database. Also
+        // having the need for two identical files with different mimetypes is a
+        // very unlikely scenario.
         let sql = "
-            INSERT INTO files (sha, mime_type, filename, data)
+            INSERT OR REPLACE INTO files (sha, mime_type, filename, data)
             VALUES (?, ?, ?, ?);
             ";
         let data = bytes_to_blob(&file.data);
@@ -120,8 +127,8 @@ fn md_link(file: &File) -> String {
 fn show_file(file: &File) -> String {
     format!(
         "
-        <div style='padding: 10px; padding-bottom: 0px; \
-          border-bottom: 1px solid var(--border); padding-top: 16px;'>
+        <div style='padding: 10px; padding-bottom: 0px; padding-top: 16px; \
+          border-bottom: 1px solid var(--border);'>
             <a href='/files/{}'>{}</a><br>
             <span style='font-size: var(--ui-font-size);'>
                 Markdown link:
