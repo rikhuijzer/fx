@@ -3,6 +3,7 @@ use crate::data::Post;
 use crate::serve::ServerContext;
 use crate::serve::response;
 use crate::serve::response_json;
+use crate::settings::Settings;
 use axum::Router;
 use axum::body::Body;
 use axum::extract::State;
@@ -76,6 +77,7 @@ fn unauthorized(ctx: &ServerContext) -> Response<Body> {
 
 struct SiteData<'a> {
     posts: &'a [Post],
+    settings: &'a Settings,
 }
 
 fn create_archive(site_data: &SiteData) -> Vec<u8> {
@@ -104,6 +106,16 @@ fn create_archive(site_data: &SiteData) -> Vec<u8> {
         ar.append_data(&mut header, &path, data).unwrap();
     }
 
+    let mut header = Header::new_gnu();
+    let path = "settings.toml";
+    header.set_path(path).unwrap();
+    header.set_mode(0o644);
+    let data = toml::to_string(&site_data.settings).unwrap();
+    let data = data.as_bytes();
+    header.set_size(data.len() as u64);
+    header.set_cksum();
+    ar.append_data(&mut header, path, data).unwrap();
+
     ar.into_inner().unwrap()
 }
 
@@ -129,7 +141,20 @@ async fn get_download_all(State(ctx): State<ServerContext>, headers: HeaderMap) 
             "failed to list posts",
         );
     };
-    let site_data = SiteData { posts: &posts };
+    let settings = Settings::from_db(&conn);
+    let settings = if let Ok(settings) = settings {
+        settings
+    } else {
+        return error(
+            &ctx,
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "failed to get settings",
+        );
+    };
+    let site_data = SiteData {
+        posts: &posts,
+        settings: &settings,
+    };
     let data = create_archive(&site_data);
     let body = compress(&data);
     let mut headers = HeaderMap::new();

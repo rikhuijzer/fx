@@ -28,7 +28,7 @@ pub struct Settings {
 }
 
 impl Settings {
-    fn from_db(conn: &Connection) -> rusqlite::Result<Self> {
+    pub fn from_db(conn: &Connection) -> rusqlite::Result<Self> {
         let domain = Kv::get(conn, "domain")?;
         let site_name = Kv::get(conn, "site_name")?;
         let author_name = Kv::get(conn, "author_name")?;

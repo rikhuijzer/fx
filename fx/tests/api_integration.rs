@@ -78,5 +78,13 @@ async fn test_download_all() {
 
     let second = entries.next().unwrap().unwrap();
     assert!(path(&second).contains("posts/2.md"));
+
+    let mut third = entries.next().unwrap().unwrap();
+    assert!(path(&third).contains("settings.toml"));
+    let mut content = String::new();
+    third.read_to_string(&mut content).unwrap();
+    println!("settings.toml content:\n{content}");
+    assert!(content.contains(r#"author_name = "John""#));
+
     assert!(entries.next().is_none());
 }
