@@ -191,8 +191,8 @@ pub fn minify(page: &str) -> String {
     for line in page.lines() {
         let trimmed = line.trim();
         // Don't minify the textarea content or it will effectively modify the
-        // post content on the editing page.
-        if trimmed.starts_with("<textarea style='display: block") {
+        // textarea content.
+        if trimmed.starts_with("<textarea ") {
             inside_textarea = true;
             lines.push(trimmed);
             continue;
@@ -236,6 +236,15 @@ fn test_minify() {
     "#}
     .trim();
     assert_eq!(minify(page), expected);
+
+    let page = indoc::indoc! {r#"
+    <textarea id='about'>
+    x = 1;
+
+    println!("{x}");
+    </textarea>
+    "#};
+    assert!(minify(page).contains("x = 1;\n\nprintln!"));
 }
 
 fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
