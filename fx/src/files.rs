@@ -39,6 +39,27 @@ pub struct File {
     pub data: Bytes,
 }
 
+impl File {
+    fn new(mime_type: &str, filename: &str, data: Bytes) -> Self {
+        let sha = sha2::Sha256::digest(&data);
+        // Turning the 256 bit hash into a 64 bit hash. The probability of a
+        // collision is roughly 1 in 2^(n/2) which means 1 in 2^32=4 billion to
+        // get a collision. Collisions are not a security risk here, because the
+        // site owner is the only one who can upload files. If my math is right,
+        // it would take 1 million sites with 1000 files each before a collision
+        // is likely to occur. This risk is worth it since a shorter hash is
+        // much easier to work with.
+        let sha = sha[..8].to_vec();
+        let sha = hex::encode(sha);
+        Self {
+            sha,
+            mime_type: mime_type.to_string(),
+            filename: filename.to_string(),
+            data,
+        }
+    }
+}
+
 fn bytes_to_blob(bytes: &Bytes) -> Vec<u8> {
     bytes.to_vec()
 }
@@ -232,14 +253,7 @@ async fn post_file(
             .bytes()
             .await
             .expect("Failed to read file; the file could be too large.");
-        let sha = sha2::Sha256::digest(&data);
-        let sha = hex::encode(sha);
-        let file = File {
-            sha,
-            mime_type,
-            filename,
-            data,
-        };
+        let file = File::new(&mime_type, &filename, data);
         File::insert(&ctx.conn_lock(), &file).unwrap();
     }
     crate::serve::see_other(&ctx, "/files")
