@@ -6,6 +6,7 @@ mod html;
 mod md;
 pub mod serve;
 mod settings;
+mod trigger;
 
 use clap::Parser;
 
@@ -36,9 +37,9 @@ pub struct ServeArgs {
     /// The token for triggering GitHub Actions.
     #[arg(long, env = "FX_TRIGGER_TOKEN")]
     pub trigger_token: Option<String>,
-    /// The repository for triggering GitHub Actions.
-    #[arg(long, env = "FX_TRIGGER_REPO")]
-    pub trigger_repo: Option<String>,
+    /// The owner and repository for triggering GitHub Actions.
+    #[arg(long, env = "FX_TRIGGER_OWNER_REPO")]
+    pub trigger_owner_repo: Option<String>,
     /// The branch for triggering GitHub Actions.
     #[arg(long, env = "FX_TRIGGER_BRANCH", default_value = "main")]
     pub trigger_branch: String,

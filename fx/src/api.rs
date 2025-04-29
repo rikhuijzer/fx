@@ -1,3 +1,4 @@
+//! API endpoints at `/api`.
 use crate::data::Kv;
 use crate::data::Post;
 use crate::files::File;

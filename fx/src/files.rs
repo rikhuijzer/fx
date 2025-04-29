@@ -1,3 +1,4 @@
+//! File upload and download at `/files`.
 use crate::html::PageSettings;
 use crate::html::Top;
 use crate::html::page;
