@@ -107,6 +107,24 @@ jobs:
 This will backup your site every 6 hours.
 An example backup repository is [here](https://github.com/rikhuijzer/fx-backup).
 
+To trigger a backup for each change to the website, you can set the following environment variables:
+
+```yml
+FX_TRIGGER_TOKEN: '<TOKEN>'
+FX_TRIGGER_REPO: '<OWNER>/<REPO>'
+FX_TRIGGER_BRANCH: '<BRANCH>' # Defaults to `main`.
+FX_TRIGGER_WORKFLOW_ID: '<WORKFLOW_ID>' # Defaults to `ci.yml`.
+```
+
+To obtain the token, you can use the following steps:
+
+1. Go to <https://github.com/settings/personal-access-tokens/new>.
+1. Set name: `fx-backup-trigger`.
+1. Set description: `Used by fx to trigger a backup`.
+1. Set repository access: `Only select repositories: <OWNER>/<REPO>`.
+1. Set permissions: `Actions` (Read and write).
+1. Copy the token.
+
 ### Update
 
 You can update the `about` text via:
