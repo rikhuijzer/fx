@@ -32,4 +32,17 @@ pub struct ServeArgs {
     /// Content that is added to the `<head>` tag of the HTML page.
     #[arg(long, env = "FX_EXTRA_HEAD", default_value = "")]
     pub extra_head: String,
+
+    /// The token for triggering GitHub Actions.
+    #[arg(long, env = "FX_TRIGGER_TOKEN")]
+    pub trigger_token: Option<String>,
+    /// The repository for triggering GitHub Actions.
+    #[arg(long, env = "FX_TRIGGER_REPO")]
+    pub trigger_repo: Option<String>,
+    /// The branch for triggering GitHub Actions.
+    #[arg(long, env = "FX_TRIGGER_BRANCH", default_value = "main")]
+    pub trigger_branch: String,
+    /// The workflow ID for triggering GitHub Actions.
+    #[arg(long, env = "FX_TRIGGER_WORKFLOW_ID", default_value = "ci.yml")]
+    pub trigger_workflow_id: String,
 }

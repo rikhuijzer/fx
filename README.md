@@ -110,10 +110,10 @@ An example backup repository is [here](https://github.com/rikhuijzer/fx-backup).
 To trigger a backup for each change to the website, you can set the following environment variables:
 
 ```yml
-FX_TRIGGER_TOKEN: '<TOKEN>'
-FX_TRIGGER_REPO: '<OWNER>/<REPO>'
-FX_TRIGGER_BRANCH: '<BRANCH>' # Defaults to `main`.
-FX_TRIGGER_WORKFLOW_ID: '<WORKFLOW_ID>' # Defaults to `ci.yml`.
+FX_TRIGGER_TOKEN: 'github_pat_...'
+FX_TRIGGER_REPO: 'johndoe/fx-backup'
+FX_TRIGGER_BRANCH: 'main' # Optional
+FX_TRIGGER_WORKFLOW_ID: 'ci.yml' # Optional
 ```
 
 To obtain the token, you can use the following steps:
@@ -124,6 +124,8 @@ To obtain the token, you can use the following steps:
 1. Set repository access: `Only select repositories: <OWNER>/<REPO>`.
 1. Set permissions: `Actions` (Read and write).
 1. Copy the token.
+
+See the [GitHub documentation](https://docs.github.com/en/rest/actions/workflows?apiVersion=2022-11-28#create-a-workflow-dispatch-event) for more information.
 
 ### Update
 
