@@ -44,6 +44,6 @@ pub struct ServeArgs {
     #[arg(long, env = "FX_TRIGGER_BRANCH", default_value = "main")]
     pub trigger_branch: String,
     /// The workflow ID for triggering GitHub Actions.
-    #[arg(long, env = "FX_TRIGGER_WORKFLOW_ID", default_value = "ci.yml")]
+    #[arg(long, env = "FX_TRIGGER_WORKFLOW_ID", default_value = "backup.yml")]
     pub trigger_workflow_id: String,
 }

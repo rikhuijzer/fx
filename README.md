@@ -113,7 +113,7 @@ To trigger a backup for each change to the website, you can set the following en
 FX_TRIGGER_TOKEN: 'github_pat_...'
 FX_TRIGGER_OWNER_REPO: 'johndoe/fx-backup'
 FX_TRIGGER_BRANCH: 'main' # Optional
-FX_TRIGGER_WORKFLOW_ID: 'ci.yml' # Optional
+FX_TRIGGER_WORKFLOW_ID: 'backup.yml' # Optional
 ```
 
 To obtain the token, you can use the following steps:
