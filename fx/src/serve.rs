@@ -161,7 +161,8 @@ pub fn content_type(headers: &mut HeaderMap, content_type: &str) {
 }
 
 pub fn enable_caching(headers: &mut HeaderMap, max_age: u32) {
-    let src = format!("public, max-age={max_age}");
+    // `must-revalidate` avoids stale responses when disconnected.
+    let src = format!("public, max-age={max_age}, must-revalidate");
     let val = HeaderValue::from_str(&src).unwrap();
     headers.insert(hyper::header::CACHE_CONTROL, val);
 }
