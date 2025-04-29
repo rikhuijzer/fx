@@ -8,8 +8,8 @@ use serde_json::json;
 /// Returns a JSON object that can be used as WebFinger response.
 ///
 /// And do some basic verification via <https://webfinger.net/>.
-pub fn webfinger(ctx: &ServerContext) -> Option<Value> {
-    let domain = Kv::get(&ctx.conn_lock(), "domain").unwrap();
+pub async fn webfinger(ctx: &ServerContext) -> Option<Value> {
+    let domain = Kv::get(&*ctx.conn().await, "domain").unwrap();
     let domain = String::from_utf8(domain).unwrap();
     let username = &ctx.args.username;
     let domain = domain.trim_matches('/');

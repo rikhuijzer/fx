@@ -88,14 +88,14 @@ fn text_input(
 async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
     if !is_logged_in {
-        return crate::serve::unauthorized(&ctx);
+        return crate::serve::unauthorized(&ctx).await;
     }
-    let settings = match Settings::from_db(&ctx.conn_lock()) {
+    let settings = match Settings::from_db(&*ctx.conn().await) {
         Ok(settings) => settings,
         Err(e) => {
             let msg = "Could not get settings from database";
             tracing::error!("{msg}: {e}");
-            return crate::serve::internal_server_error(&ctx, msg);
+            return crate::serve::internal_server_error(&ctx, msg).await;
         }
     };
     let style = "margin-top: 5vh; width: 80%;";
@@ -141,10 +141,11 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
         )
     );
     let page_settings = PageSettings::new("Settings", is_logged_in, false, Top::GoHome, "");
-    let body = page(&ctx, &page_settings, &body);
+    let body = page(&ctx, &page_settings, &body).await;
     response(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
+#[axum::debug_handler]
 async fn post_settings(
     State(ctx): State<ServerContext>,
     jar: CookieJar,
@@ -152,13 +153,14 @@ async fn post_settings(
 ) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
     if !is_logged_in {
-        return crate::serve::unauthorized(&ctx);
+        return crate::serve::unauthorized(&ctx).await;
     }
-    let conn = &ctx.conn_lock();
+    let conn = &*ctx.conn().await;
     Kv::insert(conn, "site_name", form.site_name.as_bytes()).unwrap();
     Kv::insert(conn, "author_name", form.author_name.as_bytes()).unwrap();
     Kv::insert(conn, "about", form.about.as_bytes()).unwrap();
-    let _ = crate::trigger::trigger_github_backup(&ctx);
+    let args = crate::trigger::TriggerArgs::new(&ctx);
+    crate::trigger::trigger_github_backup(&args).await;
     crate::serve::see_other(&ctx, "/")
 }
 

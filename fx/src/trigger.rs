@@ -4,8 +4,29 @@ use hyper::HeaderMap;
 use hyper::header;
 use hyper::header::HeaderValue;
 
-pub async fn trigger_github_backup(ctx: &ServerContext) -> Option<()> {
-    let args = &ctx.args;
+/// Arguments for triggering GitHub Actions.
+/// 
+/// Unlike `ServerContext`, this struct does not contain the database
+/// connection, which allows it to be passed between threads by tokio.
+pub struct TriggerArgs {
+    trigger_token: Option<String>,
+    trigger_owner_repo: Option<String>,
+    trigger_branch: String,
+    trigger_workflow_id: String,
+}
+
+impl TriggerArgs {
+    pub fn new(ctx: &ServerContext) -> Self {
+        Self {
+            trigger_token: ctx.args.trigger_token.clone(),
+            trigger_owner_repo: ctx.args.trigger_owner_repo.clone(),
+            trigger_branch: ctx.args.trigger_branch.clone(),
+            trigger_workflow_id: ctx.args.trigger_workflow_id.clone(),
+        }
+    }
+}
+
+pub async fn trigger_github_backup(args: &TriggerArgs) -> Option<()> {
     let token = match &args.trigger_token {
         Some(token) => token,
         None => return None,

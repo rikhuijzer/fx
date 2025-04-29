@@ -22,7 +22,7 @@ use tar::Header;
 use xz2::read::XzEncoder;
 
 async fn get_api(State(ctx): State<ServerContext>) -> Response<Body> {
-    let domain = Kv::get(&ctx.conn_lock(), "domain").unwrap();
+    let domain = Kv::get(&*ctx.conn().await, "domain").unwrap();
     let domain = String::from_utf8(domain).unwrap();
     let port = ctx.args.port;
     let domain = if domain == "localhost" {
@@ -147,7 +147,7 @@ async fn get_download_all(State(ctx): State<ServerContext>, headers: HeaderMap) 
     if !is_authenticated(&ctx, &headers) {
         return unauthorized(&ctx);
     }
-    let posts = Post::list(&ctx.conn_lock());
+    let posts = Post::list(&*ctx.conn().await);
     let posts = if let Ok(posts) = posts {
         posts
     } else {
@@ -157,7 +157,7 @@ async fn get_download_all(State(ctx): State<ServerContext>, headers: HeaderMap) 
             "failed to get posts",
         );
     };
-    let settings = Settings::from_db(&ctx.conn_lock());
+    let settings = Settings::from_db(&*ctx.conn().await);
     let settings = if let Ok(settings) = settings {
         settings
     } else {
@@ -167,7 +167,7 @@ async fn get_download_all(State(ctx): State<ServerContext>, headers: HeaderMap) 
             "failed to get settings",
         );
     };
-    let files = File::list(&ctx.conn_lock());
+    let files = File::list(&*ctx.conn().await);
     let files = if let Ok(files) = files {
         files
     } else {
@@ -200,7 +200,7 @@ async fn update_about(
     if !is_authenticated(&ctx, &headers) {
         return unauthorized(&ctx);
     }
-    let about = Settings::set_about(&ctx.conn_lock(), &body);
+    let about = Settings::set_about(&*ctx.conn().await, &body);
     if let Err(e) = about {
         return error(
             &ctx,

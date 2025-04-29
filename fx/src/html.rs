@@ -247,11 +247,11 @@ fn test_minify() {
     assert!(minify(page).contains("x = 1;\n\nprintln!"));
 }
 
-fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
-    let about = Kv::get(&ctx.conn_lock(), "about").unwrap();
+async fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
+    let about = Kv::get(&*ctx.conn().await, "about").unwrap();
     let about = String::from_utf8(about).unwrap();
     let about = crate::md::content_to_html(&about);
-    let author_name = Kv::get(&ctx.conn_lock(), "author_name").unwrap();
+    let author_name = Kv::get(&*ctx.conn().await, "author_name").unwrap();
     let author_name = String::from_utf8(author_name).unwrap();
     let style = "font-size: 0.8rem; padding-top: 0.1rem;";
     let settings_button = if settings.is_logged_in {
@@ -315,8 +315,8 @@ fn highlight_head(body: &str) -> String {
     }
 }
 
-pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String {
-    let site_name = Kv::get(&ctx.conn_lock(), "site_name").unwrap();
+pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String {
+    let site_name = Kv::get(&*ctx.conn().await, "site_name").unwrap();
     let site_name = String::from_utf8(site_name).unwrap();
     let site_name = escape_single_quote(&site_name);
     let full_title = if settings.title.is_empty() {
@@ -325,7 +325,7 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
         format!("{} - {site_name}", settings.title)
     };
     let about = if settings.show_about {
-        about(ctx, settings)
+        about(ctx, settings).await
     } else {
         "".to_string()
     };
@@ -393,7 +393,7 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
     minify(&page)
 }
 
-pub fn login(ctx: &ServerContext, error: Option<&str>) -> String {
+pub async fn login(ctx: &ServerContext, error: Option<&str>) -> String {
     let top = Top::Homepage;
     let settings = PageSettings::new("login", false, false, top, "");
     let error = match error {
@@ -414,5 +414,5 @@ pub fn login(ctx: &ServerContext, error: Option<&str>) -> String {
         </form>
     "
     );
-    page(ctx, &settings, &body)
+    page(ctx, &settings, &body).await
 }

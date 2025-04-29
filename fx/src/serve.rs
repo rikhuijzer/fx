@@ -30,8 +30,8 @@ use rusqlite::Connection;
 use serde::Deserialize;
 use serde::Serialize;
 use std::sync::Arc;
-use std::sync::Mutex;
-use std::sync::MutexGuard;
+use tokio::sync::Mutex;
+use tokio::sync::MutexGuard;
 
 #[derive(Clone)]
 pub struct ServerContext {
@@ -48,8 +48,8 @@ impl ServerContext {
             salt,
         }
     }
-    pub fn conn_lock(&self) -> MutexGuard<Connection> {
-        self.conn.lock().unwrap()
+    pub async fn conn(&self) -> MutexGuard<'_, Connection> {
+        self.conn.lock().await
     }
 }
 
@@ -75,7 +75,7 @@ where
     response
 }
 
-pub fn error(ctx: &ServerContext, status: StatusCode, title: &str, msg: &str) -> Response<Body> {
+pub async fn error(ctx: &ServerContext, status: StatusCode, title: &str, msg: &str) -> Response<Body> {
     let body = msg.to_string();
     let headers = HeaderMap::new();
     let settings = PageSettings::new(title, true, false, Top::GoHome, "");
@@ -87,26 +87,26 @@ pub fn error(ctx: &ServerContext, status: StatusCode, title: &str, msg: &str) ->
         </div>
         "
     );
-    let body = page(ctx, &settings, &body);
+    let body = page(ctx, &settings, &body).await;
     response(status, headers, body, ctx)
 }
 
-pub fn internal_server_error(ctx: &ServerContext, msg: &str) -> Response<Body> {
+pub async fn internal_server_error(ctx: &ServerContext, msg: &str) -> Response<Body> {
     error(
         ctx,
         StatusCode::INTERNAL_SERVER_ERROR,
         "Internal Server Error",
         msg,
-    )
+    ).await
 }
 
-pub fn unauthorized(ctx: &ServerContext) -> Response<Body> {
+pub async fn unauthorized(ctx: &ServerContext) -> Response<Body> {
     error(
         ctx,
         StatusCode::UNAUTHORIZED,
         "Unauthorized",
         "Not logged in",
-    )
+    ).await
 }
 
 pub fn response_json<D>(status: StatusCode, body: D, ctx: &ServerContext) -> Response<Body>
@@ -134,8 +134,8 @@ pub fn is_logged_in(ctx: &ServerContext, jar: &CookieJar) -> bool {
     fx_auth::is_logged_in(&ctx.salt, &login, jar)
 }
 
-fn list_posts(ctx: &ServerContext, _is_logged_in: bool) -> String {
-    let mut posts = { Post::list(&ctx.conn_lock()).unwrap() };
+async fn list_posts(ctx: &ServerContext, _is_logged_in: bool) -> String {
+    let mut posts = { Post::list(&*ctx.conn().await).unwrap() };
     posts
         .iter_mut()
         .map(|p| {
@@ -150,8 +150,8 @@ async fn get_posts(State(ctx): State<ServerContext>, jar: CookieJar) -> Response
     let is_logged_in = is_logged_in(&ctx, &jar);
     let extra_head = &ctx.args.extra_head;
     let settings = PageSettings::new("", is_logged_in, true, Top::Homepage, extra_head);
-    let posts = list_posts(&ctx, is_logged_in);
-    let body = page(&ctx, &settings, &posts);
+    let posts = list_posts(&ctx, is_logged_in).await;
+    let body = page(&ctx, &settings, &posts).await;
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
@@ -200,7 +200,7 @@ async fn get_delete(
     if !is_logged_in {
         return not_found(State(ctx.clone())).await;
     }
-    let post = Post::get(&ctx.conn_lock(), id);
+    let post = Post::get(&*ctx.conn().await, id);
     let post = match post {
         Ok(post) => post,
         Err(_) => return not_found(State(ctx.clone())).await,
@@ -218,7 +218,7 @@ async fn get_delete(
         </div>
     "#};
     let body = format!("{}\n{}", delete_button, post_to_html(&post, false));
-    let body = page(&ctx, &settings, &body);
+    let body = page(&ctx, &settings, &body).await;
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
@@ -228,7 +228,7 @@ async fn get_edit(
     jar: CookieJar,
 ) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
-    let post = Post::get(&ctx.conn_lock(), id);
+    let post = Post::get(&*ctx.conn().await, id);
     let post = match post {
         Ok(post) => post,
         Err(_) => return not_found(State(ctx)).await,
@@ -243,7 +243,7 @@ async fn get_edit(
         Top::GoBack,
         &ctx.args.extra_head,
     );
-    let body = page(&ctx, &settings, &body);
+    let body = page(&ctx, &settings, &body).await;
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
@@ -253,13 +253,13 @@ async fn get_post(
     jar: CookieJar,
 ) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
-    let post = Post::get(&ctx.conn_lock(), id);
+    let post = Post::get(&*ctx.conn().await, id);
     let post = match post {
         Ok(post) => post,
         Err(_) => return not_found(State(ctx)).await,
     };
     let title = crate::md::extract_html_title(&post);
-    let author = Kv::get(&ctx.conn_lock(), "author_name").unwrap();
+    let author = Kv::get(&*ctx.conn().await, "author_name").unwrap();
     let author = String::from_utf8(author).unwrap();
     let created = &post.created;
     let updated = &post.updated;
@@ -274,7 +274,7 @@ async fn get_post(
     if is_logged_in {
         body = format!("{}\n{body}", crate::html::edit_post_buttons(&ctx, &post));
     }
-    let body = page(&ctx, &settings, &body);
+    let body = page(&ctx, &settings, &body).await;
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
@@ -289,12 +289,12 @@ pub async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
     "};
     let extra_head = &ctx.args.extra_head;
     let settings = PageSettings::new("not found", is_logged_in, false, Top::GoHome, extra_head);
-    let body = page(&ctx, &settings, body);
+    let body = page(&ctx, &settings, body).await;
     response::<String>(StatusCode::NOT_FOUND, HeaderMap::new(), body, &ctx)
 }
 
 async fn get_login(State(ctx): State<ServerContext>) -> Response<Body> {
-    let body = crate::html::login(&ctx, None);
+    let body = crate::html::login(&ctx, None).await;
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
@@ -337,7 +337,7 @@ async fn post_login(
             Err(response::<String>(
                 StatusCode::UNAUTHORIZED,
                 HeaderMap::new(),
-                body,
+                body.await,
                 &ctx,
             ))
         }
@@ -363,7 +363,7 @@ async fn post_delete(
             &ctx,
         ));
     }
-    Post::delete(&ctx.conn_lock(), id).unwrap();
+    Post::delete(&*ctx.conn().await, id).unwrap();
     Ok(Redirect::to("/"))
 }
 
@@ -413,7 +413,7 @@ async fn post_edit(
     let input = String::from_utf8(bytes).unwrap();
     let publish = input.contains("publish=Publish");
     let form = serde_urlencoded::from_str::<EditPostForm>(&input).unwrap();
-    let created = match Post::get(&ctx.conn_lock(), id) {
+    let created = match Post::get(&*ctx.conn().await, id) {
         Ok(post) => post.created,
         Err(_) => Utc::now(),
     };
@@ -424,7 +424,7 @@ async fn post_edit(
         content: form.content,
     };
     if publish {
-        let post = post.update(&ctx.conn_lock());
+        let post = post.update(&*ctx.conn().await);
         if post.is_err() {
             return response(
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -437,8 +437,8 @@ async fn post_edit(
         see_other(&ctx, &url)
     } else {
         let preview = crate::html::post_to_html(&post, false);
-        let body = page(&ctx, &settings, &preview);
-        response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
+        let body = page(&ctx, &settings, &preview).await;
+        response(StatusCode::OK, HeaderMap::new(), body, &ctx)
     }
 }
 
@@ -477,7 +477,7 @@ async fn post_add(
     let form = serde_urlencoded::from_str::<AddPostForm>(&input).unwrap();
     if publish {
         let now = Utc::now();
-        let post_id = Post::insert(&ctx.conn_lock(), now, now, &form.content);
+        let post_id = Post::insert(&*ctx.conn().await, now, now, &form.content);
         let post_id = if let Ok(post_id) = post_id {
             post_id
         } else {
@@ -498,13 +498,13 @@ async fn post_add(
             content: form.content,
         };
         let preview = crate::html::post_to_html(&post, false);
-        let body = page(&ctx, &settings, &preview);
-        response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
+        let body = page(&ctx, &settings, &preview).await;
+        response(StatusCode::OK, HeaderMap::new(), body, &ctx)
     }
 }
 
 async fn get_webfinger(State(ctx): State<ServerContext>) -> Response<Body> {
-    let body = crate::ap::webfinger(&ctx);
+    let body = crate::ap::webfinger(&ctx).await;
     let body = match body {
         Some(body) => body,
         None => return not_found(State(ctx)).await,
