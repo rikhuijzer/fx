@@ -54,6 +54,10 @@ pub async fn trigger_github_backup(args: &TriggerArgs) -> Option<()> {
         "X-GitHub-Api-Version",
         HeaderValue::from_static("2022-11-28"),
     );
+    headers.insert(
+        header::USER_AGENT,
+        format!("fx/{}", env!("CARGO_PKG_VERSION")).parse().unwrap(),
+    );
     let body = format!(r#"{{"ref":"{branch}"}}"#);
     let response = client.post(url).headers(headers).body(body).send().await;
     match response {
