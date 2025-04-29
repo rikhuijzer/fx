@@ -291,6 +291,30 @@ fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
     )
 }
 
+fn highlight_head(body: &str) -> String {
+    let has_code = body.contains("<pre><code");
+    if has_code {
+        let prefix = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/";
+        format!(
+            "
+            <link rel='stylesheet' href='{prefix}/styles/default.min.css' \
+              media='(prefers-color-scheme: light)'>
+            <link rel='stylesheet' href='{prefix}/styles/github-dark.min.css' \
+              media='(prefers-color-scheme: dark)'>
+            <script src='{prefix}/highlight.min.js' defer>
+            </script>
+            <script defer>
+                document.addEventListener('DOMContentLoaded', function() {{
+                    hljs.highlightAll();
+                }});
+            </script>
+            "
+        )
+    } else {
+        "".to_string()
+    }
+}
+
 pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String {
     let site_name = Kv::get(&ctx.conn_lock(), "site_name").unwrap();
     let site_name = String::from_utf8(site_name).unwrap();
@@ -333,6 +357,7 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
     let html_lang = &ctx.args.html_lang;
     let extra_head = &settings.extra_head;
     let version = include_str!("version.txt").trim();
+    let highlight = highlight_head(body);
     let page = indoc::formatdoc! {
         r#"
         <!DOCTYPE html>
@@ -345,6 +370,7 @@ pub fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String 
             <script src='/static/script.js' defer></script>
             <title>{full_title}</title>
             <meta property='og:site_name' content='{site_name}'/>
+            {highlight}
             {extra_head}
         </head>
         <body>
