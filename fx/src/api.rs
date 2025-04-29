@@ -110,7 +110,9 @@ fn create_archive(site_data: &SiteData) -> Vec<u8> {
     }
 
     let mut header = Header::new_gnu();
-    let path = "settings.toml";
+    // Putting it in `settings/` to be more consistent with the other files that
+    // are also put in directories.
+    let path = "settings/settings.toml";
     header.set_path(path).unwrap();
     header.set_mode(0o644);
     let data = toml::to_string(&site_data.settings).unwrap();
