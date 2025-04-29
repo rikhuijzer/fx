@@ -145,7 +145,6 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
     response(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
-#[axum::debug_handler]
 async fn post_settings(
     State(ctx): State<ServerContext>,
     jar: CookieJar,

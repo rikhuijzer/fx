@@ -8,7 +8,8 @@ readme = "../README.md"
 publish = false
 
 [dependencies]
-axum = { version = "0.8", features = ["form", "macros", "multipart"] }
+# For the `axum::debug_handler` enable "macros".
+axum = { version = "0.8", features = ["form", "multipart"] }
 axum-extra = { version = "0.10", features = ["cookie"] }
 bytes = { version = "1", features = ["serde"] }
 chrono = { version = "0.4.40", features = ["serde"] }
