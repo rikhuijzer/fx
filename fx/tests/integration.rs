@@ -234,3 +234,9 @@ async fn test_post_edit() {
     assert!(!body.contains("# Code"), "text not updated");
     assert!(body.contains("https://example.com"), "text not updated");
 }
+
+#[tokio::test]
+async fn test_no_crash_on_unknown_file() {
+    let (status, _body) = request_body("/files/2323").await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+}

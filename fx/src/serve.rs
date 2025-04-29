@@ -279,7 +279,8 @@ async fn get_post(
 }
 
 pub async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
-    let is_logged_in = is_logged_in(&ctx, &CookieJar::new());
+    // Should probably not show the login button at all on 404 pages.
+    let is_logged_in = false;
     let body = indoc::indoc! {"
         <div style='text-align: center; margin-top: 100px;'>
             <h1>Not found</h1>

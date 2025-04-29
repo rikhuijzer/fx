@@ -223,7 +223,15 @@ async fn get_files(State(ctx): State<ServerContext>, jar: CookieJar) -> Response
 }
 
 async fn get_file(State(ctx): State<ServerContext>, Path(sha): Path<String>) -> Response<Body> {
-    let file = File::get(&ctx.conn_lock(), &sha).unwrap();
+    let file = match File::get(&ctx.conn_lock(), &sha) {
+        Ok(file) => file,
+        Err(_) => {
+            return {
+                let body = "not found";
+                response(StatusCode::NOT_FOUND, HeaderMap::new(), body, &ctx)
+            };
+        }
+    };
     let mut headers = HeaderMap::new();
     crate::serve::content_type(&mut headers, &file.mime_type);
     // Setting this too high might make deleted files accessible for too long
