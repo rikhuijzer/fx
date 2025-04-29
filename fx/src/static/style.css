@@ -73,6 +73,10 @@ li {
     line-height: 1.2;
 }
 
+li p {
+    margin: 0.3rem 0;
+}
+
 code {
     background-color: var(--code-background);
     border-radius: var(--radius);
