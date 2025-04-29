@@ -1,3 +1,4 @@
+//! File upload and download at `/files`.
 use crate::html::PageSettings;
 use crate::html::Top;
 use crate::html::page;
@@ -188,9 +189,9 @@ fn show_file(file: &File) -> String {
 async fn get_files(State(ctx): State<ServerContext>, jar: CookieJar) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
     if !is_logged_in {
-        return crate::serve::unauthorized(&ctx);
+        return crate::serve::unauthorized(&ctx).await;
     }
-    let files = File::list(&ctx.conn_lock()).unwrap();
+    let files = File::list(&*ctx.conn().await).unwrap();
     let files = files
         .iter()
         .map(show_file)
@@ -218,12 +219,12 @@ async fn get_files(State(ctx): State<ServerContext>, jar: CookieJar) -> Response
         "
     );
     let page_settings = PageSettings::new("Files", is_logged_in, false, Top::GoHome, "");
-    let body = page(&ctx, &page_settings, &body);
+    let body = page(&ctx, &page_settings, &body).await;
     response(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
 async fn get_file(State(ctx): State<ServerContext>, Path(sha): Path<String>) -> Response<Body> {
-    let file = match File::get(&ctx.conn_lock(), &sha) {
+    let file = match File::get(&*ctx.conn().await, &sha) {
         Ok(file) => file,
         Err(_) => {
             return {
@@ -248,7 +249,7 @@ async fn post_file(
 ) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
     if !is_logged_in {
-        return crate::serve::unauthorized(&ctx);
+        return crate::serve::unauthorized(&ctx).await;
     }
     while let Some(field) = multipart.next_field().await.unwrap() {
         let filename = field.file_name().unwrap().to_string();
@@ -262,7 +263,7 @@ async fn post_file(
             .await
             .expect("Failed to read file; the file could be too large.");
         let file = File::new(&mime_type, &filename, data);
-        File::insert(&ctx.conn_lock(), &file).unwrap();
+        File::insert(&*ctx.conn().await, &file).unwrap();
     }
     crate::serve::see_other(&ctx, "/files")
 }
@@ -274,9 +275,9 @@ async fn get_delete(
 ) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
     if !is_logged_in {
-        return crate::serve::unauthorized(&ctx);
+        return crate::serve::unauthorized(&ctx).await;
     }
-    let file = File::get(&ctx.conn_lock(), &sha);
+    let file = File::get(&*ctx.conn().await, &sha);
     let file = match file {
         Ok(file) => file,
         Err(_) => return not_found(State(ctx.clone())).await,
@@ -293,7 +294,7 @@ async fn get_delete(
             <br>
         </div>
     "#, file.filename};
-    let body = page(&ctx, &settings, &body);
+    let body = page(&ctx, &settings, &body).await;
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
@@ -304,9 +305,9 @@ async fn post_delete(
 ) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
     if !is_logged_in {
-        return crate::serve::unauthorized(&ctx);
+        return crate::serve::unauthorized(&ctx).await;
     }
-    File::delete(&ctx.conn_lock(), &sha).unwrap();
+    File::delete(&*ctx.conn().await, &sha).unwrap();
     crate::serve::see_other(&ctx, "/files")
 }
 
@@ -317,9 +318,9 @@ async fn get_rename(
 ) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
     if !is_logged_in {
-        return crate::serve::unauthorized(&ctx);
+        return crate::serve::unauthorized(&ctx).await;
     }
-    let file = File::get(&ctx.conn_lock(), &sha);
+    let file = File::get(&*ctx.conn().await, &sha);
     let file = match file {
         Ok(file) => file,
         Err(_) => return not_found(State(ctx.clone())).await,
@@ -342,7 +343,7 @@ async fn get_rename(
             <br>
         </div>
     "#, file.filename, file.filename};
-    let body = page(&ctx, &settings, &body);
+    let body = page(&ctx, &settings, &body).await;
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
@@ -359,10 +360,10 @@ async fn post_rename(
 ) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
     if !is_logged_in {
-        return crate::serve::unauthorized(&ctx);
+        return crate::serve::unauthorized(&ctx).await;
     }
     let filename = rename_form.filename;
-    File::rename(&ctx.conn_lock(), &sha, &filename).unwrap();
+    File::rename(&*ctx.conn().await, &sha, &filename).unwrap();
     crate::serve::see_other(&ctx, "/files")
 }
 

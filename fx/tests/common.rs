@@ -17,6 +17,10 @@ pub trait TestDefault {
 impl TestDefault for ServeArgs {
     fn test_default() -> Self {
         Self {
+            trigger_token: Some("trigger-token".to_string()),
+            trigger_owner_repo: Some("test-owner/test-repo".to_string()),
+            trigger_branch: "main".to_string(),
+            trigger_workflow_id: "ci.yml".to_string(),
             production: false,
             port: 3000,
             database_path: "".to_string(),
