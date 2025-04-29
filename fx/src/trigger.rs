@@ -4,7 +4,7 @@ use hyper::HeaderMap;
 use hyper::header;
 use hyper::header::HeaderValue;
 
-async fn trigger_github_actions(ctx: &ServerContext) -> Option<()> {
+pub async fn trigger_github_backup(ctx: &ServerContext) -> Option<()> {
     let args = &ctx.args;
     let token = match &args.trigger_token {
         Some(token) => token,
@@ -38,7 +38,6 @@ async fn trigger_github_actions(ctx: &ServerContext) -> Option<()> {
     match response {
         Ok(response) => {
             if response.status().is_success() {
-                tracing::info!("GitHub Actions triggered");
                 Some(())
             } else {
                 tracing::error!(
