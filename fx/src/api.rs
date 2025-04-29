@@ -13,6 +13,7 @@ use axum::http::StatusCode;
 use axum::http::header::HeaderMap;
 use axum::http::header::HeaderValue;
 use axum::routing::get;
+use axum::routing::put;
 use serde_json::json;
 use std::io::Read;
 use tar::Builder;
@@ -188,9 +189,29 @@ async fn get_download_all(State(ctx): State<ServerContext>, headers: HeaderMap) 
     response::<Vec<u8>>(StatusCode::OK, headers, body, &ctx)
 }
 
+async fn update_about(
+    State(ctx): State<ServerContext>,
+    headers: HeaderMap,
+    body: String,
+) -> Response<Body> {
+    if !is_authenticated(&ctx, &headers) {
+        return unauthorized(&ctx);
+    }
+    let about = Settings::set_about(&ctx.conn_lock(), &body);
+    if let Err(e) = about {
+        return error(
+            &ctx,
+            StatusCode::INTERNAL_SERVER_ERROR,
+            &format!("failed to update about: {e}"),
+        );
+    }
+    response_json(StatusCode::OK, "ok", &ctx)
+}
+
 pub fn routes(router: &Router<ServerContext>) -> Router<ServerContext> {
     router
         .clone()
         .route("/api", get(get_api))
         .route("/api/download/all.tar.xz", get(get_download_all))
+        .route("/api/settings/about", put(update_about))
 }

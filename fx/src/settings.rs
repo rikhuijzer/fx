@@ -37,6 +37,10 @@ impl Settings {
             about: String::from_utf8(about).unwrap(),
         })
     }
+    pub fn set_about(conn: &Connection, about: &str) -> rusqlite::Result<()> {
+        Kv::insert(conn, "about", about.as_bytes())?;
+        Ok(())
+    }
 }
 
 enum InputType {

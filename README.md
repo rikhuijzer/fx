@@ -47,7 +47,9 @@ services:
     restart: 'unless-stopped'
 ```
 
-## Backup
+## API
+
+### Backup
 
 You can backup your site to plain text files with the following shell script:
 
@@ -57,7 +59,7 @@ set -euxo pipefail
 
 ARCHIVE_PATH="all.tar.xz"
 
-curl --proto "=https" --tlsv1.2 -sSf \
+curl \
   -H "Authorization: Bearer $FX_PASSWORD" \
   https://$DOMAIN/api/download/all.tar.xz > "$ARCHIVE_PATH"
 
@@ -104,3 +106,15 @@ jobs:
 
 This will backup your site every 6 hours.
 An example backup repository is [here](https://github.com/rikhuijzer/fx-backup).
+
+### Update
+
+You can update the `about` text via:
+
+```bash
+curl \
+  -X PUT \
+  -H "Authorization: Bearer $FX_PASSWORD" \
+  https://$DOMAIN/api/settings/about \
+  -d "Some text"
+```

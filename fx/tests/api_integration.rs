@@ -5,6 +5,7 @@ use axum::extract::Request;
 use axum::http::StatusCode;
 use chrono::Utc;
 use common::*;
+use fx::serve::ServerContext;
 use fx::serve::app;
 use http_body_util::BodyExt;
 use std::io::Cursor;
@@ -29,14 +30,17 @@ async fn test_no_access() {
     }
 }
 
-#[allow(dead_code)]
+fn auth_header(ctx: &ServerContext) -> String {
+    let auth = ctx.args.password.clone().unwrap();
+    format!("Bearer {auth}")
+}
+
 pub async fn request_body_authenticated(uri: &str) -> (StatusCode, Vec<u8>) {
     let ctx = server_context();
-    let auth = ctx.args.password.clone().unwrap();
     let req = Request::builder()
         .method("GET")
         .uri(uri)
-        .header("Authorization", format!("Bearer {auth}"))
+        .header("Authorization", auth_header(&ctx))
         .body(Body::empty())
         .unwrap();
     let response = app(ctx.clone()).oneshot(req).await.unwrap();
@@ -44,6 +48,33 @@ pub async fn request_body_authenticated(uri: &str) -> (StatusCode, Vec<u8>) {
     let body = response.into_body().collect().await.unwrap();
     let body: Vec<u8> = body.to_bytes().into();
     (status, body)
+}
+
+#[tokio::test]
+async fn test_update_about() {
+    let ctx = server_context();
+    let router = app(ctx.clone());
+    let uri = "/api/settings/about";
+    let body = "test";
+    let req = Request::builder()
+        .method("PUT")
+        .uri(uri)
+        .body(Body::from(body))
+        .unwrap();
+    let response = router.oneshot(req).await.unwrap();
+    let status = response.status();
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+
+    let req = Request::builder()
+        .method("PUT")
+        .uri(uri)
+        .header("Authorization", auth_header(&ctx))
+        .body(Body::from(body))
+        .unwrap();
+    let router = app(ctx.clone());
+    let response = router.oneshot(req).await.unwrap();
+    let status = response.status();
+    assert_eq!(status, StatusCode::OK);
 }
 
 #[tokio::test]
