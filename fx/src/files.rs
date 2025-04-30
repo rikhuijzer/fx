@@ -236,8 +236,8 @@ async fn get_file(State(ctx): State<ServerContext>, Path(sha): Path<String>) -> 
     let mut headers = HeaderMap::new();
     crate::serve::content_type(&mut headers, &file.mime_type);
     // Setting this too high might make deleted files accessible for too long
-    // which could be confusing for the author.
-    let max_age = 60;
+    // which could be confusing for the user.
+    let max_age = 300;
     crate::serve::enable_caching(&mut headers, max_age);
     response(StatusCode::OK, headers, file.data, &ctx)
 }
@@ -254,7 +254,7 @@ async fn post_file(
     while let Some(field) = multipart.next_field().await.unwrap() {
         let filename = field.file_name().unwrap().to_string();
         if filename.is_empty() {
-            // This occurs when clicking "Upload" without selecting any files.
+            // Occurs when clicking "Upload" without selecting any files.
             continue;
         }
         let mime_type = field.content_type().unwrap().to_string();
@@ -265,6 +265,7 @@ async fn post_file(
         let file = File::new(&mime_type, &filename, data);
         File::insert(&*ctx.conn().await, &file).unwrap();
     }
+    crate::trigger::trigger_github_backup(&ctx).await;
     crate::serve::see_other(&ctx, "/files")
 }
 
@@ -308,6 +309,7 @@ async fn post_delete(
         return crate::serve::unauthorized(&ctx).await;
     }
     File::delete(&*ctx.conn().await, &sha).unwrap();
+    crate::trigger::trigger_github_backup(&ctx).await;
     crate::serve::see_other(&ctx, "/files")
 }
 
@@ -364,6 +366,7 @@ async fn post_rename(
     }
     let filename = rename_form.filename;
     File::rename(&*ctx.conn().await, &sha, &filename).unwrap();
+    crate::trigger::trigger_github_backup(&ctx).await;
     crate::serve::see_other(&ctx, "/files")
 }
 

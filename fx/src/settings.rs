@@ -158,8 +158,7 @@ async fn post_settings(
     Kv::insert(conn, "site_name", form.site_name.as_bytes()).unwrap();
     Kv::insert(conn, "author_name", form.author_name.as_bytes()).unwrap();
     Kv::insert(conn, "about", form.about.as_bytes()).unwrap();
-    let args = crate::trigger::TriggerArgs::new(&ctx);
-    crate::trigger::trigger_github_backup(&args).await;
+    crate::trigger::trigger_github_backup(&ctx).await;
     crate::serve::see_other(&ctx, "/")
 }
 

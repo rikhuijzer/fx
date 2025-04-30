@@ -36,20 +36,24 @@ fn turn_title_into_link(post: &Post, html: &str) -> String {
     }
 }
 
-pub fn post_to_html(post: &Post, is_preview: bool) -> String {
+pub fn post_to_html(post: &Post, is_front_page_preview: bool) -> String {
     // Not wrapping the full post in a `href` because that prevents text
     // selection. I've tried all kinds of workarounds with putting a `position:
     // relative` object in front of the link with `z-index`, but that didn't
     // work. Either the area was clickable or the text was selectable but not
     // both.
-    let md = if is_preview {
+    let md = if is_front_page_preview {
         turn_title_into_link(post, &post.content)
     } else {
         post.content.clone()
     };
     let html = crate::md::content_to_html(&md);
-    let style = if is_preview { &border_style(1) } else { "" };
-    let updated = if post.created == post.updated || is_preview {
+    let style = if is_front_page_preview {
+        &border_style(1)
+    } else {
+        ""
+    };
+    let updated = if post.created == post.updated || is_front_page_preview {
         ""
     } else {
         &format!(
@@ -57,17 +61,21 @@ pub fn post_to_html(post: &Post, is_preview: bool) -> String {
             show_date(&post.updated)
         )
     };
-    let post_link = if is_preview {
+    let post_link = if is_front_page_preview {
         format!("<a href='/posts/{}' class='unstyled-link'>", post.id)
     } else {
         "<span>".to_string()
     };
-    let post_link_end = if is_preview {
+    let post_link_end = if is_front_page_preview {
         "</a>".to_string()
     } else {
         "</span>".to_string()
     };
-    let post_preview_class = if is_preview { "post-preview" } else { "" };
+    let post_preview_class = if is_front_page_preview {
+        "post-preview"
+    } else {
+        ""
+    };
     indoc::formatdoc! {"
     <div class='post' style='{style}'>
         {post_link}

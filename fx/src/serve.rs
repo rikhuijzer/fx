@@ -75,7 +75,12 @@ where
     response
 }
 
-pub async fn error(ctx: &ServerContext, status: StatusCode, title: &str, msg: &str) -> Response<Body> {
+pub async fn error(
+    ctx: &ServerContext,
+    status: StatusCode,
+    title: &str,
+    msg: &str,
+) -> Response<Body> {
     let body = msg.to_string();
     let headers = HeaderMap::new();
     let settings = PageSettings::new(title, true, false, Top::GoHome, "");
@@ -97,7 +102,8 @@ pub async fn internal_server_error(ctx: &ServerContext, msg: &str) -> Response<B
         StatusCode::INTERNAL_SERVER_ERROR,
         "Internal Server Error",
         msg,
-    ).await
+    )
+    .await
 }
 
 pub async fn unauthorized(ctx: &ServerContext) -> Response<Body> {
@@ -106,7 +112,8 @@ pub async fn unauthorized(ctx: &ServerContext) -> Response<Body> {
         StatusCode::UNAUTHORIZED,
         "Unauthorized",
         "Not logged in",
-    ).await
+    )
+    .await
 }
 
 pub fn response_json<D>(status: StatusCode, body: D, ctx: &ServerContext) -> Response<Body>
@@ -364,6 +371,7 @@ async fn post_delete(
         ));
     }
     Post::delete(&*ctx.conn().await, id).unwrap();
+    crate::trigger::trigger_github_backup(&ctx).await;
     Ok(Redirect::to("/"))
 }
 
@@ -434,6 +442,7 @@ async fn post_edit(
             );
         };
         let url = format!("/posts/{}", id);
+        crate::trigger::trigger_github_backup(&ctx).await;
         see_other(&ctx, &url)
     } else {
         let preview = crate::html::post_to_html(&post, false);
@@ -489,6 +498,7 @@ async fn post_add(
             );
         };
         let url = format!("/posts/{}", post_id);
+        crate::trigger::trigger_github_backup(&ctx).await;
         see_other(&ctx, &url)
     } else {
         let post = Post {
@@ -497,7 +507,8 @@ async fn post_add(
             updated: Utc::now(),
             content: form.content,
         };
-        let preview = crate::html::post_to_html(&post, false);
+        let is_front_page_preview = false;
+        let preview = crate::html::post_to_html(&post, is_front_page_preview);
         let body = page(&ctx, &settings, &preview).await;
         response(StatusCode::OK, HeaderMap::new(), body, &ctx)
     }

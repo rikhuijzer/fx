@@ -208,6 +208,7 @@ async fn update_about(
             &format!("failed to update about: {e}"),
         );
     }
+    crate::trigger::trigger_github_backup(&ctx).await;
     response_json(StatusCode::OK, "ok", &ctx)
 }
 
