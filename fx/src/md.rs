@@ -73,6 +73,8 @@ fn to_html_options() -> Options {
     let mut options = Options::default();
     options.compile.allow_dangerous_html = true;
     options.parse.constructs.gfm_table = true;
+    options.parse.constructs.math_flow = true;
+    options.parse.constructs.math_text = true;
     options
 }
 
