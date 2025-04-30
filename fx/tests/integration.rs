@@ -240,3 +240,16 @@ async fn test_no_crash_on_unknown_file() {
     let (status, _body) = request_body("/files/2323").await;
     assert_eq!(status, StatusCode::NOT_FOUND);
 }
+
+#[tokio::test]
+async fn test_sitemap() {
+    let (status, body) = request_body("/sitemap.xml").await;
+    assert_eq!(status, StatusCode::OK);
+    println!("body:\n{body}");
+    assert!(body.contains("xml version"));
+    assert!(body.contains("<urlset xmlns"));
+    assert!(body.contains("<loc>/</loc>"));
+    assert!(body.contains("<loc>/posts/1</loc>"));
+    assert!(body.contains("<loc>/posts/2</loc>"));
+    assert!(body.contains("<lastmod>"));
+}

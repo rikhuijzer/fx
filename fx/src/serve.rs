@@ -51,6 +51,13 @@ impl ServerContext {
     pub async fn conn(&self) -> MutexGuard<'_, Connection> {
         self.conn.lock().await
     }
+    pub fn base_url(&self) -> String {
+        if self.args.domain.is_empty() {
+            "".to_string()
+        } else {
+            format!("https://{}", &self.args.domain)
+        }
+    }
 }
 
 pub fn response<D: Sized>(
@@ -198,6 +205,41 @@ async fn get_nodefer(State(ctx): State<ServerContext>) -> Response<Body> {
     response(StatusCode::OK, headers, body, &ctx)
 }
 
+fn w3_datetime(dt: &chrono::DateTime<chrono::Utc>) -> String {
+    dt.format("%Y-%m-%dT%H:%M:%SZ").to_string()
+}
+
+fn sitemap(ctx: &ServerContext, posts: &[Post]) -> String {
+    let mut body = String::new();
+    body.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+    body.push_str("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
+    let base = ctx.base_url();
+    body.push_str(&format!("<url><loc>{base}/</loc></url>\n"));
+    for post in posts {
+        let url = format!("{}/posts/{}", base, post.id);
+        let updated = w3_datetime(&post.updated);
+        let entry = format!(
+            "
+            <url>
+            <loc>{url}</loc>
+            <lastmod>{updated}</lastmod>
+            </url>
+            "
+        );
+        body.push_str(&entry);
+    }
+    body.push_str("</urlset>\n");
+    crate::html::minify(&body)
+}
+
+async fn get_sitemap(State(ctx): State<ServerContext>) -> Response<Body> {
+    let posts = Post::list(&*ctx.conn().await).unwrap();
+    let body = sitemap(&ctx, &posts);
+    let mut headers = HeaderMap::new();
+    content_type(&mut headers, "text/xml");
+    response(StatusCode::OK, headers, body, &ctx)
+}
+
 async fn get_delete(
     State(ctx): State<ServerContext>,
     Path(id): Path<i64>,
@@ -254,6 +296,10 @@ async fn get_edit(
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
+fn iso8601(dt: &chrono::DateTime<chrono::Utc>) -> String {
+    dt.format("%Y-%m-%dT%H:%M:%SZ").to_string()
+}
+
 async fn get_post(
     State(ctx): State<ServerContext>,
     Path(id): Path<i64>,
@@ -268,12 +314,15 @@ async fn get_post(
     let title = crate::md::extract_html_title(&post);
     let author = Kv::get(&*ctx.conn().await, "author_name").unwrap();
     let author = String::from_utf8(author).unwrap();
-    let created = &post.created;
-    let updated = &post.updated;
+    // Open Graph uses ISO 8601 according to <https://ogp.me/>.
+    let created = iso8601(&post.created);
+    let updated = iso8601(&post.updated);
+    let canonical = format!("{}/posts/{}", &ctx.base_url(), &post.id);
     let extra_head = indoc::formatdoc! {r#"
         <meta property='article:author' content='{author}'/>
         <meta property='article:published_time' content='{created}'/>
         <meta property='article:modified_time' content='{updated}'/>
+        <link rel='canonical' href='{canonical}'/>
         {}
     "#, ctx.args.extra_head};
     let settings = PageSettings::new(&title, is_logged_in, false, Top::GoHome, &extra_head);
@@ -537,13 +586,14 @@ pub fn app(ctx: ServerContext) -> Router {
         .route("/posts/edit/{id}", get(get_edit))
         .route("/posts/edit/{id}", post(post_edit))
         .route("/posts/add", post(post_add))
+        .route("/posts/{id}", get(get_post))
         .route("/login", get(get_login))
         .route("/login", post(post_login))
         .route("/logout", get(get_logout))
-        .route("/posts/{id}", get(get_post))
         .route("/static/style.css", get(get_style))
         .route("/static/script.js", get(get_script))
         .route("/static/nodefer.js", get(get_nodefer))
+        .route("/sitemap.xml", get(get_sitemap))
         .route("/.well-known/webfinger", get(get_webfinger));
     let router = router.fallback(not_found);
     let router = crate::api::routes(&router);
