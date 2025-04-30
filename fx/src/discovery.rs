@@ -12,6 +12,10 @@ use axum::http::Response;
 use axum::http::StatusCode;
 use axum::routing::get;
 
+fn rfc822_datetime(dt: &chrono::DateTime<chrono::Utc>) -> String {
+    dt.format("%a, %d %b %Y %H:%M:%S GMT").to_string()
+}
+
 async fn rss(ctx: &ServerContext, posts: &[Post]) -> String {
     let settings = Settings::from_db(&*ctx.conn().await).unwrap();
     let site_name = &settings.site_name;
@@ -30,12 +34,13 @@ async fn rss(ctx: &ServerContext, posts: &[Post]) -> String {
         let title = crate::md::extract_html_title(post);
         let description = crate::md::extract_html_description(post);
         let url = format!("{base}/posts/{}", post.id);
-        let created = w3_datetime(&post.created);
+        let created = rfc822_datetime(&post.created);
         let entry = format!(
             "
             <item>
             <title>{title}</title>
             <link>{url}</link>
+            <guid>{url}</guid>
             <pubDate>{created}</pubDate>
             <description>{description}</description>
             </item>
