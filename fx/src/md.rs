@@ -72,6 +72,7 @@ fn node_to_html(node: &Node) -> String {
 fn to_html_options() -> Options {
     let mut options = Options::default();
     options.compile.allow_dangerous_html = true;
+    options.parse.constructs.gfm_table = true;
     options
 }
 
