@@ -1,5 +1,4 @@
 //! API endpoints at `/api`.
-use crate::data::Kv;
 use crate::data::Post;
 use crate::files::File;
 use crate::serve::ServerContext;
@@ -22,16 +21,9 @@ use tar::Header;
 use xz2::read::XzEncoder;
 
 async fn get_api(State(ctx): State<ServerContext>) -> Response<Body> {
-    let domain = Kv::get(&*ctx.conn().await, "domain").unwrap();
-    let domain = String::from_utf8(domain).unwrap();
-    let port = ctx.args.port;
-    let domain = if domain == "localhost" {
-        format!("http://localhost:{port}")
-    } else {
-        format!("https://{domain}")
-    };
+    let domain = ctx.base_url();
     let body = json!({
-        "download_all_url": format!("{domain}/download/all"),
+        "download_all_url": format!("{domain}/api/download/all.tar.xz"),
     })
     .to_string();
     response_json(StatusCode::OK, body, &ctx)

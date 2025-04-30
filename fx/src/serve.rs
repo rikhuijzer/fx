@@ -51,11 +51,18 @@ impl ServerContext {
     pub async fn conn(&self) -> MutexGuard<'_, Connection> {
         self.conn.lock().await
     }
+    /// Returns the base URL of the server.
+    ///
+    /// For example, if the domain is "example.com", the base URL will be
+    /// "https://example.com".
     pub fn base_url(&self) -> String {
         if self.args.domain.is_empty() {
             "".to_string()
         } else {
-            format!("https://{}", &self.args.domain)
+            let domain = &self.args.domain;
+            let domain = domain.trim();
+            let domain = domain.trim_end_matches('/');
+            format!("https://{domain}")
         }
     }
 }
