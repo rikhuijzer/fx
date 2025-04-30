@@ -90,6 +90,18 @@ pub struct Post {
     pub content: String,
 }
 
+/// Cleanup user-provided content before storing it.
+///
+/// Removes trailing whitespace and trailing empty lines.
+pub fn cleanup_content(content: &str) -> String {
+    let content = content
+        .lines()
+        .map(|line| line.trim_end())
+        .collect::<Vec<&str>>()
+        .join("\n");
+    format!("{}\n", content.trim())
+}
+
 impl Post {
     fn create_table(conn: &Connection) -> Result<usize> {
         let stmt = "
@@ -114,7 +126,7 @@ impl Post {
         ";
         let created = created.to_sqlite();
         let updated = updated.to_sqlite();
-        let content = content.to_string();
+        let content = cleanup_content(content);
         conn.execute(stmt, [created, updated, content])?;
         let id = conn.last_insert_rowid();
         Ok(id)
@@ -168,7 +180,7 @@ impl Post {
         ";
         let created = self.created.to_sqlite();
         let updated = self.updated.to_sqlite();
-        let content = self.content.to_string();
+        let content = cleanup_content(&self.content);
         let id = self.id.to_string();
         conn.execute(stmt, [created, updated, content, id])
     }

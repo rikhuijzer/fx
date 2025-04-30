@@ -1,4 +1,5 @@
 use crate::data::Kv;
+use crate::data::cleanup_content;
 use crate::html::PageSettings;
 use crate::html::Top;
 use crate::html::page;
@@ -157,7 +158,8 @@ async fn post_settings(
     let conn = &*ctx.conn().await;
     Kv::insert(conn, "site_name", form.site_name.as_bytes()).unwrap();
     Kv::insert(conn, "author_name", form.author_name.as_bytes()).unwrap();
-    Kv::insert(conn, "about", form.about.as_bytes()).unwrap();
+    let about = cleanup_content(&form.about);
+    Kv::insert(conn, "about", about.as_bytes()).unwrap();
     crate::trigger::trigger_github_backup(&ctx).await;
     crate::serve::see_other(&ctx, "/")
 }
