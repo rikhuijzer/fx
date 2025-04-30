@@ -374,6 +374,7 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
             <meta charset='UTF-8'>
             <meta name='viewport' content='width=device-width, initial-scale=1'>
             <link rel='stylesheet' href='/static/style.css'>
+            <link rel='alternate' type='application/rss+xml' href='/feed.rss'>
             <script src='/static/nodefer.js'></script>
             <script src='/static/script.js' defer></script>
             <title>{full_title}</title>

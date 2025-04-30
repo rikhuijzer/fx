@@ -263,3 +263,19 @@ async fn test_robots() {
     assert!(body.contains("Disallow:\n"));
     assert!(body.contains("Sitemap:"));
 }
+
+#[tokio::test]
+async fn test_rss() {
+    let (status, body) = request_body("/feed.rss").await;
+    assert_eq!(status, StatusCode::OK);
+    println!("body:\n{body}");
+    assert!(body.starts_with("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"));
+    assert!(
+        !body.contains("<description>Lorem ipsum"),
+        "description without title"
+    );
+    assert!(
+        body.contains("<description>`Dolor sit amet"),
+        "description with title"
+    );
+}

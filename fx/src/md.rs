@@ -206,13 +206,29 @@ pub fn extract_html_title(post: &Post) -> String {
     }
 }
 
+pub fn extract_html_description(post: &Post) -> String {
+    let content = post.content.trim();
+    let title = extract_html_title(post);
+    let title = title.trim_end_matches("...");
+    let description = remove_urls(content);
+    let description = description.trim_start_matches("# ");
+    let description = description.trim_start_matches(title).trim();
+    let description = remove_urls(description);
+    let max_length = 150;
+    if description.len() <= max_length {
+        description
+    } else {
+        format!("{}...", truncate(&description, max_length))
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
     use chrono::Utc;
 
     #[test]
-    fn test_extract_html_title() {
+    fn test_extract_html_title_and_description() {
         let post = Post {
             id: 0,
             content: "[lorem](https://example.com/lorem) ipsum".to_string(),
@@ -230,5 +246,7 @@ mod test {
         };
         let title = extract_html_title(&post);
         assert_eq!(title, "Title");
+        let description = extract_html_description(&post);
+        assert_eq!(description, "ipsum");
     }
 }
