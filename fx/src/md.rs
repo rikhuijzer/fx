@@ -73,6 +73,10 @@ fn to_html_options() -> Options {
     let mut options = Options::default();
     options.compile.allow_dangerous_html = true;
     options.parse.constructs.gfm_table = true;
+    // KaTeX does not exactly match CommonMark, so we parse math to HTML and
+    // then figure out how to render the produced code blocks in Javascript.
+    // Note that this also makes it easy to detect whether a post contains math,
+    // and thus easy to decide whether to load KaTeX.
     options.parse.constructs.math_flow = true;
     options.parse.constructs.math_text = true;
     options

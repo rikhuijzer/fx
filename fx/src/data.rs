@@ -239,7 +239,7 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
             ## More
 
             Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris
-            nisi ut aliquip ex ea commodo consequat.
+            nisi ut aliquip ex ea $x=1$ commodo consequat.
 
             ```rust
             x = 1;
