@@ -116,7 +116,7 @@ img {
 
 .middle {
     width: 100%;
-    max-width: 640px;
+    max-width: 70ch;
     padding: 6px;
     display: flex;
     flex-direction: column;
