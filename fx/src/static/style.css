@@ -107,6 +107,16 @@ img {
     height: auto;
 }
 
+blockquote {
+    border-left: 2px solid var(--border);
+    padding: 0.2rem 10px;
+    margin: 0.2rem 10px;
+}
+
+blockquote p {
+    margin: 0.2rem 0;
+}
+
 .container {
     display: flex;
     justify-content: center;
