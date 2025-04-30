@@ -253,3 +253,13 @@ async fn test_sitemap() {
     assert!(body.contains("<loc>/posts/2</loc>"));
     assert!(body.contains("<lastmod>"));
 }
+
+#[tokio::test]
+async fn test_robots() {
+    let (status, body) = request_body("/robots.txt").await;
+    assert_eq!(status, StatusCode::OK);
+    println!("body:\n{body}");
+    assert!(body.starts_with("User-agent: *"));
+    assert!(body.contains("Disallow:\n"));
+    assert!(body.contains("Sitemap:"));
+}

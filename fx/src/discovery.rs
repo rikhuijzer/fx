@@ -11,6 +11,22 @@ use axum::http::Response;
 use axum::http::StatusCode;
 use axum::routing::get;
 
+async fn get_robots(State(ctx): State<ServerContext>) -> Response<Body> {
+    let base = ctx.base_url();
+    let sitemap_url = format!("{base}/sitemap.xml");
+    let body = format!(
+        "
+        User-agent: *
+        Disallow:
+        Sitemap: {sitemap_url}
+        "
+    );
+    let body = crate::html::minify(&body);
+    let mut headers = HeaderMap::new();
+    content_type(&mut headers, "text/plain; charset=utf-8");
+    response(StatusCode::OK, headers, body, &ctx)
+}
+
 fn w3_datetime(dt: &chrono::DateTime<chrono::Utc>) -> String {
     dt.format("%Y-%m-%dT%H:%M:%SZ").to_string()
 }
@@ -47,5 +63,8 @@ async fn get_sitemap(State(ctx): State<ServerContext>) -> Response<Body> {
 }
 
 pub fn routes(router: &Router<ServerContext>) -> Router<ServerContext> {
-    router.clone().route("/sitemap.xml", get(get_sitemap))
+    router
+        .clone()
+        .route("/robots.txt", get(get_robots))
+        .route("/sitemap.xml", get(get_sitemap))
 }
