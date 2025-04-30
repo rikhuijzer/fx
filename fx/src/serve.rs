@@ -212,41 +212,6 @@ async fn get_nodefer(State(ctx): State<ServerContext>) -> Response<Body> {
     response(StatusCode::OK, headers, body, &ctx)
 }
 
-fn w3_datetime(dt: &chrono::DateTime<chrono::Utc>) -> String {
-    dt.format("%Y-%m-%dT%H:%M:%SZ").to_string()
-}
-
-fn sitemap(ctx: &ServerContext, posts: &[Post]) -> String {
-    let mut body = String::new();
-    body.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-    body.push_str("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
-    let base = ctx.base_url();
-    body.push_str(&format!("<url><loc>{base}/</loc></url>\n"));
-    for post in posts {
-        let url = format!("{}/posts/{}", base, post.id);
-        let updated = w3_datetime(&post.updated);
-        let entry = format!(
-            "
-            <url>
-            <loc>{url}</loc>
-            <lastmod>{updated}</lastmod>
-            </url>
-            "
-        );
-        body.push_str(&entry);
-    }
-    body.push_str("</urlset>\n");
-    crate::html::minify(&body)
-}
-
-async fn get_sitemap(State(ctx): State<ServerContext>) -> Response<Body> {
-    let posts = Post::list(&*ctx.conn().await).unwrap();
-    let body = sitemap(&ctx, &posts);
-    let mut headers = HeaderMap::new();
-    content_type(&mut headers, "text/xml");
-    response(StatusCode::OK, headers, body, &ctx)
-}
-
 async fn get_delete(
     State(ctx): State<ServerContext>,
     Path(id): Path<i64>,
@@ -600,12 +565,12 @@ pub fn app(ctx: ServerContext) -> Router {
         .route("/static/style.css", get(get_style))
         .route("/static/script.js", get(get_script))
         .route("/static/nodefer.js", get(get_nodefer))
-        .route("/sitemap.xml", get(get_sitemap))
         .route("/.well-known/webfinger", get(get_webfinger));
-    let router = router.fallback(not_found);
     let router = crate::api::routes(&router);
     let router = crate::settings::routes(&router);
     let router = crate::files::routes(&router);
+    let router = crate::discovery::routes(&router);
+    let router = router.fallback(not_found);
     // Files larger than this will be rejected during upload.
     let limit = 15 * 1024 * 1024;
     router.with_state(ctx).layer(DefaultBodyLimit::max(limit))
