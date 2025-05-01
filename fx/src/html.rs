@@ -300,7 +300,7 @@ async fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
 }
 
 fn katex_head(body: &str) -> String {
-    let has_math = body.contains("language-math");
+    let has_math = body.contains("<code class=\"language-math");
     let prefix = "https://cdn.jsdelivr.net/npm/katex@0.16.22/dist";
     if has_math {
         format!(
@@ -322,9 +322,36 @@ fn katex_head(body: &str) -> String {
     }
 }
 
+fn has_code(body: &str) -> bool {
+    let re = r#"<code class="language-[^"]*""#;
+    let rx = regex::Regex::new(re).unwrap();
+    for cap in rx.captures_iter(body) {
+        let (text, []) = cap.extract();
+        if !text.contains("math") {
+            return true;
+        }
+    }
+    false
+}
+
+#[test]
+fn test_has_code() {
+    let body = indoc::indoc! {r#"
+        <code class="language-math">
+        x = 1
+        </code>
+        "#};
+    assert!(!has_code(body));
+    let body = indoc::indoc! {r#"
+        <code class="language-rust">
+        x = 1
+        </code>
+        "#};
+    assert!(has_code(body));
+}
+
 fn highlight_head(body: &str) -> String {
-    let has_code = body.contains("<pre><code");
-    if has_code {
+    if has_code(body) {
         let prefix = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0";
         format!(
             "

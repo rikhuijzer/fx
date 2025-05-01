@@ -246,6 +246,10 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
 
             println!("{x}");
             ```
+
+            $$
+            x = 1
+            $$
         "#}
         .trim();
         Post::insert(conn, now, now, content).unwrap();
