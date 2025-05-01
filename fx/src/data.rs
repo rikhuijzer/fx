@@ -244,7 +244,7 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
             ```rust
             x = 1;
 
-            println!("{x}");
+            find . -iname "*.tex" -o -iname "*.bib" | entr latexmk -pdf
             ```
 
             $$
