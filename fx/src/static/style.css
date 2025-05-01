@@ -2,40 +2,34 @@
     --dark-blue: hsl(214, 93%, 42%);
     --light-blue: hsl(214, 93%, 78%);
     --blue: hsl(214, 93%, 62%);
-    --light-gray: #f2f2f2;
-    --gray: #808080;
-    --xrcf-title: #333;
-    --black: #000000;
     --radius: 5px;
-    --flame: #fa7a02;
     --ui-font-size: 12px;
     --medium-font-size: 14px;
     --text-font-size: 16px;
-    --text: #000000;
     --background: hsl(220, 60%, 98%);
     --code-background: hsl(0, 0%, 94%);
     --button-background: hsl(0, 0%, 92%);
     --code-border: #dbdbdb;
+    --text: #000000;
     --border: hsl(0, 0%, 60%);
-    --blue-gradient: linear-gradient(to right, var(--dark-blue), var(--blue));
+    --header: hsl(212, 90%, 18%);
     --accent: hsl(212, 91%, 60%);
     --visited: hsl(270, 60%, 60%);
-    --header: hsl(212, 90%, 18%);
+    --blue-gradient: linear-gradient(to right, var(--dark-blue), var(--blue));
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --blue-gradient: linear-gradient(to right, var(--black), var(--dark-blue));
         --background: hsl(199, 10%, 22%);
         --border: hsl(0, 0%, 40%);
         --code-background: hsl(0, 0%, 8%);
         --button-background: hsl(0, 0%, 15%);
         --code-border: #0e0e0e;
         --text: hsl(0, 0%, 100%);
-        --xrcf-title: #d1cdcd;
         --header: hsl(0, 0%, 100%);
         --accent: hsl(212, 91%, 65%);
         --visited: hsl(270, 60%, 70%);
+        --blue-gradient: linear-gradient(to right, var(--black), var(--dark-blue));
     }
 }
 
