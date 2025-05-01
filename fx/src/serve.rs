@@ -204,6 +204,14 @@ async fn get_script(State(ctx): State<ServerContext>) -> Response<Body> {
     response(StatusCode::OK, headers, body, &ctx)
 }
 
+async fn get_katex(State(ctx): State<ServerContext>) -> Response<Body> {
+    let body = crate::html::minify(include_str!("static/katex.js"));
+    let mut headers = HeaderMap::new();
+    content_type(&mut headers, "text/javascript");
+    enable_caching(&mut headers, 600);
+    response(StatusCode::OK, headers, body, &ctx)
+}
+
 async fn get_nodefer(State(ctx): State<ServerContext>) -> Response<Body> {
     let body = crate::html::minify(include_str!("static/nodefer.js"));
     let mut headers = HeaderMap::new();
@@ -564,6 +572,7 @@ pub fn app(ctx: ServerContext) -> Router {
         .route("/logout", get(get_logout))
         .route("/static/style.css", get(get_style))
         .route("/static/script.js", get(get_script))
+        .route("/static/katex.js", get(get_katex))
         .route("/static/nodefer.js", get(get_nodefer))
         .route("/.well-known/webfinger", get(get_webfinger));
     let router = crate::api::routes(&router);

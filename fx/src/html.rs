@@ -299,10 +299,60 @@ async fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
     )
 }
 
+fn katex_head(body: &str) -> String {
+    let has_math = body.contains("<code class=\"language-math");
+    let prefix = "https://cdn.jsdelivr.net/npm/katex@0.16.22/dist";
+    if has_math {
+        format!(
+            "
+            <link rel='stylesheet' href='{prefix}/katex.min.css' \
+              crossorigin='anonymous'>
+            <script defer src='{prefix}/katex.min.js' \
+              crossorigin='anonymous'>
+            </script>
+            <script defer src='{prefix}/contrib/auto-render.min.js' \
+              crossorigin='anonymous'>
+            </script>
+            <script defer src='/static/katex.js'>
+            </script>
+            "
+        )
+    } else {
+        "".to_string()
+    }
+}
+
+fn has_code(body: &str) -> bool {
+    let re = r#"<code class="language-[^"]*""#;
+    let rx = regex::Regex::new(re).unwrap();
+    for cap in rx.captures_iter(body) {
+        let (text, []) = cap.extract();
+        if !text.contains("math") {
+            return true;
+        }
+    }
+    false
+}
+
+#[test]
+fn test_has_code() {
+    let body = indoc::indoc! {r#"
+        <code class="language-math">
+        x = 1
+        </code>
+        "#};
+    assert!(!has_code(body));
+    let body = indoc::indoc! {r#"
+        <code class="language-rust">
+        x = 1
+        </code>
+        "#};
+    assert!(has_code(body));
+}
+
 fn highlight_head(body: &str) -> String {
-    let has_code = body.contains("<pre><code");
-    if has_code {
-        let prefix = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/";
+    if has_code(body) {
+        let prefix = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0";
         format!(
             "
             <link rel='stylesheet' href='{prefix}/styles/default.min.css' \
@@ -366,6 +416,7 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
     let extra_head = &settings.extra_head;
     let version = include_str!("version.txt").trim();
     let highlight = highlight_head(body);
+    let katex = katex_head(body);
     let page = indoc::formatdoc! {
         r#"
         <!DOCTYPE html>
@@ -379,6 +430,7 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
             <script src='/static/script.js' defer></script>
             <title>{full_title}</title>
             <meta property='og:site_name' content='{site_name}'/>
+            {katex}
             {highlight}
             {extra_head}
         </head>
