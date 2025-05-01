@@ -192,6 +192,14 @@ async fn update_about(
     if !is_authenticated(&ctx, &headers) {
         return unauthorized(&ctx);
     }
+    let settings = Settings::from_db(&*ctx.conn().await);
+    if let Ok(settings) = settings {
+        // Avoid update and backup trigger when no change to avoid infinite loop.
+        if settings.about.trim() == body.trim() {
+            tracing::info!("ignoring about update because no change");
+            return response_json(StatusCode::OK, "ok", &ctx);
+        }
+    }
     let about = Settings::set_about(&*ctx.conn().await, &body);
     if let Err(e) = about {
         return error(
