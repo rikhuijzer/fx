@@ -69,16 +69,22 @@ fn node_to_html(node: &Node) -> String {
     preview
 }
 
-fn to_html_options() -> Options {
-    let mut options = Options::default();
-    options.compile.allow_dangerous_html = true;
-    options.parse.constructs.gfm_table = true;
+fn parse_options() -> ParseOptions {
+    let mut options = ParseOptions::default();
+    options.constructs.gfm_table = true;
     // KaTeX does not exactly match CommonMark, so we parse math to HTML and
     // then figure out how to render the produced code blocks in Javascript.
     // Note that this also makes it easy to detect whether a post contains math,
     // and thus easy to decide whether to load KaTeX.
-    options.parse.constructs.math_flow = true;
-    options.parse.constructs.math_text = true;
+    options.constructs.math_flow = true;
+    options.constructs.math_text = true;
+    options
+}
+
+fn to_html_options() -> Options {
+    let mut options = Options::default();
+    options.compile.allow_dangerous_html = true;
+    options.parse = parse_options();
     options
 }
 
@@ -89,7 +95,7 @@ pub fn content_to_html(content: &str) -> String {
 
 /// Prepare post to be shown as preview.
 pub fn sanitize_preview(post: &mut Post) {
-    let options = ParseOptions::default();
+    let options = parse_options();
     let tree = to_mdast(&post.content, &options).unwrap();
     let mut preview = String::new();
     let max_length = 600;
