@@ -268,3 +268,8 @@ a.button {
     -moz-box-sizing: border-box;
     box-sizing: border-box;
 }
+
+.katex {
+    /* Is 1.2em by default, which makes display math too big. */
+    font-size: 1.1em !important;
+}

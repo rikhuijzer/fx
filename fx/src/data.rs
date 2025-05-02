@@ -242,7 +242,10 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
             nisi ut aliquip ex ea $x=1$ commodo consequat.
 
             ```julia
-            println(1)
+            function f(x)
+                println(1)
+                return x
+            end
 
             find . -iname "*.tex" -o -iname "*.bib" | entr latexmk -pdf
             ```
