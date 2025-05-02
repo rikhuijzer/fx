@@ -67,12 +67,11 @@ a:visited {
 }
 
 li {
-    margin-bottom: 0.3rem;
-    line-height: 1.2;
+    margin-bottom: 0.5rem;
 }
 
 li p {
-    margin: 0.3rem 0;
+    margin: 0.5rem 0;
 }
 
 code {
