@@ -118,8 +118,12 @@ table {
     margin: 1rem auto;
 }
 
+th {
+    font-weight: bold;
+}
+
 th, td {
-    padding: 0.2rem;
+    padding: 0.3rem 0.4rem;
     border-bottom: 1px solid var(--border);
 }
 
