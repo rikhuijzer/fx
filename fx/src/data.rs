@@ -241,8 +241,8 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
             Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris
             nisi ut aliquip ex ea $x=1$ commodo consequat.
 
-            ```rust
-            x = 1;
+            ```julia
+            println(1)
 
             find . -iname "*.tex" -o -iname "*.bib" | entr latexmk -pdf
             ```

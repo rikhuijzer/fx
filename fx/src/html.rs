@@ -397,9 +397,22 @@ fn test_has_code() {
     assert!(has_code(body));
 }
 
+fn contains_language(body: &str, language: &str) -> bool {
+    let text = format!(r#"<code class="language-{language}""#);
+    body.contains(&text)
+}
+
 fn highlight_head(body: &str) -> String {
+    let prefix = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0";
+    let julia = if contains_language(body, "julia") {
+        format!("
+        <script src='{prefix}/languages/julia.min.js' defer>
+        </script>
+        ")
+    } else {
+        "".to_string()
+    };
     if has_code(body) {
-        let prefix = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0";
         format!(
             "
             <link rel='stylesheet' href='{prefix}/styles/default.min.css' \
@@ -408,6 +421,7 @@ fn highlight_head(body: &str) -> String {
               media='(prefers-color-scheme: dark)'>
             <script src='{prefix}/highlight.min.js' defer>
             </script>
+            {julia}
             <script defer>
                 document.addEventListener('DOMContentLoaded', function() {{
                     document.querySelectorAll('pre code').forEach((el) => {{
