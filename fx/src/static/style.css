@@ -269,7 +269,7 @@ a.button {
     box-sizing: border-box;
 }
 
-.katex {
+.katex-display {
     /* Is 1.2em by default, which makes display math too big. */
-    font-size: 1.1em !important;
+    font-size: 1em !important;
 }
