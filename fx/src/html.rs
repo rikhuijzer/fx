@@ -46,8 +46,7 @@ fn turn_title_into_link(post: &Post, html: &str) -> String {
 fn set_header_id(html: &str) -> String {
     html.lines()
         .map(|line| {
-            let line = line.trim();
-            if line.starts_with("<h") {
+            if line.trim().starts_with("<h") {
                 if line.contains(" id=") {
                     return line.to_string();
                 }
@@ -71,6 +70,7 @@ fn test_set_header_id() {
     <h1>Hello</h1>
     <h2>Bar baz</h2>
     <h3 id='quux'>Quux</h3>
+
     "#};
     let actual = set_header_id(html);
     println!("actual:\n{}", actual);
@@ -78,8 +78,18 @@ fn test_set_header_id() {
     <h1 id='hello'>Hello</h1>
     <h2 id='bar-baz'>Bar baz</h2>
     <h3 id='quux'>Quux</h3>
+
     "#};
     assert_eq!(actual.trim(), expected.trim());
+
+    let html = indoc::indoc! {r#"
+        <pre><code>function f(x)
+            println(1)
+        end
+        </code></pre>
+        "#}
+    .trim();
+    assert_eq!(html, set_header_id(html), "code block has changed");
 }
 
 pub fn post_to_html(post: &Post, is_front_page_preview: bool) -> String {
@@ -123,7 +133,8 @@ pub fn post_to_html(post: &Post, is_front_page_preview: bool) -> String {
     } else {
         ""
     };
-    indoc::formatdoc! {"
+    format!(
+        "
     <div class='post' style='{style}'>
         {post_link}
             <div class='post-header'>
@@ -135,7 +146,10 @@ pub fn post_to_html(post: &Post, is_front_page_preview: bool) -> String {
         {html}
         </div>
     </div>
-    ", show_date(&post.created), post.id}
+    ",
+        show_date(&post.created),
+        post.id
+    )
 }
 
 pub enum Top {
@@ -405,9 +419,11 @@ fn contains_language(body: &str, language: &str) -> bool {
 fn highlight_head(body: &str) -> String {
     let prefix = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0";
     let julia = if contains_language(body, "julia") {
-        format!("
+        format!(
+            "
         <script src='{prefix}/languages/julia.min.js' defer></script>
-        ")
+        "
+        )
     } else {
         "".to_string()
     };
