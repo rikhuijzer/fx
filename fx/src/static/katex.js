@@ -1,10 +1,13 @@
 document.addEventListener("DOMContentLoaded", function() {
+    // The CommonMark parser wraps the math code in <code> tags with the class
+    // `language-math`. It also adds a class `math-inline` to inline math and
+    // `math-display` to display math.
     const mathCodeBlocks = document.querySelectorAll('code.language-math');
 
     mathCodeBlocks.forEach((codeBlock) => {
         const tex = codeBlock.textContent;
 
-        const isDisplayMode = codeBlock.parentElement && codeBlock.parentElement.tagName === 'pre';
+        const isDisplayMode = codeBlock.classList.contains('math-display');
 
         const container = document.createElement(isDisplayMode ? 'div' : 'span');
         if (isDisplayMode) {
