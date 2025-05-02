@@ -6,7 +6,8 @@
     --small-font-size: 12px;
     --medium-font-size: 14px;
     --text-font-size: 16px;
-    --background: hsl(220, 60%, 98%);
+    /* Best stick to 100% white for plots that have white background. */
+    --background: hsl(220, 60%, 100%);
     --code-background: hsl(0, 0%, 94%);
     --button-background: hsl(0, 0%, 92%);
     --code-border: #dbdbdb;
