@@ -112,6 +112,16 @@ blockquote p {
     margin: 0.2rem 0;
 }
 
+table {
+    border-collapse: collapse;
+    margin: 1rem auto;
+}
+
+th, td {
+    padding: 0.2rem;
+    border-bottom: 1px solid var(--border);
+}
+
 .container {
     display: flex;
     justify-content: center;

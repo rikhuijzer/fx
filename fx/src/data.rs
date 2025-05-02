@@ -250,6 +250,11 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
             $$
             x = 1
             $$
+
+            | my | table |
+            | --- | --- |
+            | a | b |
+            | c | d |
         "#}
         .trim();
         Post::insert(conn, now, now, content).unwrap();
