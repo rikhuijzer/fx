@@ -406,8 +406,7 @@ fn highlight_head(body: &str) -> String {
     let prefix = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0";
     let julia = if contains_language(body, "julia") {
         format!("
-        <script src='{prefix}/languages/julia.min.js' defer>
-        </script>
+        <script src='{prefix}/languages/julia.min.js' defer></script>
         ")
     } else {
         "".to_string()
@@ -419,8 +418,7 @@ fn highlight_head(body: &str) -> String {
               media='(prefers-color-scheme: light)'>
             <link rel='stylesheet' href='{prefix}/styles/github-dark.min.css' \
               media='(prefers-color-scheme: dark)'>
-            <script src='{prefix}/highlight.min.js' defer>
-            </script>
+            <script src='{prefix}/highlight.min.js' defer></script>
             {julia}
             <script defer>
                 document.addEventListener('DOMContentLoaded', function() {{
