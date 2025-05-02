@@ -115,10 +115,11 @@ blockquote p {
 table {
     font-size: var(--small-font-size);
     border-collapse: collapse;
-    margin: 1rem auto;
+    margin: 2rem auto;
 }
 
 th {
+    border-top: 1px solid var(--border);
     font-weight: bold;
 }
 
