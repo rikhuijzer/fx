@@ -31,6 +31,7 @@ async fn test_get_post() {
     let (status, body) = request_body("/posts/2").await;
     assert_eq!(status, StatusCode::OK);
     assert!(body.contains("Dolor"));
+    assert!(body.contains("<h2 id='more'>More</h2>"));
 }
 
 #[tokio::test]

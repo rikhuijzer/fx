@@ -36,6 +36,52 @@ fn turn_title_into_link(post: &Post, html: &str) -> String {
     }
 }
 
+/// Automatically set the `id` attribute for headers.
+///
+/// pulldown-cmark supports header attributes, but markdown-rs does not. That's
+/// why we need to fix the html manually. Note that pulldown-cmark also does not
+/// automatically set the `id` attribute
+/// (https://github.com/pulldown-cmark/pulldown-cmark/issues/700), so some kind
+/// of fixing is needed anyway.
+fn set_header_id(html: &str) -> String {
+    html.lines()
+        .map(|line| {
+            let line = line.trim();
+            if line.starts_with("<h") {
+                if line.contains(" id=") {
+                    return line.to_string();
+                }
+                let title_start = line.find('>').unwrap() + 1;
+                let level = line[2..title_start - 1].to_string();
+                let title_end = line.find("</h").unwrap();
+                let title = line[title_start..title_end].to_string();
+                let id = title.to_lowercase().replace(' ', "-");
+                format!("<h{level} id='{id}'>{title}</h{level}>")
+            } else {
+                line.to_string()
+            }
+        })
+        .collect::<Vec<String>>()
+        .join("\n")
+}
+
+#[test]
+fn test_set_header_id() {
+    let html = indoc::indoc! {r#"
+    <h1>Hello</h1>
+    <h2>Bar baz</h2>
+    <h3 id='quux'>Quux</h3>
+    "#};
+    let actual = set_header_id(html);
+    println!("actual:\n{}", actual);
+    let expected = indoc::indoc! {r#"
+    <h1 id='hello'>Hello</h1>
+    <h2 id='bar-baz'>Bar baz</h2>
+    <h3 id='quux'>Quux</h3>
+    "#};
+    assert_eq!(actual.trim(), expected.trim());
+}
+
 pub fn post_to_html(post: &Post, is_front_page_preview: bool) -> String {
     // Not wrapping the full post in a `href` because that prevents text
     // selection. I've tried all kinds of workarounds with putting a `position:
@@ -48,6 +94,7 @@ pub fn post_to_html(post: &Post, is_front_page_preview: bool) -> String {
         post.content.clone()
     };
     let html = crate::md::content_to_html(&md);
+    let html = set_header_id(&html);
     let style = if is_front_page_preview {
         &border_style(1)
     } else {

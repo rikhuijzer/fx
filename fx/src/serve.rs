@@ -159,9 +159,9 @@ async fn list_posts(ctx: &ServerContext, _is_logged_in: bool) -> String {
     let mut posts = { Post::list(&*ctx.conn().await).unwrap() };
     posts
         .iter_mut()
-        .map(|p| {
-            crate::md::sanitize_preview(p);
-            post_to_html(p, true)
+        .map(|post| {
+            crate::md::sanitize_preview(post);
+            post_to_html(post, true)
         })
         .collect::<Vec<String>>()
         .join("\n")
