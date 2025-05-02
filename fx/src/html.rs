@@ -363,7 +363,12 @@ fn highlight_head(body: &str) -> String {
             </script>
             <script defer>
                 document.addEventListener('DOMContentLoaded', function() {{
-                    hljs.highlightAll();
+                    document.querySelectorAll('pre code').forEach((el) => {{
+                        if (el.classList.contains('language-math')) {{
+                            return;
+                        }}
+                        hljs.highlightElement(el);
+                    }});
                 }});
             </script>
             "
