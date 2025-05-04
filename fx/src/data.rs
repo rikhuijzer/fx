@@ -190,6 +190,17 @@ impl Post {
     }
 }
 
+#[test]
+fn tmp_comp_opts() {
+    let conn = Connection::open_in_memory().unwrap();
+    let stmt = "
+        CREATE VIRTUAL TABLE fts USING fts5(title, '');
+    ";
+    let opts = conn.prepare(stmt).unwrap().execute([]).unwrap();
+    println!("opts: {}", opts);
+    assert!(false);
+}
+
 pub fn connect(args: &ServeArgs) -> Result<Connection> {
     let conn = if args.production {
         let path = &args.database_path;
@@ -206,23 +217,23 @@ fn init_tables(conn: &Connection) {
     File::create_table(conn).expect("Failed to create files table");
 }
 
-fn init_kv(conn: &Connection, key: &str, value: &[u8]) {
+fn init_kv_data(conn: &Connection, key: &str, value: &[u8]) {
     if Kv::get(conn, key).is_err() {
         Kv::insert(conn, key, value).unwrap();
     }
 }
 
 fn init_data(args: &ServeArgs, conn: &Connection) {
-    init_kv(conn, "site_name", b"John's Weblog");
+    init_kv_data(conn, "site_name", b"John's Weblog");
     let about = if args.production {
         ""
     } else {
         "About [example](https://example.com)"
     };
-    init_kv(conn, "about", about.as_bytes());
-    init_kv(conn, "author_name", b"John");
+    init_kv_data(conn, "about", about.as_bytes());
+    init_kv_data(conn, "author_name", b"John");
     let domain = if args.production { "" } else { "localhost" };
-    init_kv(conn, "domain", domain.as_bytes());
+    init_kv_data(conn, "domain", domain.as_bytes());
 
     if !args.production {
         let now = chrono::Utc::now();
