@@ -17,12 +17,10 @@ A (micro)blogging server that you can self-host.
 
 ## Background
 
-What made sites like Twitter nice was that it was easy to quickly write something down and later be able to find it back.
-For example, say you have just read a nice blog post and want to remember it for later, you could just tweet it.
-However, X (formerly Twitter) and most other social media platforms have been locking this down.
-Most posts can now only be viewed when you are logged in.
-Furthermore, the X algorithm also discourages adding [links in posts](https://x.com/TheBubbleBubble/status/1849818873018610090) so as a user you are incentivized to not add links.
-I think this is a sad development since links are an essential part of the internet.
+This site is aimed at people who want to write down something and later be able to find it back.
+For example, say you have just read a nice blog post and want to remember it for later, you can describe the post in your own words and add a link to it.
+Or if you want to remember a cooking recipe or some code snippet, you can write it down for later.
+This way, you and other people can benefit from the things you and others have written down.
 
 ## Installation
 
