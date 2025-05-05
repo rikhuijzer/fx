@@ -18,9 +18,17 @@ A (micro)blogging server that you can self-host.
 ## Background
 
 This site is aimed at people who want to write down something and later be able to find it back.
-For example, say you have just read a nice blog post and want to remember it for later, you can describe the post in your own words and add a link to it.
-Or if you want to remember a cooking recipe or some code snippet, you can write it down for later.
-This way, you and other people can benefit from the things you and others have written down.
+Think of it as a public notebook, where you can write down anything you want.
+For example, say you have just read a nice blog post, cooking recipe, or code snippet, and want to remember it for later, you can quickly write a short description and post it on your site.
+Later, you can use Google or the built-in search to find it again.
+
+Another use-case could be if you are a teacher who often gets the same questions.
+Instead of copy-pasting the same answer each time, you can write a post and share the link with your students.
+
+Compared to social media, having your own site mitigates the risk of being (shadow) banned.
+If you host your posts on your own site, you have much more control over your content.
+Furthermore, domains in most countries are protected by law, so nobody can just take your content down.
+Also, having your own domain looks more professional.
 
 ## Installation
 
