@@ -456,16 +456,6 @@ fn highlight_head(body: &str) -> String {
     }
 }
 
-fn search_head() -> String {
-    let url = "https://cdn.jsdelivr.net/npm/minisearch@7.1.2/dist/umd/index.min.js";
-    format!(
-        "
-        <script src='{url}' defer></script>
-        <script src='/search.js' defer></script>
-        "
-    )
-}
-
 pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String {
     let site_name = Kv::get(&*ctx.conn().await, "site_name").unwrap();
     let site_name = String::from_utf8(site_name).unwrap();
@@ -510,7 +500,6 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
     let version = include_str!("version.txt").trim();
     let highlight = highlight_head(body);
     let katex = katex_head(body);
-    let search = search_head();
     let page = indoc::formatdoc! {
         r#"
         <!DOCTYPE html>
@@ -526,7 +515,6 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
             <meta property='og:site_name' content='{site_name}'/>
             {katex}
             {highlight}
-            {search}
             {extra_head}
         </head>
         <body>
