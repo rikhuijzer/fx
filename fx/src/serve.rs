@@ -576,9 +576,10 @@ pub fn app(ctx: ServerContext) -> Router {
         .route("/static/nodefer.js", get(get_nodefer))
         .route("/.well-known/webfinger", get(get_webfinger));
     let router = crate::api::routes(&router);
-    let router = crate::settings::routes(&router);
-    let router = crate::files::routes(&router);
     let router = crate::discovery::routes(&router);
+    let router = crate::files::routes(&router);
+    let router = crate::search::routes(&router);
+    let router = crate::settings::routes(&router);
     let router = router.fallback(not_found);
     // Files larger than this will be rejected during upload.
     let limit = 15 * 1024 * 1024;
