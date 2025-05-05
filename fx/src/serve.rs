@@ -160,7 +160,7 @@ async fn list_posts(ctx: &ServerContext, _is_logged_in: bool) -> String {
     posts
         .iter_mut()
         .map(|post| {
-            crate::md::sanitize_preview(post);
+            crate::md::preview(post, 600);
             post_to_html(post, true)
         })
         .collect::<Vec<String>>()

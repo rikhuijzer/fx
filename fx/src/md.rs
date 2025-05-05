@@ -94,11 +94,10 @@ pub fn content_to_html(content: &str) -> String {
 }
 
 /// Prepare post to be shown as preview.
-pub fn sanitize_preview(post: &mut Post) {
+pub fn preview(post: &mut Post, max_length: usize) {
     let options = parse_options();
     let tree = to_mdast(&post.content, &options).unwrap();
     let mut preview = String::new();
-    let max_length = 600;
     for node in tree.children().unwrap() {
         if max_length < preview.len() {
             let id = post.id;
@@ -134,7 +133,7 @@ fn test_keep_link() {
         created: Utc::now(),
         updated: Utc::now(),
     };
-    sanitize_preview(&mut post);
+    preview(&mut post, 600);
     let expected = indoc::indoc! {"
         <h1>Title</h1>
 
@@ -174,7 +173,7 @@ fn test_sanitize_preview() {
         created: Utc::now(),
         updated: Utc::now(),
     };
-    sanitize_preview(&mut post);
+    preview(&mut post, 600);
     println!("post:\n{}", post.content);
     assert!(post.content.contains("Show more"));
     assert!(post.content.contains("<p>Lorem"));

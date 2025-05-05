@@ -107,7 +107,7 @@ async fn get_search(
     let results = results
         .iter_mut()
         .map(|p| {
-            crate::md::sanitize_preview(p);
+            crate::md::preview(p, 100);
             let is_front_page_preview = true;
             post_to_html(p, is_front_page_preview)
         })
