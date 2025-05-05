@@ -47,6 +47,10 @@ async fn search(ctx: &ServerContext, q: &str) -> Vec<Post> {
     let stmt = "BEGIN TRANSACTION";
     conn.execute(stmt, []).unwrap();
 
+    // Creating a virtual table on each query to avoid having to manually keep
+    // track of updates to the fts table. For small sites, creating the index on
+    // each query should be fine.
+    //
     // Not copying updated since it's not shown in the preview.
     let stmt = "
         CREATE VIRTUAL TABLE posts_fts USING fts5(
