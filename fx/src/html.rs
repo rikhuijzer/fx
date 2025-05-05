@@ -327,6 +327,9 @@ async fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
         &format!(
             "
             <span>
+                <a href='/search' class='unstyled-link' style='{style}'>
+                    🔍 Search
+                </a>&nbsp;
                 <a href='/files' class='unstyled-link' style='{style}'>
                     📁 Files
                 </a>&nbsp;
