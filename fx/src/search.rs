@@ -59,43 +59,67 @@ struct SearchResult {
     content: String,
 }
 
-async fn search_results(ctx: &ServerContext, q: &str) -> Vec<SearchResult> {
+async fn search(ctx: &ServerContext, q: &str) -> Vec<SearchResult> {
     let conn = ctx.conn().await;
+
+    let stmt = "BEGIN TRANSACTION";
+    conn.execute(stmt, []).unwrap();
+
+    let stmt = "
+        CREATE VIRTUAL TABLE posts_fts USING fts5(
+            id,
+            content,
+            content=posts,
+            tokenize=trigram
+        );
+        ";
+    conn.execute(stmt, []).unwrap();
+
+    let stmt = "
+        INSERT INTO posts_fts (id, content)
+        SELECT id, content FROM posts;
+    ";
+    conn.execute(stmt, []).unwrap();
+
     let mut results = conn
-        .prepare("SELECT * FROM posts WHERE content LIKE ?")
+        .prepare("SELECT * FROM posts_fts WHERE posts_fts MATCH ?")
         .unwrap();
     let results = results
         .query_map([q], |row| {
-            let content: String = row.get("content")?;
             let id: i64 = row.get("id")?;
+            let content: String = row.get("content")?;
             let post = SearchResult { id, content };
             Ok(post)
         })
         .unwrap()
         .collect::<Result<Vec<_>, _>>()
         .unwrap();
+
+    let stmt = "ROLLBACK";
+    conn.execute(stmt, []).unwrap();
+
     results
 }
 
 async fn get_search(
     State(ctx): State<ServerContext>,
     jar: CookieJar,
-    search: Query<SearchForm>,
+    search_query: Query<SearchForm>,
 ) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
     let search_form = search_form();
-    let q = search.q.clone().unwrap_or_default();
-    let results = search_results(&ctx, &q).await;
+    let q = search_query.q.clone().unwrap_or_default();
+    let results = search(&ctx, &q).await;
     let results = results
         .iter()
         .map(|r| {
             format!(
                 "
-    <div>
-        <h2>{}</h2>
-        <p>{}</p>
-    </div>
-    ",
+                <div>
+                    <h2>{}</h2>
+                    <p>{}</p>
+                </div>
+                ",
                 r.id, r.content
             )
         })
