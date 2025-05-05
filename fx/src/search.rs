@@ -109,12 +109,7 @@ async fn get_search(
         .map(|p| {
             crate::md::sanitize_preview(p);
             let is_front_page_preview = true;
-            let html = post_to_html(p, is_front_page_preview);
-            format!(
-                "
-                {html}
-                ",
-            )
+            post_to_html(p, is_front_page_preview)
         })
         .collect::<Vec<_>>();
     let results = results.join("\n");
