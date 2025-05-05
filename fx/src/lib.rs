@@ -5,6 +5,7 @@ mod discovery;
 mod files;
 mod html;
 mod md;
+mod search;
 pub mod serve;
 mod settings;
 mod trigger;
