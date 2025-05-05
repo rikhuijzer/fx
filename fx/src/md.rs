@@ -30,6 +30,27 @@ fn node_to_html(node: &Node) -> String {
             preview.push_str(&format!("</h{}>", heading.depth));
             preview.push_str("\n\n");
         }
+        Node::Emphasis(emphasis) => {
+            preview.push_str("<em>");
+            for child in emphasis.children.iter() {
+                preview.push_str(&node_to_html(child));
+            }
+            preview.push_str("</em>");
+        }
+        Node::Strong(strong) => {
+            preview.push_str("<strong>");
+            for child in strong.children.iter() {
+                preview.push_str(&node_to_html(child));
+            }
+            preview.push_str("</strong>");
+        }
+        Node::Delete(delete) => {
+            preview.push_str("<del>");
+            for child in delete.children.iter() {
+                preview.push_str(&node_to_html(child));
+            }
+            preview.push_str("</del>");
+        }
         Node::Text(text) => preview.push_str(&text.value),
         Node::Html(html) => preview.push_str(&html.value),
         Node::Link(link) => {
