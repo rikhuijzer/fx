@@ -27,8 +27,8 @@
         --code-background: hsl(0, 0%, 8%);
         --button-background: hsl(0, 0%, 15%);
         --code-border: #0e0e0e;
-        --text: hsl(0, 0%, 100%);
-        --header: hsl(0, 0%, 100%);
+        --text: hsl(0, 0%, 95%);
+        --header: hsl(0, 0%, 95%);
         --accent: hsl(212, 91%, 65%);
         --visited: hsl(270, 60%, 70%);
         --blue-gradient: linear-gradient(to right, var(--black), var(--dark-blue));
