@@ -63,14 +63,38 @@ You can backup your site to plain text files with the following shell script:
 #!/usr/bin/env bash
 set -euxo pipefail
 
-ARCHIVE_PATH="all.tar.xz"
+cleanup() {
+  rm -rf files/ posts/ settings/
+}
 
-curl \
-  -H "Authorization: Bearer $FX_PASSWORD" \
-  https://$DOMAIN/api/download/all.tar.xz > "$ARCHIVE_PATH"
+download() {
+  ARCHIVE_PATH="all.tar.xz"
+  curl --proto "=https" --tlsv1.2 -sSf \
+    -H "Authorization: Bearer $FX_PASSWORD" \
+    https://fx.huijzer.xyz/api/download/all.tar.xz > "$ARCHIVE_PATH"
 
-tar --verbose -xf "$ARCHIVE_PATH"
-rm "$ARCHIVE_PATH"
+  tar --verbose -xf "$ARCHIVE_PATH"
+  rm "$ARCHIVE_PATH"
+}
+
+commit() {
+  if [ -n "$(git status --porcelain)" ]; then
+    git config --global user.email "$GITHUB_ACTOR@users.noreply.github.com"
+    git config --global user.name "$GITHUB_ACTOR"
+
+    git add .
+    git commit -m '[bot] backup'
+    git push
+  fi
+}
+
+if [[ "$1" == "cleanup" ]]; then
+  cleanup
+elif [[ "$1" == "download" ]]; then
+  download
+elif [[ "$1" == "commit" ]]; then
+  commit
+fi
 ```
 
 where `$FX_PASSWORD` is the admin password (as set via the `FX_PASSWORD` environment variable) and `$DOMAIN` is the domain of your site (for example, `example.com`).
@@ -78,39 +102,39 @@ where `$FX_PASSWORD` is the admin password (as set via the `FX_PASSWORD` environ
 Assuming this file is named `backup.sh` and executable (`chmod +x backup.sh`), you can run a backup in a GitHub Actions workflow with the following YAML:
 
 ```yml
-name: ci
+name: backup
+concurrency:
+  group: ${{ github.workflow }}
 on:
   schedule:
-    - cron: '24 0,6,12,18 * * *'
+    - cron: '24 0 * * *'
   push:
     branches:
       - main
   pull_request:
   workflow_dispatch:
 jobs:
-  backup:
+  run:
     permissions:
       contents: write
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - run: ./backup.sh
+        # Avoiding `actions/checkout` since it runs concurrently even when
+        # concurrency group is set, see
+        # https://github.com/actions/checkout/discussions/1125.
+      - run: >
+          git clone --depth=1
+          https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          .
+      - run: ./backup.sh cleanup
+      - run: ./backup.sh download
         env:
           FX_PASSWORD: ${{ secrets.FX_PASSWORD }}
       - if: github.event_name != 'pull_request'
-        run: |
-          if [ -n "$(git status --porcelain)" ]; then
-            git config --global user.email "$GITHUB_ACTOR@users.noreply.github.com"
-            git config --global user.name "$GITHUB_ACTOR"
-
-            git add .
-            git commit -m '[bot] backup'
-            git push
-          fi
-
+        run: ./backup.sh commit
 ```
 
-This will backup your site every 6 hours.
+This will backup your site at least once per day.
 An example backup repository is [here](https://github.com/rikhuijzer/fx-backup).
 
 To trigger a backup for each change to the website, you can set the following environment variables:
@@ -135,7 +159,7 @@ See the [GitHub documentation](https://docs.github.com/en/rest/actions/workflows
 
 ### Update
 
-You can update the `about` text via:
+You can update the `about` text via the API:
 
 ```bash
 curl \
