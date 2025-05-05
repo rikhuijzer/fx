@@ -63,6 +63,8 @@ You can backup your site to plain text files with the following shell script:
 #!/usr/bin/env bash
 set -euxo pipefail
 
+DOMAIN="example.com"
+
 cleanup() {
   rm -rf files/ posts/ settings/
 }
@@ -71,7 +73,7 @@ download() {
   ARCHIVE_PATH="all.tar.xz"
   curl --proto "=https" --tlsv1.2 -sSf \
     -H "Authorization: Bearer $FX_PASSWORD" \
-    https://fx.huijzer.xyz/api/download/all.tar.xz > "$ARCHIVE_PATH"
+    https://$DOMAIN/api/download/all.tar.xz > "$ARCHIVE_PATH"
 
   tar --verbose -xf "$ARCHIVE_PATH"
   rm "$ARCHIVE_PATH"
@@ -97,7 +99,7 @@ elif [[ "$1" == "commit" ]]; then
 fi
 ```
 
-where `$FX_PASSWORD` is the admin password (as set via the `FX_PASSWORD` environment variable) and `$DOMAIN` is the domain of your site (for example, `example.com`).
+where `$FX_PASSWORD` is the admin password (as set via the `FX_PASSWORD` environment variable) and `$DOMAIN` is the domain of your site.
 
 Assuming this file is named `backup.sh` and executable (`chmod +x backup.sh`), you can run a backup in a GitHub Actions workflow with the following YAML:
 
