@@ -55,17 +55,19 @@ jobs:
       - run: rustup update stable
       - run: rustup default stable
       - run: cargo install --debug jas@0.3.0
-      - if: ${{ matrix.os == 'ubuntu-24.04-arm' }}
-        run: >
+      - id: just-sha
+        run: |
+          SHA=""
+          if [ ${{ matrix.os }} == 'ubuntu-24.04-arm' ]; then
+            SHA="d065d0df1a1f99529869fba8a5b3e0a25c1795b9007099b00dfabe29c7c1f7b6"
+          else
+            SHA="181b91d0ceebe8a57723fb648ed2ce1a44d849438ce2e658339df4f8db5f1263"
+          fi
+          echo "::set-output name=SHA::$SHA"
+      - run: >
           jas install
           --gh casey/just@1.40.0
-          --sha d065d0df1a1f99529869fba8a5b3e0a25c1795b9007099b00dfabe29c7c1f7b6
-          --gh-token ${{ secrets.GITHUB_TOKEN }}
-      - if: ${{ matrix.os == 'ubuntu-24.04' }}
-        run: >
-          jas install
-          --gh casey/just@1.40.0
-          --sha 181b91d0ceebe8a57723fb648ed2ce1a44d849438ce2e658339df4f8db5f1263
+          --sha ${{ steps.just-sha.outputs.SHA }}
           --gh-token ${{ secrets.GITHUB_TOKEN }}
       - run: sudo timedatectl set-timezone Europe/Amsterdam
       - run: date +'%Y-%m-%d %H:%M' > fx/src/version.txt
