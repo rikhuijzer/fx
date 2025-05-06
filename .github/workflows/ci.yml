@@ -3,8 +3,12 @@ on:
   push:
     branches:
       - main
+    tags:
+      - "v*"
   pull_request:
   workflow_dispatch:
+env:
+  REGISTRY_IMAGE: rikhuijzer/fx
 jobs:
   test:
     runs-on: ubuntu-24.04-arm
@@ -22,10 +26,18 @@ jobs:
       - run: rustup default stable
       - run: cargo test
   
-  deploy:
+  # Based on https://docs.docker.com/build/ci/github-actions/multi-platform/.
+  build:
     needs: test
-    runs-on: ubuntu-24.04-arm
-    concurrency: deploy-group
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-24.04
+          - ubuntu-24.04-arm
+    concurrency:
+      group: ${{ github.workflow }}-${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
@@ -35,7 +47,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-deploy-${{ hashFiles('**/Cargo.toml') }}
+          key: ${{ runner.os }}-build-${{ hashFiles('**/Cargo.toml') }}
       - uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
@@ -44,23 +56,104 @@ jobs:
         id: meta
         uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804
         with:
-          images: 'rikhuijzer/fx'
+          images: ${{ env.REGISTRY_IMAGE }}
       - run: rustup update stable
       - run: rustup default stable
       - run: cargo install --debug jas@0.3.0
+      - id: just-sha
+        run: |
+          SHA=""
+          if [ ${{ matrix.os }} == 'ubuntu-24.04-arm' ]; then
+            SHA="d065d0df1a1f99529869fba8a5b3e0a25c1795b9007099b00dfabe29c7c1f7b6"
+          else
+            SHA="181b91d0ceebe8a57723fb648ed2ce1a44d849438ce2e658339df4f8db5f1263"
+          fi
+          echo "::set-output name=SHA::$SHA"
       - run: >
           jas install
           --gh casey/just@1.40.0
-          --sha d065d0df1a1f99529869fba8a5b3e0a25c1795b9007099b00dfabe29c7c1f7b6
+          --sha ${{ steps.just-sha.outputs.SHA }}
           --gh-token ${{ secrets.GITHUB_TOKEN }}
       - run: sudo timedatectl set-timezone Europe/Amsterdam
       - run: date +'%Y-%m-%d %H:%M' > fx/src/version.txt
       - run: just release
+      - uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+      - id: platform
+        run: |
+          PLATFORM=""
+          if [ ${{ matrix.os }} == 'ubuntu-24.04-arm' ]; then
+            PLATFORM="linux/arm64"
+          else
+            PLATFORM="linux/amd64"
+          fi
+          echo "::set-output name=PLATFORM::$PLATFORM"
       - name: Build and push Docker image
-        if: github.event_name != 'pull_request'
+        id: build
         uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
         with:
           context: './public'
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          platforms: ${{ steps.platform.outputs.PLATFORM }}
           labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ env.REGISTRY_IMAGE }}
+          outputs: type=image,push-by-digest=true,name-canonical=true,push=true
+      - name: Export digest
+        run: |
+          mkdir -p ${{ runner.temp }}/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "${{ runner.temp }}/digests/${digest#sha256:}"
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ matrix.os }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+  merge:
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      # Required by softprops/action-gh-release.
+      contents: write
+    needs:
+      - build
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0 v5
+        with:
+          images: ${{ env.REGISTRY_IMAGE }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Create manifest list and push
+        working-directory: ${{ runner.temp }}/digests
+        if: github.event_name != 'pull_request'
+        run: |
+          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
+
+      - name: Inspect image
+        if: github.event_name != 'pull_request'
+        run: |
+          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }}
+    
+      - uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631 # v2.2.2
+        if: github.ref_type == 'tag'
