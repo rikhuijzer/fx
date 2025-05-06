@@ -57,7 +57,7 @@ async fn get_rss(State(ctx): State<ServerContext>) -> Response<Body> {
     let posts = Post::list(&*ctx.conn().await).unwrap();
     let body = rss(&ctx, &posts).await;
     let mut headers = HeaderMap::new();
-    content_type(&mut headers, "application/rss+xml");
+    content_type(&mut headers, "application/rss+xml; charset=utf-8");
     response(StatusCode::OK, headers, body, &ctx)
 }
 

@@ -323,13 +323,10 @@ async fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
     let author_name = Kv::get(&*ctx.conn().await, "author_name").unwrap();
     let author_name = String::from_utf8(author_name).unwrap();
     let style = "font-size: 0.8rem; padding-top: 0.1rem;";
-    let settings_button = if settings.is_logged_in {
+    let admin_buttons = if settings.is_logged_in {
         &format!(
             "
             <span>
-                <a href='/search' class='unstyled-link' style='{style}'>
-                    🔍 Search
-                </a>&nbsp;
                 <a href='/files' class='unstyled-link' style='{style}'>
                     📁 Files
                 </a>&nbsp;
@@ -353,10 +350,20 @@ async fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
                 {author_name}
             </div>
             <div>
-                {settings_button}
+                <span>
+                    <a href='/search' class='unstyled-link' style='{style}'>
+                        🔍 Search
+                    </a>&nbsp;
+                    <a href='/feed.rss' class='unstyled-link' style='{style}'>
+                        🔄 RSS
+                    </a>&nbsp;
+                </span>
             </div>
         </div>
         <div class='about' style='font-size: 0.9rem;'>{about}</div>
+        <div>
+            {admin_buttons}
+        </div>
     </div>
     ",
         border_style(2),
