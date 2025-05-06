@@ -1,8 +1,6 @@
 use crate::data::Kv;
 use crate::data::Post;
 use crate::serve::ServerContext;
-use chrono::DateTime;
-
 fn border_style(width: u64) -> String {
     format!(
         "border-bottom: {}px solid var(--border); border-radius: 0px;",
@@ -14,8 +12,31 @@ pub fn escape_single_quote(s: &str) -> String {
     s.replace('\'', "&#39;")
 }
 
+use chrono::{DateTime, Duration, Utc};
+
 fn show_date<Tz: chrono::TimeZone>(datetime: &DateTime<Tz>) -> String {
-    datetime.date_naive().to_string()
+    let now = Utc::now();
+    let duration = now.signed_duration_since(datetime.clone());
+
+    if duration < Duration::hours(24) && duration >= Duration::zero() {
+        let hours = duration.num_hours();
+        if hours == 0 {
+            let minutes = duration.num_minutes();
+             if minutes == 0 {
+                "just now".to_string()
+            } else if minutes == 1 {
+                "1 minute ago".to_string()
+            } else {
+                format!("{} minutes ago", minutes)
+            }
+        } else if hours == 1 {
+            "1 hour ago".to_string()
+        } else {
+            format!("{} hours ago", hours)
+        }
+    } else {
+        datetime.date_naive().format("%Y-%m-%d").to_string()
+    }
 }
 
 const SET_LEAVE_CONFIRMATION: &str = "window.onbeforeunload = () => true;";
