@@ -14,6 +14,21 @@ pub fn markdown_link() -> &'static str {
 fn node_to_html(node: &Node) -> String {
     let mut preview = String::new();
     match node {
+        Node::Code(code) => {
+            let lang = code.lang.clone().unwrap_or("".to_string());
+            let class = if lang.is_empty() {
+                ""
+            } else {
+                &format!("class='language-{lang}'")
+            };
+            let html = format!(
+                "
+                <pre><code {class}>{}</code></pre>
+                ",
+                code.value
+            );
+            preview.push_str(&html);
+        }
         Node::Paragraph(paragraph) => {
             preview.push_str("<p>");
             for child in paragraph.children.iter() {
@@ -58,6 +73,9 @@ fn node_to_html(node: &Node) -> String {
             let url = &link.url;
             preview.push_str(&format!("<a href='{url}'>{text}</a>"));
         }
+        Node::InlineCode(inline_code) => {
+            preview.push_str(&format!("<code>{}</code>", inline_code.value));
+        }
         Node::List(list) => {
             let tag = if list.ordered { "ol" } else { "ul" };
             preview.push_str(&format!("<{tag}>"));
@@ -73,17 +91,10 @@ fn node_to_html(node: &Node) -> String {
             }
             preview.push_str("</li>");
         }
-        Node::Code(code) => {
-            let lang = code.lang.clone().unwrap_or("".to_string());
-            preview.push_str(&format!("\n\n```{lang}\n{}\n```\n", code.value));
-        }
         Node::Image(image) => {
             let url = &image.url;
             let alt = &image.alt;
             preview.push_str(&format!("<img src='{url}' alt='{alt}' />"));
-        }
-        Node::InlineCode(inline_code) => {
-            preview.push_str(&format!("<code>{}</code>", inline_code.value));
         }
         _ => {}
     }
