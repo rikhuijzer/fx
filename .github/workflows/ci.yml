@@ -5,6 +5,8 @@ on:
       - main
   pull_request:
   workflow_dispatch:
+env:
+  REGISTRY_IMAGE: rikhuijzer/fx
 jobs:
   test:
     runs-on: ubuntu-24.04-arm
@@ -22,6 +24,7 @@ jobs:
       - run: rustup default stable
       - run: cargo test
   
+  # Based on https://docs.docker.com/build/ci/github-actions/multi-platform/.
   build:
     needs: test
     strategy:
@@ -79,8 +82,8 @@ jobs:
         with:
           context: './public'
           platforms: ${{ matrix.platform }}
-          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ env.REGISTRY_IMAGE }}
           outputs: type=image,push-by-digest=true,name-canonical=true,push=true
       - name: Export digest
         run: |
