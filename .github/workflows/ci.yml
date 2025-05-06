@@ -25,6 +25,9 @@ jobs:
   deploy:
     needs: test
     runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: read
+      packages: write
     concurrency: deploy-group
     steps:
       - uses: actions/checkout@v4
