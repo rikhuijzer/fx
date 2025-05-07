@@ -1,6 +1,9 @@
 use crate::data::Kv;
 use crate::data::Post;
 use crate::serve::ServerContext;
+use chrono::DateTime;
+use chrono::Duration;
+
 fn border_style(width: u64) -> String {
     format!(
         "border-bottom: {}px solid var(--border); border-radius: 0px;",
@@ -12,17 +15,15 @@ pub fn escape_single_quote(s: &str) -> String {
     s.replace('\'', "&#39;")
 }
 
-use chrono::{DateTime, Duration, Utc};
-
 fn show_date<Tz: chrono::TimeZone>(datetime: &DateTime<Tz>) -> String {
-    let now = Utc::now();
+    let now = chrono::Utc::now();
     let duration = now.signed_duration_since(datetime.clone());
 
     if duration < Duration::hours(24) && duration >= Duration::zero() {
         let hours = duration.num_hours();
         if hours == 0 {
             let minutes = duration.num_minutes();
-             if minutes == 0 {
+            if minutes == 0 {
                 "just now".to_string()
             } else if minutes == 1 {
                 "1 minute ago".to_string()
@@ -113,18 +114,23 @@ fn test_set_header_id() {
     assert_eq!(html, set_header_id(html), "code block has changed");
 }
 
-pub fn post_to_html(post: &Post, is_front_page_preview: bool) -> String {
+pub fn wrap_post_content(post: &Post, is_front_page_preview: bool) -> String {
     // Not wrapping the full post in a `href` because that prevents text
     // selection. I've tried all kinds of workarounds with putting a `position:
     // relative` object in front of the link with `z-index`, but that didn't
     // work. Either the area was clickable or the text was selectable but not
     // both.
-    let md = if is_front_page_preview {
+    let html = if is_front_page_preview {
         turn_title_into_link(post, &post.content)
     } else {
         post.content.clone()
     };
-    let html = crate::md::content_to_html(&md);
+    let html = if is_front_page_preview {
+        // Front page preview is already HTML.
+        html
+    } else {
+        crate::md::content_to_html(&html)
+    };
     let html = set_header_id(&html);
     let style = if is_front_page_preview {
         &border_style(1)

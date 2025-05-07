@@ -12,6 +12,12 @@ pub fn markdown_link() -> &'static str {
 ///
 /// The default `to_string()` method only returns text.
 fn node_to_html(node: &Node) -> String {
+    // Maybe this method should be rewritten to return Markdown or use some
+    // internal logic from the `markdown` crate for the preview. I think the
+    // reason that this part is converting to HTML now is that HTML is more
+    // clear than Markdown. The benefit of having this code here is to later be
+    // able to easily modify the Markdown node to HTML conversion. For example,
+    // to remove hyperlinks from some Markdown code.
     let mut preview = String::new();
     match node {
         Node::Code(code) => {
@@ -72,6 +78,36 @@ fn node_to_html(node: &Node) -> String {
             let text = node_to_html(link.children.first().unwrap());
             let url = &link.url;
             preview.push_str(&format!("<a href='{url}'>{text}</a>"));
+        }
+        Node::Math(math) => {
+            preview.push_str(&format!(
+                r#"
+                <pre><code class="language-math math-display">{}
+                </code></pre>
+                "#,
+                math.value
+            ));
+        }
+        Node::Table(table) => {
+            preview.push_str("<table>");
+            for child in table.children.iter() {
+                preview.push_str(&node_to_html(child));
+            }
+            preview.push_str("</table>");
+        }
+        Node::TableRow(table_row) => {
+            preview.push_str("<tr>");
+            for child in table_row.children.iter() {
+                preview.push_str(&node_to_html(child));
+            }
+            preview.push_str("</tr>");
+        }
+        Node::TableCell(table_cell) => {
+            preview.push_str("<td>");
+            for child in table_cell.children.iter() {
+                preview.push_str(&node_to_html(child));
+            }
+            preview.push_str("</td>");
         }
         Node::InlineCode(inline_code) => {
             preview.push_str(&format!("<code>{}</code>", inline_code.value));

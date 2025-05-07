@@ -4,7 +4,7 @@ use crate::data::SqliteDateTime;
 use crate::html::PageSettings;
 use crate::html::Top;
 use crate::html::page;
-use crate::html::post_to_html;
+use crate::html::wrap_post_content;
 use crate::serve::ServerContext;
 use crate::serve::content_type;
 use crate::serve::is_logged_in;
@@ -109,7 +109,7 @@ async fn get_search(
         .map(|p| {
             crate::md::preview(p, 60);
             let is_front_page_preview = true;
-            post_to_html(p, is_front_page_preview)
+            wrap_post_content(p, is_front_page_preview)
         })
         .collect::<Vec<_>>();
     let results = results.join("\n");

@@ -3,7 +3,7 @@ mod api;
 pub mod data;
 mod discovery;
 mod files;
-mod html;
+pub mod html;
 mod md;
 mod search;
 pub mod serve;
