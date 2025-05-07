@@ -131,7 +131,6 @@ pub fn preview(post: &mut Post, max_length: usize) {
     let tree = to_mdast(&post.content, &options).unwrap();
     let mut preview = String::new();
     for node in tree.children().unwrap() {
-        preview.push('\n');
         if max_length < preview.len() {
             let id = post.id;
             let style = "text-decoration: underline; font-size: 0.8rem;";
@@ -172,7 +171,7 @@ fn test_keep_link() {
 
         <p>Lorem ipsum <a href='https://example.com/foo'>foo</a> dolor sit amet</p>
     "};
-    assert_eq!(post.content, expected.trim());
+    assert_eq!(post.content.trim(), expected.trim());
 }
 
 #[test]
