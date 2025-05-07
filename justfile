@@ -1,6 +1,6 @@
 shebang := '''
     /usr/bin/env bash
-    set -euxo pipefail
+    set -euo pipefail
 '''
 
 alias r := release
@@ -14,9 +14,9 @@ tag:
 
     METADATA="$(cargo metadata --format-version=1 --no-deps)"
     VERSION="$(echo $METADATA | jq -r '.packages[0].version')"
-    echo "VERSION $VERSION"
+    echo "VERSION: $VERSION"
     TAGNAME="v$VERSION"
-    echo "TAGNAME $TAGNAME"
+    echo "TAGNAME: $TAGNAME"
 
     echo "Existing tags:"
     git tag
