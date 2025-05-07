@@ -75,6 +75,10 @@ a:visited {
     color: var(--visited);
 }
 
+a.url {
+  word-break: break-all;
+}
+
 li {
     margin-bottom: 0.5rem;
 }
