@@ -36,7 +36,7 @@ async fn test_get_post() {
 }
 
 #[tokio::test]
-async fn test_code_preview() {
+async fn test_front_page_preview() {
     let (status, body) = request_body("/").await;
     assert_eq!(status, StatusCode::OK);
     let body = fx::html::minify(&body);
@@ -52,6 +52,7 @@ async fn test_code_preview() {
         "#
     };
     assert!(body.contains(code_area.trim()));
+    assert!(body.contains("Show more"));
 }
 
 #[tokio::test]

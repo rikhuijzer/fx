@@ -73,6 +73,36 @@ fn node_to_html(node: &Node) -> String {
             let url = &link.url;
             preview.push_str(&format!("<a href='{url}'>{text}</a>"));
         }
+        Node::Math(math) => {
+            preview.push_str(&format!(
+                r#"
+                <pre><code class="language-math math-display">{}
+                </code></pre>
+                "#,
+                math.value
+            ));
+        }
+        Node::Table(table) => {
+            preview.push_str("<table>");
+            for child in table.children.iter() {
+                preview.push_str(&node_to_html(child));
+            }
+            preview.push_str("</table>");
+        }
+        Node::TableRow(table_row) => {
+            preview.push_str("<tr>");
+            for child in table_row.children.iter() {
+                preview.push_str(&node_to_html(child));
+            }
+            preview.push_str("</tr>");
+        }
+        Node::TableCell(table_cell) => {
+            preview.push_str("<td>");
+            for child in table_cell.children.iter() {
+                preview.push_str(&node_to_html(child));
+            }
+            preview.push_str("</td>");
+        }
         Node::InlineCode(inline_code) => {
             preview.push_str(&format!("<code>{}</code>", inline_code.value));
         }
