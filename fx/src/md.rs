@@ -171,7 +171,7 @@ fn test_keep_link() {
 
         <p>Lorem ipsum <a href='https://example.com/foo'>foo</a> dolor sit amet</p>
     "};
-    assert_eq!(post.content.trim(), expected.trim());
+    assert_eq!(post.content, expected.trim());
 }
 
 #[test]
