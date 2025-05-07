@@ -125,6 +125,12 @@ pub fn wrap_post_content(post: &Post, is_front_page_preview: bool) -> String {
     } else {
         post.content.clone()
     };
+    let html = if is_front_page_preview {
+        // Front page preview is already HTML.
+        html
+    } else {
+        crate::md::content_to_html(&html)
+    };
     let html = set_header_id(&html);
     let style = if is_front_page_preview {
         &border_style(1)
