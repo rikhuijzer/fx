@@ -131,6 +131,8 @@ pub fn preview(post: &mut Post, max_length: usize) {
     let tree = to_mdast(&post.content, &options).unwrap();
     let mut preview = String::new();
     for node in tree.children().unwrap() {
+        println!("node: {:?}", node);
+        println!("preview length: {}", preview.len());
         if max_length < preview.len() {
             let id = post.id;
             let style = "text-decoration: underline; font-size: 0.8rem;";

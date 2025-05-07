@@ -161,10 +161,7 @@ async fn list_posts(ctx: &ServerContext, _is_logged_in: bool) -> String {
         .iter_mut()
         .map(|post| {
             crate::md::preview(post, 600);
-            println!("post:\n{}", post.content);
-            let html = wrap_post_content(post, true);
-            println!("html:\n{}", html);
-            html
+            wrap_post_content(post, true)
         })
         .collect::<Vec<String>>()
         .join("\n")
