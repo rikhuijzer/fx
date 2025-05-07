@@ -26,12 +26,29 @@ async fn test_home() {
 async fn test_get_post() {
     let (status, body) = request_body("/posts/1").await;
     assert_eq!(status, StatusCode::OK);
+    println!("body:\n{body}");
     assert!(body.contains("Lorem"));
 
     let (status, body) = request_body("/posts/2").await;
     assert_eq!(status, StatusCode::OK);
     assert!(body.contains("Dolor"));
     assert!(body.contains("<h2 id='more'>More</h2>"));
+}
+
+#[tokio::test]
+async fn test_code_preview() {
+    let (status, body) = request_body("/").await;
+    assert_eq!(status, StatusCode::OK);
+    println!("body:\n{body}");
+    let code_area = indoc::indoc! {
+    "<pre><code class='language-julia'>function f(x)
+        println(1)
+        return x
+        end
+
+        find . -iname &quot;<em>.tex&quot; -o -iname &quot;</em>.bib&quot; | entr latexmk -pdf</code></pre>
+        "};
+    assert!(body.contains(code_area.trim()));
 }
 
 #[tokio::test]
