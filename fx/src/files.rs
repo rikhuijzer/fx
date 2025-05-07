@@ -160,8 +160,8 @@ fn show_file(file: &File) -> String {
     let sha = &file.sha;
     format!(
         "
-        <div style='padding: 10px; padding-bottom: 0px; padding-top: 16px; \
-          border-bottom: 1px solid var(--border);'>
+        <div style='padding: 6px; padding-bottom: 0px; padding-top: 12px; \
+          border-bottom: 1px solid var(--border); font-size: 0.8rem;'>
             <a href='/files/{sha}'>{}</a>&nbsp;&nbsp;
             <a class='unstyled-link' href='/files/rename/{sha}' \
               style='font-size: 0.8rem; padding-top: 0.1rem;'>
@@ -199,18 +199,33 @@ async fn get_files(State(ctx): State<ServerContext>, jar: CookieJar) -> Response
         .join("");
     let body = format!(
         "
-        <div>
+        <div style='border-bottom: 2px solid var(--border);'>
             <form method='post' action='/files/add' \
+              class='margin-auto' \
               enctype='multipart/form-data' \
-              style='padding: 10px; text-align: center; \
-              border-bottom: 2px solid var(--border);'>
+              style='margin-top: 5vh; width: 80%;'>
                 <div>
-                    <label for='file'>Choose file(s) to upload (max 15MB)</label>
+                    <label for='file'>Choose file(s) to upload (max 15 MB)</label><br>
                     <input type='file' id='file' name='file' multiple />
                 </div>
+                <br>
                 <div>
-                    <button>Upload</button>
+                    <label for='prefix'>Prefix for the uploaded file(s) (optional)</label><br>
+                    <input type='text' id='prefix' name='prefix' \
+                      placeholder='example/'/> 
+                    <br>
+                    <span style='font-size: 0.8rem; line-height: 1.2; \
+                      display: inline-block;'>
+                        This is added to the beginning of the filename. For example, set the prefix
+                        'example/' to get files like 'example/a.txt' and 'example/b.pdf'.
+                    </span>
                 </div>
+                <br>
+                <div>
+                    <input style='margin-left: 0;' type='submit' value='Upload'/>
+                </div>
+                <br>
+                <br>
             </form>
         </div>
         <div>
@@ -251,20 +266,41 @@ async fn post_file(
     if !is_logged_in {
         return crate::serve::unauthorized(&ctx).await;
     }
+    let mut received_files = Vec::new();
+    let mut prefix = String::new();
     while let Some(field) = multipart.next_field().await.unwrap() {
-        let filename = field.file_name().unwrap().to_string();
-        if filename.is_empty() {
-            // Occurs when clicking "Upload" without selecting any files.
-            continue;
+        let name = field.name();
+        if name == Some("file") {
+            let filename = field.file_name().unwrap().to_string();
+            if filename.is_empty() {
+                // Occurs when clicking "Upload" without selecting any files.
+                continue;
+            }
+            let mime_type = field.content_type().unwrap().to_string();
+            let data = field
+                .bytes()
+                .await
+                .expect("Failed to read file; the file could be too large.");
+            let file = File::new(&mime_type, &filename, data);
+            received_files.push(file);
+        } else if name == Some("prefix") {
+            let bytes = field.bytes().await.unwrap();
+            prefix = String::from_utf8(bytes.to_vec()).unwrap();
+        } else {
+            tracing::warn!("unknown field: {:?}", name);
         }
-        let mime_type = field.content_type().unwrap().to_string();
-        let data = field
-            .bytes()
-            .await
-            .expect("Failed to read file; the file could be too large.");
-        let file = File::new(&mime_type, &filename, data);
+    }
+
+    for file in received_files {
+        let filename = if !prefix.is_empty() {
+            format!("{}{}", prefix, file.filename)
+        } else {
+            file.filename
+        };
+        let file = File::new(&file.mime_type, &filename, file.data);
         File::insert(&*ctx.conn().await, &file).unwrap();
     }
+
     crate::trigger::trigger_github_backup(&ctx).await;
     crate::serve::see_other(&ctx, "/files")
 }
