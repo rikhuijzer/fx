@@ -239,7 +239,7 @@ fn add_post_form() -> String {
           style='display: block; width: 100%; height: 180px; margin-top: 10px;' \
           class='boxsizing-border' \
           onchange='{SET_LEAVE_CONFIRMATION}' \
-          id='content' name='content' placeholder='Your text..'>
+          id='content' name='content' placeholder='Your Markdown text..'>
         </textarea>
         <br>
         <div style='display: flex; justify-content: flex-end;'>
