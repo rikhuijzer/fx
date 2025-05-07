@@ -12,6 +12,12 @@ pub fn markdown_link() -> &'static str {
 ///
 /// The default `to_string()` method only returns text.
 fn node_to_html(node: &Node) -> String {
+    // Maybe this method should be rewritten to return Markdown or use some
+    // internal logic from the `markdown` crate for the preview. I think the
+    // reason that this part is converting to HTML now is that HTML is more
+    // clear than Markdown. The benefit of having this code here is to later be
+    // able to easily modify the Markdown node to HTML conversion. For example,
+    // to remove hyperlinks from some Markdown code.
     let mut preview = String::new();
     match node {
         Node::Code(code) => {
