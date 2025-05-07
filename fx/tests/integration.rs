@@ -39,15 +39,18 @@ async fn test_get_post() {
 async fn test_code_preview() {
     let (status, body) = request_body("/").await;
     assert_eq!(status, StatusCode::OK);
-    println!("body:\n{body}");
     let code_area = indoc::indoc! {
-    "<pre><code class='language-julia'>function f(x)
-        println(1)
-        return x
+        r#"
+        <pre><code class='language-julia'>function f(x)
+            println(1)
+            return x
         end
 
-        find . -iname &quot;<em>.tex&quot; -o -iname &quot;</em>.bib&quot; | entr latexmk -pdf</code></pre>
-        "};
+        find . -iname "*.tex" -o -iname "*.bib" | entr latexmk -pdf</code></pre>
+        "#
+    };
+    let body = fx::html::minify(&body);
+    println!("body:\n{body}");
     assert!(body.contains(code_area.trim()));
 }
 

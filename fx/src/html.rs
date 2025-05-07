@@ -114,18 +114,17 @@ fn test_set_header_id() {
     assert_eq!(html, set_header_id(html), "code block has changed");
 }
 
-pub fn post_to_html(post: &Post, is_front_page_preview: bool) -> String {
+pub fn wrap_post_content(post: &Post, is_front_page_preview: bool) -> String {
     // Not wrapping the full post in a `href` because that prevents text
     // selection. I've tried all kinds of workarounds with putting a `position:
     // relative` object in front of the link with `z-index`, but that didn't
     // work. Either the area was clickable or the text was selectable but not
     // both.
-    let md = if is_front_page_preview {
+    let html = if is_front_page_preview {
         turn_title_into_link(post, &post.content)
     } else {
         post.content.clone()
     };
-    let html = crate::md::content_to_html(&md);
     let html = set_header_id(&html);
     let style = if is_front_page_preview {
         &border_style(1)

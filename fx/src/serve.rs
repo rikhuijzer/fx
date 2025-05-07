@@ -5,7 +5,7 @@ use crate::data::Post;
 use crate::html::PageSettings;
 use crate::html::Top;
 use crate::html::page;
-use crate::html::post_to_html;
+use crate::html::wrap_post_content;
 use axum::Form;
 use axum::Router;
 use axum::body::Body;
@@ -162,7 +162,7 @@ async fn list_posts(ctx: &ServerContext, _is_logged_in: bool) -> String {
         .map(|post| {
             crate::md::preview(post, 600);
             println!("post:\n{}", post.content);
-            let html = post_to_html(post, true);
+            let html = wrap_post_content(post, true);
             println!("html:\n{}", html);
             html
         })
@@ -249,7 +249,7 @@ async fn get_delete(
             <br>
         </div>
     "#};
-    let body = format!("{}\n{}", delete_button, post_to_html(&post, false));
+    let body = format!("{}\n{}", delete_button, wrap_post_content(&post, false));
     let body = page(&ctx, &settings, &body).await;
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
@@ -309,7 +309,7 @@ async fn get_post(
         {}
     "#, ctx.args.extra_head};
     let settings = PageSettings::new(&title, is_logged_in, false, Top::GoHome, &extra_head);
-    let mut body = post_to_html(&post, false);
+    let mut body = wrap_post_content(&post, false);
     if is_logged_in {
         body = format!("{}\n{body}", crate::html::edit_post_buttons(&ctx, &post));
     }
@@ -477,7 +477,7 @@ async fn post_edit(
         crate::trigger::trigger_github_backup(&ctx).await;
         see_other(&ctx, &url)
     } else {
-        let preview = crate::html::post_to_html(&post, false);
+        let preview = crate::html::wrap_post_content(&post, false);
         let body = page(&ctx, &settings, &preview).await;
         response(StatusCode::OK, HeaderMap::new(), body, &ctx)
     }
@@ -540,7 +540,7 @@ async fn post_add(
             content: form.content,
         };
         let is_front_page_preview = false;
-        let preview = crate::html::post_to_html(&post, is_front_page_preview);
+        let preview = crate::html::wrap_post_content(&post, is_front_page_preview);
         let body = page(&ctx, &settings, &preview).await;
         response(StatusCode::OK, HeaderMap::new(), body, &ctx)
     }
