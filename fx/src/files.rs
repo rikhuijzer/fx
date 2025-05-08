@@ -120,23 +120,16 @@ impl File {
             WHERE sha = ?;
             ";
         let mut stmt = conn.prepare(stmt)?;
-        let file = stmt.query_row([name], |row| {
+        // Not logging an error because it could just mean that someone
+        // requested an a file (by requesting some URL) that does not exist.
+        stmt.query_row([name], |row| {
             Ok(File {
                 sha: row.get("sha")?,
                 mime_type: row.get("mime_type")?,
                 filename: row.get("filename")?,
                 data: blob_to_bytes(row.get("data")?),
             })
-        });
-        let file = match file {
-            Ok(file) => file,
-            Err(e) => {
-                let msg = "Could not get file from database";
-                tracing::error!("{msg}: {e}");
-                return Err(e);
-            }
-        };
-        Ok(file)
+        })
     }
     pub fn delete(conn: &Connection, sha: &str) -> rusqlite::Result<usize> {
         let sql = "DELETE FROM files WHERE sha = ?";
