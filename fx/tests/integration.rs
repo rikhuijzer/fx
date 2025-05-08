@@ -288,7 +288,7 @@ async fn test_robots() {
 
 #[tokio::test]
 async fn test_rss() {
-    let (status, body) = request_body("/feed.rss").await;
+    let (status, body) = request_body("/feed.xml").await;
     assert_eq!(status, StatusCode::OK);
     println!("body:\n{body}");
     assert!(body.starts_with("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"));

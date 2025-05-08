@@ -381,7 +381,7 @@ async fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
                     <a href='/search' class='unstyled-link' style='{style}'>
                         🔍 Search
                     </a>&nbsp;
-                    <a href='/feed.rss' class='unstyled-link' style='{style}'>
+                    <a href='/feed.xml' class='unstyled-link' style='{style}'>
                         🔄 RSS
                     </a>&nbsp;
                 </span>
@@ -542,7 +542,7 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
             <meta charset='UTF-8'>
             <meta name='viewport' content='width=device-width, initial-scale=1'>
             <link rel='stylesheet' href='/static/style.css'>
-            <link rel='alternate' type='application/rss+xml' href='/feed.rss'>
+            <link rel='alternate' type='application/rss+xml' href='/feed.xml'>
             <script src='/static/nodefer.js'></script>
             <script src='/static/script.js' defer></script>
             <title>{full_title}</title>

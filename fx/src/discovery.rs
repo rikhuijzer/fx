@@ -115,7 +115,7 @@ async fn get_sitemap(State(ctx): State<ServerContext>) -> Response<Body> {
 pub fn routes(router: &Router<ServerContext>) -> Router<ServerContext> {
     router
         .clone()
-        .route("/feed.rss", get(get_rss))
+        .route("/feed.xml", get(get_rss))
         .route("/robots.txt", get(get_robots))
         .route("/sitemap.xml", get(get_sitemap))
 }
