@@ -146,6 +146,8 @@ fn parse_options() -> ParseOptions {
     // and thus easy to decide whether to load KaTeX.
     options.constructs.math_flow = true;
     options.constructs.math_text = true;
+    options.constructs.gfm_footnote_definition = true;
+    options.constructs.gfm_label_start_footnote = true;
     options
 }
 

@@ -259,7 +259,9 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
             | a | b |
             | c | d |
 
-            And some more text to get over the preview length limit.
+            And some more text to get over the preview length limit[^simple].
+
+            [^simple]: A simple footnote.
         "#}
         .trim();
         Post::insert(conn, now, now, content).unwrap();
