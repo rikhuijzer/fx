@@ -374,7 +374,7 @@ async fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
         <div style='{container_style}'>
             <div class='full-name' \
                 style='{name_style}'>
-                {author_name}
+                <a class='unstyled-link' href='/'>{author_name}</a>
             </div>
             <div>
                 <span>
