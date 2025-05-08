@@ -21,3 +21,15 @@ function make_post_previews_clickable() {
 }
 
 make_post_previews_clickable();
+
+function reset_form_if_requested() {
+    let urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("reset_forms") === "true") {
+        const forms = document.querySelectorAll("form");
+        forms.forEach((form) => {
+            form.reset();
+        });
+    }
+}
+
+reset_form_if_requested();

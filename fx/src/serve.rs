@@ -516,9 +516,7 @@ async fn post_add(
     if publish {
         let now = Utc::now();
         let post_id = Post::insert(&*ctx.conn().await, now, now, &form.content);
-        let post_id = if let Ok(post_id) = post_id {
-            post_id
-        } else {
+        if let Err(_e) = post_id {
             return response(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 HeaderMap::new(),
@@ -526,9 +524,9 @@ async fn post_add(
                 &ctx,
             );
         };
-        let url = format!("/posts/{}", post_id);
+        let url = "/?reset_forms=true";
         crate::trigger::trigger_github_backup(&ctx).await;
-        see_other(&ctx, &url)
+        see_other(&ctx, url)
     } else {
         let post = Post {
             id: 0,
