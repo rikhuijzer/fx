@@ -15,6 +15,11 @@ A (micro)blogging server that you can self-host.
 - 📁 Upload files and images to embed them in posts.
 - 🔒 Automatically backup to plain text files, see [Backup](#backup).
 
+## Demo
+
+There is a demo site where you can log in and create posts at <https://fx-demo.huijzer.xyz>.
+The demo site is reset every hour.
+
 ## Background
 
 This site is aimed at people who want to write down something and later be able to find it back.
