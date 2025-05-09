@@ -16,13 +16,17 @@ fn rfc822_datetime(dt: &chrono::DateTime<chrono::Utc>) -> String {
     dt.format("%a, %d %b %Y %H:%M:%S GMT").to_string()
 }
 
+fn xml_header() -> &'static str {
+    r#"<?xml version="1.0" encoding="UTF-8"?>\n"#
+}
+
 async fn rss(ctx: &ServerContext, posts: &[Post]) -> String {
     let settings = Settings::from_db(&*ctx.conn().await).unwrap();
     let site_name = &settings.site_name;
     let author_name = &settings.author_name;
     let base = ctx.base_url();
     let mut body = String::new();
-    body.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+    body.push_str(xml_header());
     body.push_str("<rss version=\"2.0\">\n");
     body.push_str("<channel>\n");
     body.push_str(&format!("<title>{site_name}</title>\n"));
@@ -57,6 +61,8 @@ async fn get_rss(State(ctx): State<ServerContext>) -> Response<Body> {
     let posts = Post::list(&*ctx.conn().await).unwrap();
     let body = rss(&ctx, &posts).await;
     let mut headers = HeaderMap::new();
+    // Forces download in Firefox unfortunately:
+    // https://www.petefreitag.com/blog/content-type-xml-feeds/
     content_type(&mut headers, "application/rss+xml; charset=utf-8");
     response(StatusCode::OK, headers, body, &ctx)
 }
@@ -83,7 +89,7 @@ fn w3_datetime(dt: &chrono::DateTime<chrono::Utc>) -> String {
 
 fn sitemap(ctx: &ServerContext, posts: &[Post]) -> String {
     let mut body = String::new();
-    body.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+    body.push_str(xml_header());
     body.push_str("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
     let base = ctx.base_url();
     body.push_str(&format!("<url><loc>{base}/</loc></url>\n"));
