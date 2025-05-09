@@ -301,3 +301,9 @@ async fn test_rss() {
         "description with title"
     );
 }
+
+#[tokio::test]
+async fn test_invalid_post_request() {
+    let (status, _body) = request_body("/posts/foo").await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+}

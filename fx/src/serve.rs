@@ -282,10 +282,14 @@ fn iso8601(dt: &chrono::DateTime<chrono::Utc>) -> String {
 
 async fn get_post(
     State(ctx): State<ServerContext>,
-    Path(id): Path<i64>,
+    Path(id): Path<String>,
     jar: CookieJar,
 ) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
+    let id = match id.parse::<i64>() {
+        Ok(id) => id,
+        Err(_) => return not_found(State(ctx)).await,
+    };
     let post = Post::get(&*ctx.conn().await, id);
     let post = match post {
         Ok(post) => post,

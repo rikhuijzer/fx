@@ -18,7 +18,7 @@ A (micro)blogging server that you can self-host.
 ## Demo
 
 There is a demo site where you can log in and create posts at <https://fx-demo.huijzer.xyz>.
-The demo site is reset every hour.
+The demo site resets every hour.
 
 ## Background
 
@@ -31,9 +31,14 @@ Another use-case could be if you are a teacher who often gets the same questions
 Instead of copy-pasting the same answer each time, you can write a post and share the link with your students.
 
 Compared to social media, having your own site mitigates the risk of being (shadow) banned.
-If you host your posts on your own site, you have much more control over your content.
+If you host your posts on your own site, you have more control over your content.
 Furthermore, domains in most countries are protected by law, so nobody can just take your content down.
-Also, having your own domain looks more professional.
+
+Compared to static site generators, this server is meant to make it easier to write and edit posts.
+With a static site generator, the publishing workflow often means that you have to add a file, commit it, and then wait for the build to complete.
+Or you have to be on your desktop to run the server locally.
+With this server, you can write your posts inside the web interface.
+In my experience, this lowers the barrier to write posts since it is now possible to see the result of a change within seconds instead of minutes.
 
 ## Installation
 
