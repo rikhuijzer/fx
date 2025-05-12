@@ -39,11 +39,17 @@ tag:
 release:
     #!{{shebang}}
 
-    TARGET="--target=x86_64-unknown-linux-musl"
-    if [[ ${{ matrix.os }} == "ubuntu-24.04-arm" ]]; then
-        TARGET="--target=aarch64-unknown-linux-musl"
+    ARCH="$(uname -m)"
+    echo "ARCH: $ARCH"
+    OS="$(uname -s)"
+    echo "OS: $OS"
+
+    if [[ $ARCH == "x86_64" && $OS == "Linux" ]]; then
+        TARGET="--target=x86_64-unknown-linux-musl"
+        cargo build -p fx --release $TARGET
+    else
+        cargo build -p fx --release
     fi
-    cargo build -p fx --release $TARGET
 
     rm -rf public
     mkdir -p public
