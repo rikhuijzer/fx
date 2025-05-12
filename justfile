@@ -39,21 +39,22 @@ tag:
 release:
     #!{{shebang}}
 
+    rm -rf public
+    mkdir -p public
+
     ARCH="$(uname -m)"
     echo "ARCH: $ARCH"
     OS="$(uname -s)"
     echo "OS: $OS"
 
     if [[ $ARCH == "x86_64" && $OS == "Linux" ]]; then
-        TARGET="--target=x86_64-unknown-linux-musl"
-        cargo build -p fx --release $TARGET
+        TARGET="x86_64-unknown-linux-musl"
+        cargo build -p fx --release --target="$TARGET"
+        cp --verbose "target/$TARGET/release/fx public/"
     else
         cargo build -p fx --release
+        cp --verbose target/release/fx public/
     fi
-
-    rm -rf public
-    mkdir -p public
-    cp --verbose target/release/fx public/
 
     cat > public/Dockerfile << EOF
     FROM gcr.io/distroless/cc-debian12
