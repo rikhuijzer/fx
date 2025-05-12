@@ -39,7 +39,17 @@ tag:
 release:
     #!{{shebang}}
 
-    cargo build -p fx --release
+    ARCH="$(uname -m)"
+    echo "ARCH: $ARCH"
+    OS="$(uname -s)"
+    echo "OS: $OS"
+
+    if [[ $ARCH == "x86_64" && $OS == "Linux" ]]; then
+        TARGET="--target=x86_64-unknown-linux-musl"
+        cargo build -p fx --release $TARGET
+    else
+        cargo build -p fx --release
+    fi
 
     rm -rf public
     mkdir -p public
