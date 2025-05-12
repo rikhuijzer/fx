@@ -40,7 +40,7 @@ release:
     #!{{shebang}}
 
     TARGET="--target=x86_64-unknown-linux-musl"
-    if [[ "${{ matrix.os }}" == "ubuntu-24.04-arm" ]]; then
+    if [[ ${{ matrix.os }} == "ubuntu-24.04-arm" ]]; then
         TARGET="--target=aarch64-unknown-linux-musl"
     fi
     cargo build -p fx --release $TARGET
