@@ -26,9 +26,10 @@ pub struct ServeArgs {
     /// The password for the admin interface.
     #[arg(long, env = "FX_PASSWORD")]
     pub password: Option<String>,
-    /// The domain name of the website.
-    #[arg(long, env = "FX_DOMAIN", default_value = "")]
-    pub domain: String,
+    /// The base URL of the website including the protocol, host, and path
+    /// without trailing slash. For example, "https://example.com/myserver".
+    #[arg(long, env = "FX_BASE_URL", default_value = "")]
+    pub base_url: String,
     /// The language of the website.
     #[arg(long, env = "FX_HTML_LANG", default_value = "en")]
     pub html_lang: String,
