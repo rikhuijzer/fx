@@ -102,6 +102,9 @@ fn node_to_html(node: &Node) -> String {
             }
             preview.push_str("</tr>");
         }
+        Node::Break(_br) => {
+            preview.push_str("<br />");
+        }
         Node::TableCell(table_cell) => {
             preview.push_str("<td>");
             for child in table_cell.children.iter() {
