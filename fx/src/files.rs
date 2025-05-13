@@ -141,21 +141,43 @@ impl File {
     }
 }
 
-fn md_link(file: &File) -> String {
+fn file_ext(file: &File) -> String {
+    let filename = &file.filename;
     if file.mime_type.starts_with("image/") {
-        format!("![{}](/files/{})", file.filename, file.sha)
+        // For images, the extension is not important since the download link
+        // will automatically add the extension based on the mime type.
+        "".to_string()
     } else {
-        format!("[{}](/files/{})", file.filename, file.sha)
+        // For other files, the extension is important since the browser cannot
+        // guess the extension based on the mime type.
+        if let Some(ext) = filename.split('.').next_back() {
+            format!(".{ext}")
+        } else {
+            "".to_string()
+        }
+    }
+}
+
+fn md_link(file: &File) -> String {
+    let filename = &file.filename;
+    let ext = file_ext(file);
+    let sha = &file.sha;
+    if file.mime_type.starts_with("image/") {
+        format!("![{filename}](/files/{sha})")
+    } else {
+        format!("[{filename}](/files/{sha}{ext})")
     }
 }
 
 fn show_file(file: &File) -> String {
     let sha = &file.sha;
+    let link = md_link(file);
+    let ext = file_ext(file);
     format!(
         "
         <div style='padding: 6px; padding-bottom: 0px; padding-top: 12px; \
           border-bottom: 1px solid var(--border); font-size: 0.8rem;'>
-            <a href='/files/{sha}'>{}</a>&nbsp;&nbsp;
+            <a href='/files/{sha}{ext}'>{}</a>&nbsp;&nbsp;
             <a class='unstyled-link' href='/files/rename/{sha}' \
               style='font-size: 0.8rem; padding-top: 0.1rem;'>
                 ✏️ Rename
@@ -170,12 +192,11 @@ fn show_file(file: &File) -> String {
                   onclick='copyCode(\"{sha}\")'>click to copy</a>):
             </span><br>
             <pre style='margin-top: 6px; margin-bottom: 0px;'>
-                <code id='code-{sha}' class='language-md'>{}</code>
+                <code id='code-{sha}' class='language-md'>{link}</code>
             </pre>
         </div>
         ",
         file.filename,
-        md_link(file)
     )
 }
 
