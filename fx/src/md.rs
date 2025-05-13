@@ -135,7 +135,7 @@ fn node_to_html(node: &Node) -> String {
             let alt = &image.alt;
             preview.push_str(&format!("<img src='{url}' alt='{alt}' />"));
         }
-        Node::FootnoteDefinition(_footnote_definition) => {},
+        Node::FootnoteDefinition(_footnote_definition) => {}
         Node::Blockquote(blockquote) => {
             preview.push_str("<blockquote>");
             for child in blockquote.children.iter() {

@@ -232,7 +232,18 @@ async fn get_files(State(ctx): State<ServerContext>, jar: CookieJar) -> Response
 }
 
 async fn get_file(State(ctx): State<ServerContext>, Path(sha): Path<String>) -> Response<Body> {
-    let file = match File::get(&*ctx.conn().await, &sha) {
+    // Anything after the sha is allowed. This allows anyone to decide the
+    // filename. For security purposes, this should be okay since the only
+    // person that can upload files is the site owner. So in the worst case, a
+    // "malicious" filename is added but this would be a problem for the system
+    // to handle and not the users.
+    let trim_len = 16;
+    let name = if trim_len < sha.len() {
+        sha[..trim_len].to_string()
+    } else {
+        sha
+    };
+    let file = match File::get(&*ctx.conn().await, &name) {
         Ok(file) => file,
         Err(_) => {
             return {

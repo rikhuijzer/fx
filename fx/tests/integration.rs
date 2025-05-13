@@ -264,6 +264,16 @@ async fn test_no_crash_on_unknown_file() {
 }
 
 #[tokio::test]
+async fn test_allow_filename_suffix() {
+    let url = "/files/69b83ddf8f65695f-example.txt";
+    let (status, _body) = request_body(url).await;
+    assert_eq!(status, StatusCode::OK);
+    let url = "/files/69b83ddf8f65695f-foo.jl";
+    let (status, _body) = request_body(url).await;
+    assert_eq!(status, StatusCode::OK);
+}
+
+#[tokio::test]
 async fn test_sitemap() {
     let (status, body) = request_body("/sitemap.xml").await;
     assert_eq!(status, StatusCode::OK);
