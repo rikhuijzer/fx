@@ -25,6 +25,7 @@ use axum_extra::extract::CookieJar;
 use chrono::Utc;
 use fx_auth::Login;
 use fx_auth::Salt;
+use fx_rss::RssFeed;
 use http_body_util::BodyExt;
 use rusqlite::Connection;
 use serde::Deserialize;
@@ -186,6 +187,18 @@ pub fn enable_caching(headers: &mut HeaderMap, max_age: u32) {
     let src = format!("public, max-age={max_age}, must-revalidate");
     let val = HeaderValue::from_str(&src).unwrap();
     headers.insert(hyper::header::CACHE_CONTROL, val);
+}
+
+async fn get_blogroll(State(ctx): State<ServerContext>) -> Response<Body> {
+    let feeds = vec![
+        RssFeed::new("Example", "https://example.com/rss.xml"),
+    ];
+    let config = fx_rss::RssConfig::new(feeds, 24);
+    let feed = fx_rss::read_rss(&config).await;
+    let body = feed.to_html(&config);
+    let mut headers = HeaderMap::new();
+    content_type(&mut headers, "text/html");
+    response(StatusCode::OK, headers, body, &ctx)
 }
 
 async fn get_style(State(ctx): State<ServerContext>) -> Response<Body> {
@@ -563,6 +576,7 @@ async fn get_webfinger(State(ctx): State<ServerContext>) -> Response<Body> {
 pub fn app(ctx: ServerContext) -> Router {
     let router = Router::new()
         .route("/", get(get_posts))
+        .route("/blogroll", get(get_blogroll))
         .route("/posts/delete/{id}", get(get_delete))
         .route("/posts/delete/{id}", post(post_delete))
         .route("/posts/edit/{id}", get(get_edit))

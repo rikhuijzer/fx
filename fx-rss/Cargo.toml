@@ -1,0 +1,18 @@
+[package]
+name = "fx-rss"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+readme = "../README.md"
+publish = false
+
+[dependencies]
+atom_syndication = "0.12"
+chrono = "0.4"
+diligent-date-parser = "0.1.5"
+futures = { version = "0.3.31", default-features = false }
+indoc = "2"
+regex = "1.11"
+reqwest = { version = "0.12.12", default-features = false, features = ["rustls-tls"] }
+rss = "2.0.11"
