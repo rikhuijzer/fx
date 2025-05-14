@@ -189,18 +189,6 @@ pub fn enable_caching(headers: &mut HeaderMap, max_age: u32) {
     headers.insert(hyper::header::CACHE_CONTROL, val);
 }
 
-async fn get_blogroll(State(ctx): State<ServerContext>) -> Response<Body> {
-    let feeds = vec![
-        RssFeed::new("Example", "https://example.com/rss.xml"),
-    ];
-    let config = fx_rss::RssConfig::new(feeds, 24);
-    let feed = fx_rss::read_rss(&config).await;
-    let body = feed.to_html(&config);
-    let mut headers = HeaderMap::new();
-    content_type(&mut headers, "text/html");
-    response(StatusCode::OK, headers, body, &ctx)
-}
-
 async fn get_style(State(ctx): State<ServerContext>) -> Response<Body> {
     let body = crate::html::minify(include_str!("static/style.css"));
     let mut headers = HeaderMap::new();
@@ -576,7 +564,6 @@ async fn get_webfinger(State(ctx): State<ServerContext>) -> Response<Body> {
 pub fn app(ctx: ServerContext) -> Router {
     let router = Router::new()
         .route("/", get(get_posts))
-        .route("/blogroll", get(get_blogroll))
         .route("/posts/delete/{id}", get(get_delete))
         .route("/posts/delete/{id}", post(post_delete))
         .route("/posts/edit/{id}", get(get_edit))
@@ -592,6 +579,7 @@ pub fn app(ctx: ServerContext) -> Router {
         .route("/static/nodefer.js", get(get_nodefer))
         .route("/.well-known/webfinger", get(get_webfinger));
     let router = crate::api::routes(&router);
+    let router = crate::blogroll::routes(&router);
     let router = crate::discovery::routes(&router);
     let router = crate::files::routes(&router);
     let router = crate::search::routes(&router);

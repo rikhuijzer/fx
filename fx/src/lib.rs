@@ -1,5 +1,6 @@
 mod ap;
 mod api;
+mod blogroll;
 pub mod data;
 mod discovery;
 mod files;

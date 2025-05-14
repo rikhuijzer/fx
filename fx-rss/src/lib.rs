@@ -1,16 +1,15 @@
 use chrono::DateTime;
 use chrono::Datelike;
 use chrono::Utc;
-use std::fs::File;
-use std::io::BufRead;
-use std::io::ErrorKind;
 use diligent_date_parser::parse_date;
-use regex::Regex;
 use futures;
-use indoc::indoc;
+use regex::Regex;
 use rss::Channel;
 use std::error::Error;
+use std::fs::File;
+use std::io::BufRead;
 use std::io::BufReader;
+use std::io::ErrorKind;
 
 /// An RSS item after it has been extracted from a feed.
 ///
@@ -20,16 +19,16 @@ use std::io::BufReader;
 #[derive(Debug)]
 pub struct Item {
     /// Name of the feed from which the item was extracted.
-    feed_name: String,
+    pub feed_name: String,
     /// Not all RSS items have a title. For example, Mastodon posts don't have
     /// one.
-    title: Option<String>,
+    pub title: Option<String>,
     /// Item synopsis.
-    description: Option<String>,
+    pub description: Option<String>,
     /// URL to the item.
-    link: Option<String>,
+    pub link: Option<String>,
     ///
-    pub_date: Option<DateTime<Utc>>,
+    pub pub_date: Option<DateTime<Utc>>,
 }
 
 fn truncate(text: &str) -> String {
@@ -89,7 +88,7 @@ impl Item {
 
 #[derive(Debug)]
 pub struct Feed {
-    items: Vec<Item>,
+    pub items: Vec<Item>,
 }
 
 #[derive(Debug)]
@@ -299,7 +298,7 @@ fn items_from_atom(feed_name: &str, content: &str) -> Option<Vec<Item>> {
             let link = entry.links.first().map(|link| link.href.to_string());
             let item = Item::new(feed_name, Some(title), description, link, pub_date);
             items.push(item);
-        };
+        }
         Some(items)
     } else {
         None
@@ -363,79 +362,4 @@ impl RssConfig {
 pub async fn read_rss(config: &RssConfig) -> Feed {
     let items = config.items().await;
     Feed { items }
-}
-
-pub fn webpage(items: &str) -> String {
-    format!(
-        indoc! {r#"
-    <!DOCTYPE html>
-    <html>
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>RSS Reader</title>
-            <style>
-                :root {{
-                    --background: hsl(200, 60%, 98%);
-                    --container-background: hsl(220, 60%, 95%);
-                    --container-background-gradient: linear-gradient(62deg, #e7f2fc, #e0e0e0);
-                    --text-color: hsl(230, 60%, 10%);
-                    --link-color: hsl(240, 100%, 45%);
-                    --visited-link-color: hsl(271, 68%, 32%);
-                }}
-                @media (prefers-color-scheme: dark) {{
-                    :root {{
-                        --background: hsl(230, 10%, 10%);
-                        --container-background: hsl(230, 10%, 15%);
-                        --container-background-gradient: linear-gradient(62deg, #313332, #181a18);
-                        --text-color: hsl(230, 10%, 90%);
-                        --link-color: hsl(230, 10%, 80%);
-                        --visited-link-color: hsl(230, 10%, 40%);
-                    }}
-                }}
-                body {{
-                    background-color: var(--background);
-                    color: var(--text-color);
-                    width: 94%;
-                }}
-                a {{
-                    color: var(--link-color);
-                }}
-                a:visited {{
-                    color: var(--visited-link-color);
-                }}
-                h1 {{
-                    text-align: center;
-                }}
-                h2 {{
-                    margin-bottom: 0em;
-                }}
-                .container {{
-                    margin: 1em auto;
-                }}
-                li {{
-                    margin-bottom: 0.5em;
-                }}
-                @media only screen and (min-width: 600px) {{
-                    .container {{
-                        background-color: var(--container-background);
-                        background-image: var(--container-background-gradient);
-                        font-size: 20px;
-                        max-width: 90ch;
-                        margin: 1em auto;
-                        padding: 1em;
-                    }}
-                }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>RSS Reader</h1>
-                {}
-            </div>
-        </body>
-    </html>
-    "#},
-        items
-    )
 }
