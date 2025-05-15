@@ -21,6 +21,11 @@ use fx_rss::RssFeed;
 
 fn show_item(item: &fx_rss::Item) -> Option<String> {
     let feed_name = item.feed_name.clone();
+    let pub_date = item.pub_date.clone();
+    let pub_date = match pub_date {
+        Some(date) => crate::html::show_date(&date),
+        None => return None,
+    };
     let link = match item.link.clone() {
         Some(link) => link,
         None => return None,
@@ -31,8 +36,8 @@ fn show_item(item: &fx_rss::Item) -> Option<String> {
     };
     Some(format!(
         "
-        <span class='blogroll-item''>
-            {feed_name}: <a href=\"{link}\">{title}</a><br>
+        <span class='blogroll-item' style='font-size: 0.9rem;'>
+            {feed_name} ({pub_date}): <a href=\"{link}\">{title}</a><br>
         </span>
         <br>
         ",
@@ -82,9 +87,6 @@ async fn get_blogroll(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
         .iter()
         .filter(|item| item.pub_date.is_some())
         .collect::<Vec<_>>();
-    for item in items.iter_mut() {
-        println!("{}", item.pub_date.unwrap());
-    }
     items.sort_by(|a, b| b.pub_date.cmp(&a.pub_date));
     let items = items
         .iter()
