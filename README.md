@@ -11,7 +11,9 @@ A (micro)blogging server that you can self-host.
 
 - 🚀 Low costs due to small footprint (only a few MB of memory are required).
 - 📝 Write posts in Markdown.
-- 📱 Publish and edit from mobile device.
+- 🖥 Built-in syntax highlighting.
+- ∑ Built-in display for math expressions (LaTeX syntax, e.g. `$E=mc^2$`).
+- 📱 Publish and edit from desktop or mobile device.
 - 📁 Upload files and images to embed them in posts.
 - 🔒 Automatically backup to plain text files, see [Backup](#backup).
 
@@ -62,6 +64,9 @@ services:
       - './data:/data:rw'
     restart: 'unless-stopped'
 ```
+
+Let me know when you are hosting this software, I'll happily link to you from <https://huijzer.xyz> to increase your search engine ranking.
+My email address is at the top of <https://huijzer.xyz>.
 
 ## API
 
