@@ -94,8 +94,8 @@ async fn get_blogroll(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
     let last_update = crate::html::show_date(&last_update);
     let body = format!(
         "
-        <div>
-            Last updated: {last_update}
+        <div style='text-align: right; font-size: 0.8rem;'>
+            last update: {last_update}
         </div>
         {items}
         "
