@@ -27,7 +27,7 @@ pub struct Item {
     pub description: Option<String>,
     /// URL to the item.
     pub link: Option<String>,
-    ///
+    /// Date and time when the item was published.
     pub pub_date: Option<DateTime<Utc>>,
 }
 

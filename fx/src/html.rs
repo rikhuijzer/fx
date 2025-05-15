@@ -381,6 +381,9 @@ async fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
                     <a href='/search' class='unstyled-link' style='{style}'>
                         🔍 Search
                     </a>&nbsp;
+                    <a href='/blogroll' class='unstyled-link' style='{style}'>
+                        🔭 Blogroll
+                    </a>&nbsp;
                     <a href='/feed.xml' class='unstyled-link' style='{style}'>
                         🔄 RSS
                     </a>&nbsp;

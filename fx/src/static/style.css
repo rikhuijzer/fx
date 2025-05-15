@@ -284,3 +284,14 @@ a.button {
     /* Is 1.2em by default, which makes display math too big. */
     font-size: 1em !important;
 }
+
+.blogroll-item {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-bottom: 0.3em;
+}
+
+.blogroll-item a::visited {
+    color: var(--visited);
+}
