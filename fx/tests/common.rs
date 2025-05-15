@@ -42,15 +42,15 @@ impl TestDefault for Connection {
     }
 }
 
-pub fn server_context() -> ServerContext {
+pub async fn server_context() -> ServerContext {
     let args = ServeArgs::test_default();
     let conn = Connection::test_default();
     let salt = fx_auth::generate_salt();
-    ServerContext::new(args, conn, salt)
+    ServerContext::new(args, conn, salt).await
 }
 
 pub async fn request_body(uri: &str) -> (StatusCode, String) {
-    let ctx = server_context();
+    let ctx = server_context().await;
     let app = app(ctx);
     let req = Request::builder().uri(uri).body(Body::empty()).unwrap();
     let response = app.oneshot(req).await.unwrap();
@@ -65,7 +65,7 @@ pub async fn request_cookie() -> (ServerContext, String) {
     let args = ServeArgs::test_default();
     let conn = Connection::test_default();
     let salt = fx_auth::generate_salt();
-    let ctx = ServerContext::new(args, conn, salt);
+    let ctx = ServerContext::new(args, conn, salt).await;
     let form = LoginForm {
         username: "test-admin".to_string(),
         password: "test-password".to_string(),

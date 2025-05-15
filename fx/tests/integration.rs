@@ -97,7 +97,7 @@ async fn test_login() {
     let args = ServeArgs::test_default();
     let conn = Connection::test_default();
     let salt = fx_auth::generate_salt();
-    let ctx = ServerContext::new(args, conn, salt);
+    let ctx = ServerContext::new(args, conn, salt).await;
 
     // Valid login.
     let form = LoginForm {

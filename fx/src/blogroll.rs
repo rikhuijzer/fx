@@ -1,10 +1,10 @@
-use crate::serve::ServerContext;
-use crate::serve::content_type;
-use crate::serve::response;
-use crate::serve::is_logged_in;
 use crate::html::PageSettings;
 use crate::html::Top;
 use crate::html::page;
+use crate::serve::ServerContext;
+use crate::serve::content_type;
+use crate::serve::is_logged_in;
+use crate::serve::response;
 use axum::Router;
 use axum::body::Body;
 use axum::extract::State;
@@ -12,8 +12,12 @@ use axum::http::HeaderMap;
 use axum::http::Response;
 use axum::http::StatusCode;
 use axum::routing::get;
-use fx_rss::RssFeed;
 use axum_extra::extract::CookieJar;
+use chrono::DateTime;
+use chrono::Utc;
+use fx_rss::Item;
+use fx_rss::RssConfig;
+use fx_rss::RssFeed;
 
 fn show_item(item: &fx_rss::Item) -> Option<String> {
     let feed_name = item.feed_name.clone();
@@ -35,30 +39,67 @@ fn show_item(item: &fx_rss::Item) -> Option<String> {
     ))
 }
 
+pub struct BlogCache {
+    config: RssConfig,
+    pub last_updated: DateTime<Utc>,
+    pub items: Vec<Item>,
+}
+
+impl BlogCache {
+    pub async fn new(feeds: Vec<RssFeed>) -> Self {
+        let config = fx_rss::RssConfig::new(feeds, 1);
+        Self {
+            config,
+            last_updated: Utc::now(),
+            items: vec![],
+        }
+    }
+    pub async fn update(&mut self) {
+        let feed = fx_rss::read_rss(&self.config).await;
+        let mut items = feed
+            .items
+            .iter()
+            .filter(|item| item.pub_date.is_some())
+            .collect::<Vec<_>>();
+        items.sort_by(|a, b| b.pub_date.cmp(&a.pub_date));
+        self.items = items
+            .into_iter()
+            .map(|item| item.clone())
+            .collect::<Vec<_>>();
+        self.last_updated = Utc::now();
+    }
+}
+
 async fn get_blogroll(State(ctx): State<ServerContext>, jar: CookieJar) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
     let extra_head = &ctx.args.extra_head;
     let title = "Blogroll";
     let settings = PageSettings::new(title, is_logged_in, false, Top::GoHome, extra_head);
 
-    let feeds = vec![
-        RssFeed::new("Economist Writing Every Day", "https://economistwritingeveryday.com/feed"),
-        RssFeed::new(
-        "Pragmatic Engineer",
-        "https://blog.pragmaticengineer.com/feed/",
-    ), RssFeed::new(
-        "Jaan Juurikas",
-        "https://rss.beehiiv.com/feeds/IP6TE2kgRb.xml"
-    )];
-    let config = fx_rss::RssConfig::new(feeds, 1);
-    let feed = fx_rss::read_rss(&config).await;
-    let mut items = feed.items.iter().filter(|item| item.pub_date.is_some()).collect::<Vec<_>>();
+    let last_update = ctx.blog_cache.lock().await.last_updated;
+    let items = &ctx.blog_cache.lock().await.items;
+    let mut items = items
+        .iter()
+        .filter(|item| item.pub_date.is_some())
+        .collect::<Vec<_>>();
+    for item in items.iter_mut() {
+        println!("{}", item.pub_date.unwrap());
+    }
     items.sort_by(|a, b| b.pub_date.cmp(&a.pub_date));
-    let body = items
+    let items = items
         .iter()
         .filter_map(|item| show_item(item))
         .collect::<Vec<_>>()
         .join("\n");
+    let last_update = crate::html::show_date(&last_update);
+    let body = format!(
+        "
+        <div>
+            Last updated: {last_update}
+        </div>
+        {items}
+        "
+    );
     let body = page(&ctx, &settings, &body).await;
     let mut headers = HeaderMap::new();
     content_type(&mut headers, "text/html");

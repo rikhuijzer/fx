@@ -16,7 +16,7 @@ use std::io::ErrorKind;
 /// According to https://www.rssboard.org/rss-specification, all elements of an
 /// item are optional, but "at least one of title or description must be
 /// present."
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Item {
     /// Name of the feed from which the item was extracted.
     pub feed_name: String,
@@ -234,7 +234,7 @@ pub fn feeds_from_csv(path: &str) -> Vec<RssFeed> {
 
 pub struct RssConfig {
     /// URLs of RSS feeds.
-    feeds: Vec<RssFeed>,
+    pub feeds: Vec<RssFeed>,
     /// Only show items that are less than this age in months.
     max_age_in_months: u32,
 }

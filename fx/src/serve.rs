@@ -1,4 +1,5 @@
 use crate::ServeArgs;
+use crate::blogroll::BlogCache;
 use crate::data;
 use crate::data::Kv;
 use crate::data::Post;
@@ -25,6 +26,7 @@ use axum_extra::extract::CookieJar;
 use chrono::Utc;
 use fx_auth::Login;
 use fx_auth::Salt;
+use fx_rss::RssFeed;
 use http_body_util::BodyExt;
 use rusqlite::Connection;
 use serde::Deserialize;
@@ -38,14 +40,32 @@ pub struct ServerContext {
     pub args: ServeArgs,
     pub conn: Arc<Mutex<Connection>>,
     pub salt: Salt,
+    pub blog_cache: Arc<Mutex<BlogCache>>,
 }
 
 impl ServerContext {
-    pub fn new(args: ServeArgs, conn: Connection, salt: Salt) -> Self {
+    pub async fn new(args: ServeArgs, conn: Connection, salt: Salt) -> Self {
+        let feeds = vec![
+            RssFeed::new(
+                "Economist Writing Every Day",
+                "https://economistwritingeveryday.com/feed",
+            ),
+            RssFeed::new(
+                "Pragmatic Engineer",
+                "https://blog.pragmaticengineer.com/feed/",
+            ),
+            RssFeed::new(
+                "Jaan Juurikas",
+                "https://rss.beehiiv.com/feeds/IP6TE2kgRb.xml",
+            ),
+        ];
+        let mut cache = BlogCache::new(feeds).await;
+        cache.update().await;
         Self {
             args: args.clone(),
             conn: Arc::new(Mutex::new(conn)),
             salt,
+            blog_cache: Arc::new(Mutex::new(cache)),
         }
     }
     pub async fn conn(&self) -> MutexGuard<'_, Connection> {
@@ -614,7 +634,7 @@ pub async fn run(args: &ServeArgs) {
     let conn = data::connect(args).unwrap();
     data::init(args, &conn);
     let salt = obtain_salt(args, &conn);
-    let ctx = ServerContext::new(args.clone(), conn, salt);
+    let ctx = ServerContext::new(args.clone(), conn, salt).await;
     let app = app(ctx);
     let addr = format!("0.0.0.0:{}", args.port);
     tracing::info!("Listening on {addr}");

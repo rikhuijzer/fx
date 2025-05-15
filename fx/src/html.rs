@@ -15,7 +15,7 @@ pub fn escape_single_quote(s: &str) -> String {
     s.replace('\'', "&#39;")
 }
 
-fn show_date<Tz: chrono::TimeZone>(datetime: &DateTime<Tz>) -> String {
+pub fn show_date<Tz: chrono::TimeZone>(datetime: &DateTime<Tz>) -> String {
     let now = chrono::Utc::now();
     let duration = now.signed_duration_since(datetime.clone());
 
