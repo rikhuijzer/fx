@@ -291,7 +291,7 @@ a.button {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    margin-bottom: 0.3em;
+    margin-bottom: 0.35em;
 }
 
 .blogroll-item a:visited {

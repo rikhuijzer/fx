@@ -37,7 +37,7 @@ fn show_item(item: &fx_rss::Item) -> Option<String> {
     Some(format!(
         "
         <span class='blogroll-item' style='font-size: 0.9rem;'>
-            {feed_name} ({pub_date}): <a href=\"{link}\">{title}</a><br>
+            {feed_name}: <a href=\"{link}\">{title}</a> ({pub_date})<br>
         </span>
         <br>
         ",
@@ -96,7 +96,7 @@ async fn get_blogroll(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
     let last_update = crate::html::show_date(&last_update);
     let body = format!(
         "
-        <div style='text-align: right; font-size: 0.8rem;'>
+        <div style='text-align: right; font-size: 0.8rem; margin-bottom: 0.5rem;'>
             last update: {last_update}
         </div>
         {items}
