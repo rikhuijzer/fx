@@ -65,6 +65,9 @@ services:
     restart: 'unless-stopped'
 ```
 
+Let me know when you are hosting this software, I'll happily link to you from <https://huijzer.xyz> to increase your search engine ranking.
+My email is at the top of <https://huijzer.xyz>.
+
 ## API
 
 ### Backup
