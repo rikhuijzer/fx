@@ -2,7 +2,10 @@ use crate::html::PageSettings;
 use crate::html::Top;
 use crate::html::page;
 use crate::serve::ServerContext;
+use crate::data::Kv;
 use crate::serve::content_type;
+use crate::settings::InputType;
+use crate::settings::text_input;
 use crate::serve::is_logged_in;
 use crate::serve::response;
 use axum::Router;
@@ -94,10 +97,19 @@ async fn get_blogroll(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
         .collect::<Vec<_>>()
         .join("\n");
     let last_update = crate::html::show_date(&last_update);
+    let settings_link = if is_logged_in {
+        "<a href='/blogroll/settings' class='unstyled-link'>⚙️ Settings</a>"
+    } else {
+        ""
+    };
     let body = format!(
         "
-        <div style='text-align: right; font-size: 0.8rem; margin-bottom: 0.5rem;'>
-            last update: {last_update}
+        <div style='display: flex; justify-content: space-between; font-size: 0.8rem; \
+          margin-bottom: 1rem;'>
+            {settings_link}
+            <div style='text-align: right;'>
+                last update: {last_update}
+            </div>
         </div>
         {items}
         "
@@ -108,6 +120,45 @@ async fn get_blogroll(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
     response(StatusCode::OK, headers, body, &ctx)
 }
 
+const SETTINGS_KEY: &str = "blogroll-settings";
+
+async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Response<Body> {
+    let is_logged_in = is_logged_in(&ctx, &jar);
+    if !is_logged_in {
+        return crate::serve::unauthorized(&ctx).await;
+    }
+    let settings = match Kv::get(&*ctx.conn().await, SETTINGS_KEY) {
+        Ok(settings) => settings,
+        Err(e) => {
+            let msg = "Could not get settings from database";
+            tracing::error!("{msg}: {e}");
+            return crate::serve::internal_server_error(&ctx, msg).await;
+        }
+    };
+    let settings = String::from_utf8(settings).unwrap();
+    let style = "margin-top: 5vh; width: 80%;";
+    let body = format!(
+        "
+        <form class='margin-auto' style='{style}' \
+          method='post' action='/settings'>
+            {}
+            <input style='margin-left: 0;' type='submit' value='Save'/>
+        </form>
+        ",
+        text_input(
+            InputType::Text,
+            "site_name",
+            "Site Name",
+            &settings,
+            "This is shown in the title of the page.",
+            true,
+        ),
+    );
+    let page_settings = PageSettings::new("Settings", is_logged_in, false, Top::GoHome, "");
+    let body = page(&ctx, &page_settings, &body).await;
+    response(StatusCode::OK, HeaderMap::new(), body, &ctx)
+}
+
 pub fn routes(router: &Router<ServerContext>) -> Router<ServerContext> {
-    router.clone().route("/blogroll", get(get_blogroll))
+    router.clone().route("/blogroll", get(get_blogroll)).route("/blogroll/settings", get(get_settings))
 }
