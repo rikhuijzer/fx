@@ -1,10 +1,7 @@
 use crate::ServeArgs;
 use crate::blogroll::BlogCache;
 use crate::data;
-use tokio::task::block_in_place;
 use crate::data::Kv;
-use tokio_cron_scheduler::Job;
-use tokio_cron_scheduler::JobScheduler;
 use crate::data::Post;
 use crate::html::PageSettings;
 use crate::html::Top;
@@ -27,6 +24,7 @@ use axum::routing::get;
 use axum::routing::post;
 use axum_extra::extract::CookieJar;
 use chrono::Utc;
+use futures_util::FutureExt;
 use fx_auth::Login;
 use fx_auth::Salt;
 use fx_rss::RssFeed;
@@ -37,6 +35,8 @@ use serde::Serialize;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::sync::MutexGuard;
+use tokio_cron_scheduler::Job;
+use tokio_cron_scheduler::JobScheduler;
 
 #[derive(Clone)]
 pub struct ServerContext {
@@ -47,7 +47,12 @@ pub struct ServerContext {
 }
 
 impl ServerContext {
-    pub async fn new(args: ServeArgs, conn: Connection, salt: Salt, blog_cache: Arc<Mutex<BlogCache>>) -> Self {
+    pub async fn new(
+        args: ServeArgs,
+        conn: Connection,
+        salt: Salt,
+        blog_cache: Arc<Mutex<BlogCache>>,
+    ) -> Self {
         Self {
             args: args.clone(),
             conn: Arc::new(Mutex::new(conn)),
@@ -639,13 +644,15 @@ async fn schedule_jobs(blog_cache: Arc<Mutex<BlogCache>>) {
         }
     };
     let task = move |_uuid, _l| {
-        block_in_place(|| async {
+        let blog_cache = blog_cache.clone();
+        async move {
             let mut blog_cache = blog_cache.lock().await;
             blog_cache.update().await;
-        })
+        }
+        .boxed()
     };
     // Run at the 8th minute of the hour.
-    let job = Job::new("00 08 * * * *", task).unwrap();
+    let job = Job::new_async("00 08 * * * *", task).unwrap();
     match scheduler.add(job).await {
         Ok(_) => (),
         Err(e) => {

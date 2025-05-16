@@ -9,6 +9,8 @@ use fx::serve::ServerContext;
 use fx::serve::app;
 use http_body_util::BodyExt;
 use rusqlite::Connection;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 use tower::util::ServiceExt;
 
 pub trait TestDefault {
@@ -48,6 +50,7 @@ pub async fn server_context() -> ServerContext {
     let conn = Connection::test_default();
     let salt = fx_auth::generate_salt();
     let blog_cache = BlogCache::new(vec![]).await;
+    let blog_cache = Arc::new(Mutex::new(blog_cache));
     ServerContext::new(args, conn, salt, blog_cache).await
 }
 
@@ -64,11 +67,7 @@ pub async fn request_body(uri: &str) -> (StatusCode, String) {
 }
 
 pub async fn request_cookie() -> (ServerContext, String) {
-    let args = ServeArgs::test_default();
-    let conn = Connection::test_default();
-    let salt = fx_auth::generate_salt();
-    let blog_cache = BlogCache::new(vec![]).await;
-    let ctx = ServerContext::new(args, conn, salt, blog_cache).await;
+    let ctx = server_context().await;
     let form = LoginForm {
         username: "test-admin".to_string(),
         password: "test-password".to_string(),
