@@ -226,7 +226,7 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
     init_kv_data(conn, "author_name", b"John");
     let domain = if args.production { "" } else { "localhost" };
     init_kv_data(conn, "domain", domain.as_bytes());
-    let feeds = "Simon Willison,https://simonwillison.net/atom/everything/";
+    let feeds = "https://simonwillison.net/atom/everything/";
     init_kv_data(conn, BLOGROLL_SETTINGS_KEY, feeds.as_bytes());
 
     if !args.production {

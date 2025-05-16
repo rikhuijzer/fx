@@ -196,34 +196,15 @@ fn test_feed_to_html() {
 }
 
 pub struct RssFeed {
-    name: String,
     url: String,
 }
 
 impl RssFeed {
-    pub fn new(name: &str, url: &str) -> Self {
+    pub fn new(url: &str) -> Self {
         Self {
-            name: name.to_string(),
             url: url.to_string(),
         }
     }
-}
-
-pub fn feeds_from_csv(content: &str) -> Vec<RssFeed> {
-    let mut feeds = Vec::new();
-    for line in content.lines() {
-        let parts = line.split(',').collect::<Vec<_>>();
-        if parts.len() != 2 {
-            panic!("Invalid line (expected name,url): {line}");
-        }
-        let name = parts[0].to_string();
-        let url = parts[1].to_string();
-        if url.trim() != url {
-            panic!("Invalid line (spaces are not allowed according to RFC 4180): {line}");
-        }
-        feeds.push(RssFeed::new(&name, &url));
-    }
-    feeds
 }
 
 pub struct RssConfig {
@@ -250,7 +231,7 @@ fn sanitize(text: &str) -> String {
     String::from_utf8_lossy(text.as_bytes()).to_string()
 }
 
-fn items_from_rss(feed_name: &str, content: &str) -> Option<Vec<Item>> {
+fn items_from_rss(content: &str) -> Option<Vec<Item>> {
     let reader = BufReader::new(content.as_bytes());
     let channel = Channel::read_from(reader);
     if let Ok(channel) = channel {
@@ -261,10 +242,10 @@ fn items_from_rss(feed_name: &str, content: &str) -> Option<Vec<Item>> {
             } else {
                 None
             };
-            let feed_name = feed_name.to_string();
+            let feed_name = &channel.title;
             let title = item.title.map(|title| sanitize(&title));
             let description = item.description.map(|description| sanitize(&description));
-            let item = Item::new(feed_name, title, description, item.link, pub_date);
+            let item = Item::new(feed_name.clone(), title, description, item.link, pub_date);
             items.push(item);
         }
         Some(items)
@@ -273,24 +254,36 @@ fn items_from_rss(feed_name: &str, content: &str) -> Option<Vec<Item>> {
     }
 }
 
-fn items_from_atom(feed_name: &str, content: &str) -> Option<Vec<Item>> {
+fn domain_from_url(url: &str) -> String {
+    let domain = match url.split('/').next() {
+        Some(domain) => domain,
+        None => url,
+    };
+    domain.to_string()
+}
+
+fn items_from_atom(content: &str) -> Option<Vec<Item>> {
     let reader = BufReader::new(content.as_bytes());
     let feed = atom_syndication::Feed::read_from(reader);
     if let Ok(feed) = feed {
         let mut items = Vec::new();
+        let author = feed.authors().first().map(|author| author.name.clone());
+        let name = match author {
+            Some(author) => author,
+            None => domain_from_url(&feed.id),
+        };
         for entry in feed.entries {
             let pub_date = if let Some(pub_date) = entry.published {
                 let date = Some(pub_date);
                 date.map(|date| date.with_timezone(&Utc))
             } else {
-                println!("No pub_date for entry from {feed_name}");
+                println!("No pub_date for entry from {}", &name);
                 None
             };
-            let feed_name = feed_name.to_string();
             let title = sanitize(&entry.title);
             let description = entry.summary.map(|summary| sanitize(&summary));
             let link = entry.links.first().map(|link| link.href.to_string());
-            let item = Item::new(feed_name, Some(title), description, link, pub_date);
+            let item = Item::new(name.clone(), Some(title), description, link, pub_date);
             items.push(item);
         }
         Some(items)
@@ -305,26 +298,26 @@ async fn items_from_feed(feed: &RssFeed) -> Result<Vec<Item>, Box<dyn Error + Se
     let response = match client.get(url).send().await {
         Ok(response) => response,
         Err(e) => {
-            println!("Failed to fetch feed {}: {:?}", feed.name, e);
+            println!("Failed to fetch feed {}: {:?}", feed.url, e);
             return Err(Box::new(e));
         }
     };
     let content = match response.text().await {
         Ok(content) => content,
         Err(e) => {
-            println!("Failed to get text from feed {}: {:?}", feed.name, e);
+            println!("Failed to get text from feed {}: {:?}", feed.url, e);
             return Err(Box::new(e));
         }
     };
     // Not trying to determine the feed format here since in the end all that
     // matters whether the parser can parse the feed or not.
-    if let Some(items) = items_from_atom(&feed.name, &content) {
+    if let Some(items) = items_from_atom(&content) {
         return Ok(items);
     }
-    if let Some(items) = items_from_rss(&feed.name, &content) {
+    if let Some(items) = items_from_rss(&content) {
         return Ok(items);
     }
-    let msg = format!("Failed to parse feed {}", feed.name);
+    let msg = format!("Failed to parse feed {}", feed.url);
     Err(Box::new(std::io::Error::new(ErrorKind::InvalidInput, msg)))
 }
 
@@ -336,11 +329,7 @@ impl RssConfig {
         }
     }
     async fn items(&self) -> Vec<Item> {
-        let futures: Vec<_> = self
-            .feeds
-            .iter()
-            .map(items_from_feed)
-            .collect();
+        let futures: Vec<_> = self.feeds.iter().map(items_from_feed).collect();
         let results = futures::future::join_all(futures).await;
         results
             .into_iter()

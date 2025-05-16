@@ -26,6 +26,7 @@ use axum_extra::extract::CookieJar;
 use chrono::Utc;
 use fx_auth::Login;
 use fx_auth::Salt;
+use fx_rss::RssFeed;
 use http_body_util::BodyExt;
 use rusqlite::Connection;
 use serde::Deserialize;
@@ -617,7 +618,10 @@ async fn init_blog_cache(conn: &Connection) -> BlogCache {
     let key = crate::data::BLOGROLL_SETTINGS_KEY;
     let data = data::Kv::get(conn, key).unwrap();
     let feeds = String::from_utf8(data).unwrap();
-    let feeds = fx_rss::feeds_from_csv(&feeds);
+    let feeds = feeds
+        .lines()
+        .map(|line| RssFeed::new(line.trim()))
+        .collect::<Vec<_>>();
     let mut cache = BlogCache::new(feeds).await;
     cache.update().await;
     cache
