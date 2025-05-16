@@ -26,7 +26,6 @@ use axum_extra::extract::CookieJar;
 use chrono::Utc;
 use fx_auth::Login;
 use fx_auth::Salt;
-use fx_rss::RssFeed;
 use http_body_util::BodyExt;
 use rusqlite::Connection;
 use serde::Deserialize;

@@ -147,10 +147,12 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
                 margin-left: 1% !important;
                 margin-right: 1% !important;
                 width: 98% !important;
+
             }}
             textarea {{
                 width: 96% !important;
                 font-size: 0.8rem !important;
+                height: 50vh !important;
             }}
         </style>
         <form class='margin-auto' style='{style}' \
@@ -166,6 +168,7 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
             &settings,
             "One feed URL per line. For example,
               <pre><code>https://simonwillison.net/atom/everything/</code></pre>
+              The list will be sorted alphabetically upon save.
               ",
             true,
         ),
@@ -192,7 +195,14 @@ async fn post_settings(
     }
     let key = crate::data::BLOGROLL_SETTINGS_KEY;
     let conn = &*ctx.conn().await;
-    Kv::insert(conn, key, form.blogroll_feeds.as_bytes()).unwrap();
+    let feeds = form.blogroll_feeds;
+    let mut feeds = feeds
+        .split("\n")
+        .map(|line| line.trim())
+        .collect::<Vec<_>>();
+    feeds.sort();
+    let feeds = feeds.join("\n");
+    Kv::insert(conn, key, feeds.as_bytes()).unwrap();
     crate::trigger::trigger_github_backup(&ctx).await;
     crate::serve::see_other(&ctx, "/blogroll")
 }
