@@ -2,12 +2,9 @@ use chrono::DateTime;
 use chrono::Datelike;
 use chrono::Utc;
 use diligent_date_parser::parse_date;
-use futures;
 use regex::Regex;
 use rss::Channel;
 use std::error::Error;
-use std::fs::File;
-use std::io::BufRead;
 use std::io::BufReader;
 use std::io::ErrorKind;
 
@@ -321,16 +318,14 @@ async fn items_from_feed(feed: &RssFeed) -> Result<Vec<Item>, Box<dyn Error + Se
     };
     // Not trying to determine the feed format here since in the end all that
     // matters whether the parser can parse the feed or not.
-    match items_from_rss(&feed.name, &content) {
-        Some(items) => return Ok(items),
-        None => {}
+    if let Some(items) = items_from_atom(&feed.name, &content) {
+        return Ok(items);
     }
-    match items_from_atom(&feed.name, &content) {
-        Some(items) => return Ok(items),
-        None => {}
+    if let Some(items) = items_from_rss(&feed.name, &content) {
+        return Ok(items);
     }
     let msg = format!("Failed to parse feed {}", feed.name);
-    return Err(Box::new(std::io::Error::new(ErrorKind::InvalidInput, msg)));
+    Err(Box::new(std::io::Error::new(ErrorKind::InvalidInput, msg)))
 }
 
 impl RssConfig {
@@ -344,7 +339,7 @@ impl RssConfig {
         let futures: Vec<_> = self
             .feeds
             .iter()
-            .map(|feed| items_from_feed(&feed))
+            .map(items_from_feed)
             .collect();
         let results = futures::future::join_all(futures).await;
         results

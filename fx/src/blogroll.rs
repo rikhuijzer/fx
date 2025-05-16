@@ -27,19 +27,12 @@ use serde::Deserialize;
 
 fn show_item(item: &fx_rss::Item) -> Option<String> {
     let feed_name = item.feed_name.clone();
-    let pub_date = item.pub_date.clone();
-    let pub_date = match pub_date {
+    let pub_date = match item.pub_date {
         Some(date) => crate::html::show_date(&date),
         None => return None,
     };
-    let link = match item.link.clone() {
-        Some(link) => link,
-        None => return None,
-    };
-    let title = match item.title.clone() {
-        Some(title) => title,
-        None => return None,
-    };
+    let link = item.link.clone()?;
+    let title = item.title.clone()?;
     Some(format!(
         "
         <span class='blogroll-item' style='font-size: 0.9rem;'>
@@ -73,10 +66,7 @@ impl BlogCache {
             .filter(|item| item.pub_date.is_some())
             .collect::<Vec<_>>();
         items.sort_by(|a, b| b.pub_date.cmp(&a.pub_date));
-        self.items = items
-            .into_iter()
-            .map(|item| item.clone())
-            .collect::<Vec<_>>();
+        self.items = items.into_iter().cloned().collect::<Vec<_>>();
         self.last_updated = Utc::now();
     }
 }
