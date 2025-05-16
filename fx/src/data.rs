@@ -206,6 +206,9 @@ fn init_tables(conn: &Connection) {
     File::create_table(conn).expect("Failed to create files table");
 }
 
+pub const BLOGROLL_SETTINGS_KEY: &str = "blogroll_settings";
+pub const SITE_NAME_KEY: &str = "site_name";
+
 fn init_kv_data(conn: &Connection, key: &str, value: &[u8]) {
     if Kv::get(conn, key).is_err() {
         Kv::insert(conn, key, value).unwrap();
@@ -213,7 +216,7 @@ fn init_kv_data(conn: &Connection, key: &str, value: &[u8]) {
 }
 
 fn init_data(args: &ServeArgs, conn: &Connection) {
-    init_kv_data(conn, "site_name", b"John's Weblog");
+    init_kv_data(conn, SITE_NAME_KEY, b"John's Weblog");
     let about = if args.production {
         ""
     } else {
@@ -223,6 +226,8 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
     init_kv_data(conn, "author_name", b"John");
     let domain = if args.production { "" } else { "localhost" };
     init_kv_data(conn, "domain", domain.as_bytes());
+    let feeds = "Simon Willison,https://simonwillison.net/atom/everything/";
+    init_kv_data(conn, BLOGROLL_SETTINGS_KEY, feeds.as_bytes());
 
     if !args.production {
         let now = chrono::Utc::now();
@@ -274,6 +279,7 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
             data: Bytes::from_static(b"example"),
         };
         File::insert(conn, &file).unwrap();
+
     }
 }
 

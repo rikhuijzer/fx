@@ -1,7 +1,10 @@
 use crate::html::PageSettings;
+use serde::Deserialize;
 use crate::html::Top;
 use crate::html::page;
 use crate::serve::ServerContext;
+use axum::routing::post;
+use axum::extract::Form;
 use crate::data::Kv;
 use crate::serve::content_type;
 use crate::settings::InputType;
@@ -100,7 +103,8 @@ async fn get_blogroll(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
     let settings_link = if is_logged_in {
         "<a href='/blogroll/settings' class='unstyled-link'>⚙️ Settings</a>"
     } else {
-        ""
+        // Pushes the other element to the right.
+        "<span></span>"
     };
     let body = format!(
         "
@@ -120,14 +124,14 @@ async fn get_blogroll(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
     response(StatusCode::OK, headers, body, &ctx)
 }
 
-const SETTINGS_KEY: &str = "blogroll-settings";
 
 async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
     if !is_logged_in {
         return crate::serve::unauthorized(&ctx).await;
     }
-    let settings = match Kv::get(&*ctx.conn().await, SETTINGS_KEY) {
+    let key = crate::data::BLOGROLL_SETTINGS_KEY;
+    let settings = match Kv::get(&*ctx.conn().await, key) {
         Ok(settings) => settings,
         Err(e) => {
             let msg = "Could not get settings from database";
@@ -140,25 +144,46 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
     let body = format!(
         "
         <form class='margin-auto' style='{style}' \
-          method='post' action='/settings'>
+          method='post' action='/blogroll/settings'>
             {}
             <input style='margin-left: 0;' type='submit' value='Save'/>
         </form>
         ",
         text_input(
-            InputType::Text,
-            "site_name",
-            "Site Name",
+            InputType::Textarea,
+            "blogroll_feeds",
+            "Feeds",
             &settings,
-            "This is shown in the title of the page.",
+            "One feed per line, with the feed name and URL separated by a comma.",
             true,
         ),
     );
-    let page_settings = PageSettings::new("Settings", is_logged_in, false, Top::GoHome, "");
+    let page_settings = PageSettings::new("Blogroll Settings", is_logged_in, false, Top::GoHome, "");
     let body = page(&ctx, &page_settings, &body).await;
     response(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
+#[derive(Debug, Deserialize)]
+pub struct BlogrollSettings {
+    blogroll_feeds: String,
+}
+
+async fn post_settings(
+    State(ctx): State<ServerContext>,
+    jar: CookieJar,
+    Form(form): Form<BlogrollSettings>,
+) -> Response<Body> {
+    let is_logged_in = is_logged_in(&ctx, &jar);
+    if !is_logged_in {
+        return crate::serve::unauthorized(&ctx).await;
+    }
+    let key = crate::data::BLOGROLL_SETTINGS_KEY;
+    let conn = &*ctx.conn().await;
+    Kv::insert(conn, key, form.blogroll_feeds.as_bytes()).unwrap();
+    crate::trigger::trigger_github_backup(&ctx).await;
+    crate::serve::see_other(&ctx, "/blogroll")
+}
+
 pub fn routes(router: &Router<ServerContext>) -> Router<ServerContext> {
-    router.clone().route("/blogroll", get(get_blogroll)).route("/blogroll/settings", get(get_settings))
+    router.clone().route("/blogroll", get(get_blogroll)).route("/blogroll/settings", get(get_settings)).route("/blogroll/settings", post(post_settings))
 }
