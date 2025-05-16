@@ -122,7 +122,7 @@ async fn get_search(
     let mut headers = HeaderMap::new();
     content_type(&mut headers, "text/html");
     let title = "Search";
-    let extra_head = "";
+    let extra_head = &ctx.args.extra_head;
     let settings = PageSettings::new(title, is_logged_in, false, Top::GoHome, extra_head);
     let body = page(&ctx, &settings, &body).await;
     response(StatusCode::OK, headers, body, &ctx)

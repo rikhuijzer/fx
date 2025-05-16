@@ -1,4 +1,5 @@
 use crate::ServeArgs;
+use crate::blogroll::BlogCache;
 use crate::data;
 use crate::data::Kv;
 use crate::data::Post;
@@ -25,6 +26,7 @@ use axum_extra::extract::CookieJar;
 use chrono::Utc;
 use fx_auth::Login;
 use fx_auth::Salt;
+use fx_rss::RssFeed;
 use http_body_util::BodyExt;
 use rusqlite::Connection;
 use serde::Deserialize;
@@ -38,14 +40,16 @@ pub struct ServerContext {
     pub args: ServeArgs,
     pub conn: Arc<Mutex<Connection>>,
     pub salt: Salt,
+    pub blog_cache: Arc<Mutex<BlogCache>>,
 }
 
 impl ServerContext {
-    pub fn new(args: ServeArgs, conn: Connection, salt: Salt) -> Self {
+    pub async fn new(args: ServeArgs, conn: Connection, salt: Salt, blog_cache: BlogCache) -> Self {
         Self {
             args: args.clone(),
             conn: Arc::new(Mutex::new(conn)),
             salt,
+            blog_cache: Arc::new(Mutex::new(blog_cache)),
         }
     }
     pub async fn conn(&self) -> MutexGuard<'_, Connection> {
@@ -578,6 +582,7 @@ pub fn app(ctx: ServerContext) -> Router {
         .route("/static/nodefer.js", get(get_nodefer))
         .route("/.well-known/webfinger", get(get_webfinger));
     let router = crate::api::routes(&router);
+    let router = crate::blogroll::routes(&router);
     let router = crate::discovery::routes(&router);
     let router = crate::files::routes(&router);
     let router = crate::search::routes(&router);
@@ -609,11 +614,25 @@ fn obtain_salt(args: &ServeArgs, conn: &Connection) -> Salt {
     }
 }
 
+async fn init_blog_cache(conn: &Connection) -> BlogCache {
+    let key = crate::data::BLOGROLL_SETTINGS_KEY;
+    let data = data::Kv::get(conn, key).unwrap();
+    let feeds = String::from_utf8(data).unwrap();
+    let feeds = feeds
+        .lines()
+        .map(|line| RssFeed::new(line.trim()))
+        .collect::<Vec<_>>();
+    let mut cache = BlogCache::new(feeds).await;
+    cache.update().await;
+    cache
+}
+
 pub async fn run(args: &ServeArgs) {
     let conn = data::connect(args).unwrap();
     data::init(args, &conn);
     let salt = obtain_salt(args, &conn);
-    let ctx = ServerContext::new(args.clone(), conn, salt);
+    let blog_cache = init_blog_cache(&conn).await;
+    let ctx = ServerContext::new(args.clone(), conn, salt, blog_cache).await;
     let app = app(ctx);
     let addr = format!("0.0.0.0:{}", args.port);
     tracing::info!("Listening on {addr}");

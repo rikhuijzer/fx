@@ -16,6 +16,7 @@
     --border: hsl(0, 0%, 60%);
     --header: hsl(212, 90%, 18%);
     --accent: hsl(212, 91%, 60%);
+    --visited: hsl(271, 68%, 32%);
     --blue-gradient: linear-gradient(to right, var(--dark-blue), var(--blue));
 }
 
@@ -29,6 +30,7 @@
         --text: hsl(0, 0%, 96%);
         --header: hsl(0, 0%, 96%);
         --accent: hsl(212, 91%, 65%);
+        --visited: hsl(271, 68%, 68%);
         --blue-gradient: linear-gradient(to right, var(--black), var(--dark-blue));
     }
 }
@@ -283,4 +285,15 @@ a.button {
 .katex-display {
     /* Is 1.2em by default, which makes display math too big. */
     font-size: 1em !important;
+}
+
+.blogroll-item {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-bottom: 0.2em;
+}
+
+.blogroll-item a:visited {
+    color: var(--visited);
 }

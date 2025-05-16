@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "fx",
     "fx-auth",
+    "fx-rss",
 ]
 
 [workspace.package]

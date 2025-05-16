@@ -36,7 +36,7 @@ fn auth_header(ctx: &ServerContext) -> String {
 }
 
 pub async fn request_body_authenticated(uri: &str) -> (StatusCode, Vec<u8>) {
-    let ctx = server_context();
+    let ctx = server_context().await;
     let req = Request::builder()
         .method("GET")
         .uri(uri)
@@ -52,7 +52,7 @@ pub async fn request_body_authenticated(uri: &str) -> (StatusCode, Vec<u8>) {
 
 #[tokio::test]
 async fn test_update_about() {
-    let ctx = server_context();
+    let ctx = server_context().await;
     let router = app(ctx.clone());
     let uri = "/api/settings/about";
     let body = "test";

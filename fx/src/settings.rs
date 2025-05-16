@@ -44,12 +44,12 @@ impl Settings {
     }
 }
 
-enum InputType {
+pub enum InputType {
     Text,
     Textarea,
 }
 
-fn text_input(
+pub fn text_input(
     input_type: InputType,
     name: &str,
     label: &str,

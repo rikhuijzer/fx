@@ -15,7 +15,7 @@ pub fn escape_single_quote(s: &str) -> String {
     s.replace('\'', "&#39;")
 }
 
-fn show_date<Tz: chrono::TimeZone>(datetime: &DateTime<Tz>) -> String {
+pub fn show_date<Tz: chrono::TimeZone>(datetime: &DateTime<Tz>) -> String {
     let now = chrono::Utc::now();
     let duration = now.signed_duration_since(datetime.clone());
 
@@ -380,6 +380,9 @@ async fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
                 <span>
                     <a href='/search' class='unstyled-link' style='{style}'>
                         🔍 Search
+                    </a>&nbsp;
+                    <a href='/blogroll' class='unstyled-link' style='{style}'>
+                        🔭 Blogroll
                     </a>&nbsp;
                     <a href='/feed.xml' class='unstyled-link' style='{style}'>
                         🔄 RSS

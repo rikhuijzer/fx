@@ -4,12 +4,9 @@ use axum::body::Body;
 use axum::extract::Request;
 use axum::http::StatusCode;
 use common::*;
-use fx::ServeArgs;
 use fx::serve::LoginForm;
-use fx::serve::ServerContext;
 use fx::serve::app;
 use http_body_util::BodyExt;
-use rusqlite::Connection;
 use tower::util::ServiceExt;
 
 #[tokio::test]
@@ -94,10 +91,7 @@ async fn test_login_page() {
 
 #[tokio::test]
 async fn test_login() {
-    let args = ServeArgs::test_default();
-    let conn = Connection::test_default();
-    let salt = fx_auth::generate_salt();
-    let ctx = ServerContext::new(args, conn, salt);
+    let ctx = common::server_context().await;
 
     // Valid login.
     let form = LoginForm {
