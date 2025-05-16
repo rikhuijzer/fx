@@ -203,6 +203,7 @@ async fn post_settings(
     feeds.sort();
     let feeds = feeds.join("\n");
     Kv::insert(conn, key, feeds.as_bytes()).unwrap();
+    ctx.blog_cache.lock().await.update().await;
     crate::trigger::trigger_github_backup(&ctx).await;
     crate::serve::see_other(&ctx, "/blogroll")
 }
