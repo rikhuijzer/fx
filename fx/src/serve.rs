@@ -44,28 +44,12 @@ pub struct ServerContext {
 }
 
 impl ServerContext {
-    pub async fn new(args: ServeArgs, conn: Connection, salt: Salt) -> Self {
-        let feeds = vec![
-            RssFeed::new(
-                "Economist Writing Every Day",
-                "https://economistwritingeveryday.com/feed",
-            ),
-            RssFeed::new(
-                "Pragmatic Engineer",
-                "https://blog.pragmaticengineer.com/feed/",
-            ),
-            RssFeed::new(
-                "Jaan Juurikas",
-                "https://rss.beehiiv.com/feeds/IP6TE2kgRb.xml",
-            ),
-        ];
-        let mut cache = BlogCache::new(feeds).await;
-        cache.update().await;
+    pub async fn new(args: ServeArgs, conn: Connection, salt: Salt, blog_cache: BlogCache) -> Self {
         Self {
             args: args.clone(),
             conn: Arc::new(Mutex::new(conn)),
             salt,
-            blog_cache: Arc::new(Mutex::new(cache)),
+            blog_cache: Arc::new(Mutex::new(blog_cache)),
         }
     }
     pub async fn conn(&self) -> MutexGuard<'_, Connection> {
@@ -630,11 +614,22 @@ fn obtain_salt(args: &ServeArgs, conn: &Connection) -> Salt {
     }
 }
 
+async fn init_blog_cache(conn: &Connection) -> BlogCache {
+    let key = crate::data::BLOGROLL_SETTINGS_KEY;
+    let data = data::Kv::get(conn, key).unwrap();
+    let feeds = String::from_utf8(data).unwrap();
+    let feeds = fx_rss::feeds_from_csv(&feeds);
+    let mut cache = BlogCache::new(feeds).await;
+    cache.update().await;
+    cache
+}
+
 pub async fn run(args: &ServeArgs) {
     let conn = data::connect(args).unwrap();
     data::init(args, &conn);
     let salt = obtain_salt(args, &conn);
-    let ctx = ServerContext::new(args.clone(), conn, salt).await;
+    let blog_cache = init_blog_cache(&conn).await;
+    let ctx = ServerContext::new(args.clone(), conn, salt, blog_cache).await;
     let app = app(ctx);
     let addr = format!("0.0.0.0:{}", args.port);
     tracing::info!("Listening on {addr}");

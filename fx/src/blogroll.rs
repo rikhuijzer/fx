@@ -1,29 +1,29 @@
+use crate::data::Kv;
 use crate::html::PageSettings;
-use serde::Deserialize;
 use crate::html::Top;
 use crate::html::page;
 use crate::serve::ServerContext;
-use axum::routing::post;
-use axum::extract::Form;
-use crate::data::Kv;
 use crate::serve::content_type;
-use crate::settings::InputType;
-use crate::settings::text_input;
 use crate::serve::is_logged_in;
 use crate::serve::response;
+use crate::settings::InputType;
+use crate::settings::text_input;
 use axum::Router;
 use axum::body::Body;
+use axum::extract::Form;
 use axum::extract::State;
 use axum::http::HeaderMap;
 use axum::http::Response;
 use axum::http::StatusCode;
 use axum::routing::get;
+use axum::routing::post;
 use axum_extra::extract::CookieJar;
 use chrono::DateTime;
 use chrono::Utc;
 use fx_rss::Item;
 use fx_rss::RssConfig;
 use fx_rss::RssFeed;
+use serde::Deserialize;
 
 fn show_item(item: &fx_rss::Item) -> Option<String> {
     let feed_name = item.feed_name.clone();
@@ -124,7 +124,6 @@ async fn get_blogroll(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
     response(StatusCode::OK, headers, body, &ctx)
 }
 
-
 async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
     if !is_logged_in {
@@ -140,9 +139,20 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
         }
     };
     let settings = String::from_utf8(settings).unwrap();
-    let style = "margin-top: 5vh; width: 80%;";
+    let style = "margin-top: 5vh; width: 80%";
     let body = format!(
         "
+        <style>
+            form {{
+                margin-left: 1% !important;
+                margin-right: 1% !important;
+                width: 98% !important;
+            }}
+            textarea {{
+                width: 96% !important;
+                font-size: 0.8rem !important;
+            }}
+        </style>
         <form class='margin-auto' style='{style}' \
           method='post' action='/blogroll/settings'>
             {}
@@ -154,11 +164,14 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
             "blogroll_feeds",
             "Feeds",
             &settings,
-            "One feed per line, with the feed name and URL separated by a comma.",
+            "One feed URL per line. For example,
+              <pre><code>https://simonwillison.net/atom/everything/</code></pre>
+              ",
             true,
         ),
     );
-    let page_settings = PageSettings::new("Blogroll Settings", is_logged_in, false, Top::GoHome, "");
+    let page_settings =
+        PageSettings::new("Blogroll Settings", is_logged_in, false, Top::GoHome, "");
     let body = page(&ctx, &page_settings, &body).await;
     response(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
@@ -185,5 +198,9 @@ async fn post_settings(
 }
 
 pub fn routes(router: &Router<ServerContext>) -> Router<ServerContext> {
-    router.clone().route("/blogroll", get(get_blogroll)).route("/blogroll/settings", get(get_settings)).route("/blogroll/settings", post(post_settings))
+    router
+        .clone()
+        .route("/blogroll", get(get_blogroll))
+        .route("/blogroll/settings", get(get_settings))
+        .route("/blogroll/settings", post(post_settings))
 }

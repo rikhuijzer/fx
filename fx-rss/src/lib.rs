@@ -212,12 +212,9 @@ impl RssFeed {
     }
 }
 
-pub fn feeds_from_csv(path: &str) -> Vec<RssFeed> {
+pub fn feeds_from_csv(content: &str) -> Vec<RssFeed> {
     let mut feeds = Vec::new();
-    let file = File::open(path).unwrap();
-    let reader = BufReader::new(file);
-    for line in reader.lines() {
-        let line = line.unwrap();
+    for line in content.lines() {
         let parts = line.split(',').collect::<Vec<_>>();
         if parts.len() != 2 {
             panic!("Invalid line (expected name,url): {line}");

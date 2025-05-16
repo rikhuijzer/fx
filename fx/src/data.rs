@@ -279,7 +279,6 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
             data: Bytes::from_static(b"example"),
         };
         File::insert(conn, &file).unwrap();
-
     }
 }
 
