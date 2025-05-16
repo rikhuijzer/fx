@@ -24,6 +24,7 @@ use axum::routing::get;
 use axum::routing::post;
 use axum_extra::extract::CookieJar;
 use chrono::Utc;
+use futures_util::FutureExt;
 use fx_auth::Login;
 use fx_auth::Salt;
 use fx_rss::RssFeed;
@@ -34,6 +35,8 @@ use serde::Serialize;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::sync::MutexGuard;
+use tokio_cron_scheduler::Job;
+use tokio_cron_scheduler::JobScheduler;
 
 #[derive(Clone)]
 pub struct ServerContext {
@@ -44,12 +47,17 @@ pub struct ServerContext {
 }
 
 impl ServerContext {
-    pub async fn new(args: ServeArgs, conn: Connection, salt: Salt, blog_cache: BlogCache) -> Self {
+    pub async fn new(
+        args: ServeArgs,
+        conn: Connection,
+        salt: Salt,
+        blog_cache: Arc<Mutex<BlogCache>>,
+    ) -> Self {
         Self {
             args: args.clone(),
             conn: Arc::new(Mutex::new(conn)),
             salt,
-            blog_cache: Arc::new(Mutex::new(blog_cache)),
+            blog_cache,
         }
     }
     pub async fn conn(&self) -> MutexGuard<'_, Connection> {
@@ -627,11 +635,40 @@ async fn init_blog_cache(conn: &Connection) -> BlogCache {
     cache
 }
 
+async fn schedule_jobs(blog_cache: Arc<Mutex<BlogCache>>) {
+    let scheduler = match JobScheduler::new().await {
+        Ok(scheduler) => scheduler,
+        Err(e) => {
+            tracing::error!("Failed to create job scheduler: {}", e);
+            return;
+        }
+    };
+    let task = move |_uuid, _l| {
+        let blog_cache = blog_cache.clone();
+        async move {
+            let mut blog_cache = blog_cache.lock().await;
+            blog_cache.update().await;
+        }
+        .boxed()
+    };
+    // Run at the 8th minute of the hour.
+    let job = Job::new_async("00 08 * * * *", task).unwrap();
+    match scheduler.add(job).await {
+        Ok(_) => (),
+        Err(e) => {
+            tracing::error!("Failed to add job to scheduler: {}", e);
+        }
+    }
+    scheduler.start().await.unwrap();
+}
+
 pub async fn run(args: &ServeArgs) {
     let conn = data::connect(args).unwrap();
     data::init(args, &conn);
     let salt = obtain_salt(args, &conn);
     let blog_cache = init_blog_cache(&conn).await;
+    let blog_cache = Arc::new(Mutex::new(blog_cache));
+    schedule_jobs(blog_cache.clone()).await;
     let ctx = ServerContext::new(args.clone(), conn, salt, blog_cache).await;
     let app = app(ctx);
     let addr = format!("0.0.0.0:{}", args.port);
