@@ -17,7 +17,13 @@ fn rfc822_datetime(dt: &chrono::DateTime<chrono::Utc>) -> String {
 }
 
 fn xml_header() -> &'static str {
-    r#"<?xml version="1.0" encoding="UTF-8"?>\n"#
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+}
+
+#[test]
+fn test_xml_header() {
+    // Ensure last symbol is a newline and thus trimmed.
+    assert_ne!(xml_header(), xml_header().trim());
 }
 
 async fn rss(ctx: &ServerContext, posts: &[Post]) -> String {
