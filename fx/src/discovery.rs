@@ -46,7 +46,7 @@ async fn rss(ctx: &ServerContext, posts: &[Post]) -> String {
     let base = ctx.base_url();
     let mut body = String::new();
     body.push_str(xml_header());
-    body.push_str("<rss version=\"2.0\">\n");
+    body.push_str("<rss version=\"2.0\" xmlns:atom=\"http://www.w3.org/2005/Atom\">\n");
     body.push_str("<channel>\n");
     body.push_str(&format!("<title>{site_name}</title>\n"));
     body.push_str(&format!("<link>{base}</link>\n"));
@@ -54,8 +54,10 @@ async fn rss(ctx: &ServerContext, posts: &[Post]) -> String {
         "<description>Posts by {author_name}</description>\n"
     ));
     let atom_link = format!("{base}/feed.xml");
-    body.push_str(&format!("<atom:link rel=\"self\" href=\"{atom_link}\" \
-      type=\"application/rss+xml\"/>\n"));
+    body.push_str(&format!(
+        "<atom:link rel=\"self\" href=\"{atom_link}\" \
+      type=\"application/rss+xml\"/>\n"
+    ));
     for post in posts {
         let title = escape_xml(&crate::md::extract_html_title(post));
         let description = escape_xml(&crate::md::extract_html_description(post));
