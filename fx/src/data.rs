@@ -226,6 +226,7 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
     init_kv_data(conn, "author_name", b"John");
     let domain = if args.production { "" } else { "localhost" };
     init_kv_data(conn, "domain", domain.as_bytes());
+    init_kv_data(conn, BLOGROLL_SETTINGS_KEY, b"");
 
     if !args.production {
         let now = chrono::Utc::now();
