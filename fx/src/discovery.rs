@@ -26,10 +26,23 @@ fn test_xml_header() {
     assert_ne!(xml_header(), xml_header().trim());
 }
 
+fn escape_xml(s: &str) -> String {
+    s.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("\"", "&quot;")
+        .replace("'", "&apos;")
+}
+
+#[test]
+fn test_escape_xml() {
+    assert_eq!(escape_xml("foo&bar"), "foo&amp;bar");
+}
+
 async fn rss(ctx: &ServerContext, posts: &[Post]) -> String {
     let settings = Settings::from_db(&*ctx.conn().await).unwrap();
-    let site_name = &settings.site_name;
-    let author_name = &settings.author_name;
+    let site_name = escape_xml(&settings.site_name);
+    let author_name = escape_xml(&settings.author_name);
     let base = ctx.base_url();
     let mut body = String::new();
     body.push_str(xml_header());
@@ -41,8 +54,8 @@ async fn rss(ctx: &ServerContext, posts: &[Post]) -> String {
         "<description>Posts by {author_name}</description>\n"
     ));
     for post in posts {
-        let title = crate::md::extract_html_title(post);
-        let description = crate::md::extract_html_description(post);
+        let title = escape_xml(&crate::md::extract_html_title(post));
+        let description = escape_xml(&crate::md::extract_html_description(post));
         let url = format!("{base}/posts/{}", post.id);
         let created = rfc822_datetime(&post.created);
         let entry = format!(
