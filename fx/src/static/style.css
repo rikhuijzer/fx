@@ -208,6 +208,7 @@ th, td {
 }
 
 input {
+    box-sizing: border-box;
     background-color: var(--button-background);
     color: var(--text);
     border: 1px solid var(--border);
@@ -254,6 +255,7 @@ button {
 }
 
 textarea {
+    box-sizing: border-box;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     background-color: var(--button-background);

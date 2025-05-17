@@ -25,6 +25,7 @@ pub struct Settings {
     pub site_name: String,
     pub author_name: String,
     pub about: String,
+    pub blogroll_feeds: String,
 }
 
 impl Settings {
@@ -32,10 +33,12 @@ impl Settings {
         let site_name = Kv::get(conn, "site_name")?;
         let author_name = Kv::get(conn, "author_name")?;
         let about = Kv::get(conn, "about")?;
+        let blogroll_feeds = Kv::get(conn, crate::data::BLOGROLL_SETTINGS_KEY)?;
         Ok(Self {
             site_name: String::from_utf8(site_name).unwrap(),
             author_name: String::from_utf8(author_name).unwrap(),
             about: String::from_utf8(about).unwrap(),
+            blogroll_feeds: String::from_utf8(blogroll_feeds).unwrap(),
         })
     }
     pub fn set_about(conn: &Connection, about: &str) -> rusqlite::Result<()> {
@@ -62,21 +65,23 @@ pub fn text_input(
         InputType::Text => format!(
             "
             <input id='{name}' name='{name}' \
-            style='width: 100%; margin-top: 0.5rem; margin-bottom: 0.2rem;' \
+            style='width: 100%; margin-left: 0; margin-right: 0; \
+              margin-top: 0.5rem; margin-bottom: 0.2rem;' \
             type='text' value='{value}' {required}/><br>
             "
         ),
         InputType::Textarea => format!(
             "
             <textarea id='{name}' name='{name}' rows='7' \
-            style='width: 100%; margin-top: 0.5rem; margin-bottom: 0.2rem;' \
+            style='width: 100%; font-size: 0.8rem; \
+              margin-top: 0.5rem; margin-bottom: 0.2rem;' \
             {required}>{value}</textarea><br>
             "
         ),
     };
     format!(
         "
-        <label for='{name}'>{label}</label><br>
+        <label id='{name}_label' for='{name}'>{label}</label><br>
         {input}
         <span style='font-size: 0.8rem; line-height: 1.2; display: inline-block;'>
             {description}
@@ -99,7 +104,7 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
             return crate::serve::internal_server_error(&ctx, msg).await;
         }
     };
-    let style = "margin-top: 5vh; width: 80%;";
+    let style = "margin-top: 5vh; width: 100%;";
     let site_name = &settings.site_name;
     let site_name = crate::html::escape_single_quote(site_name);
     let about_description = format!(
@@ -108,8 +113,9 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
     );
     let body = format!(
         "
-        <form class='margin-auto' style='{style}' \
+        <form style='{style}' \
           method='post' action='/settings'>
+            {}
             {}
             {}
             {}
@@ -139,11 +145,28 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
             &settings.about,
             &about_description,
             false,
+        ),
+        text_input(
+            InputType::Textarea,
+            "blogroll_feeds",
+            "Blogroll Feeds",
+            &settings.blogroll_feeds,
+            "Feeds that are shown on the blogroll page. One feed per line. For example,
+            <pre><code>https://simonwillison.net/atom/everything/</code></pre>
+            The list will be sorted alphabetically upon save.
+            ",
+            false,
         )
     );
     let page_settings = PageSettings::new("Settings", is_logged_in, false, Top::GoHome, "");
     let body = page(&ctx, &page_settings, &body).await;
     response(StatusCode::OK, HeaderMap::new(), body, &ctx)
+}
+
+async fn update_feeds(ctx: &ServerContext) {
+    let blog_cache = ctx.blog_cache.clone();
+    let mut blog_cache = blog_cache.lock().await;
+    blog_cache.update(ctx).await;
 }
 
 async fn post_settings(
@@ -155,11 +178,27 @@ async fn post_settings(
     if !is_logged_in {
         return crate::serve::unauthorized(&ctx).await;
     }
-    let conn = &*ctx.conn().await;
-    Kv::insert(conn, "site_name", form.site_name.as_bytes()).unwrap();
-    Kv::insert(conn, "author_name", form.author_name.as_bytes()).unwrap();
-    let about = cleanup_content(&form.about);
-    Kv::insert(conn, "about", about.as_bytes()).unwrap();
+    {
+        let conn = &*ctx.conn().await;
+        Kv::insert(conn, "site_name", form.site_name.as_bytes()).unwrap();
+        Kv::insert(conn, "author_name", form.author_name.as_bytes()).unwrap();
+        let about = cleanup_content(&form.about);
+        Kv::insert(conn, "about", about.as_bytes()).unwrap();
+
+        let key = crate::data::BLOGROLL_SETTINGS_KEY;
+        let mut feeds = form
+            .blogroll_feeds
+            .split("\n")
+            .map(|line| line.trim())
+            .collect::<Vec<_>>();
+        feeds.sort();
+        let feeds = feeds.join("\n");
+        Kv::insert(conn, key, feeds.as_bytes()).unwrap();
+    }
+    let ctx_clone = ctx.clone();
+    tokio::spawn(async move {
+        update_feeds(&ctx_clone).await;
+    });
     crate::trigger::trigger_github_backup(&ctx).await;
     crate::serve::see_other(&ctx, "/")
 }

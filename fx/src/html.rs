@@ -368,6 +368,22 @@ async fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
     };
     let container_style = "display: flex; justify-content: space-between;";
     let name_style = "font-size: 1.2rem; margin-bottom: 10px; font-weight: bold;";
+    let blogroll_key = crate::data::BLOGROLL_SETTINGS_KEY;
+    let blogroll_feeds = match Kv::get(&*ctx.conn().await, blogroll_key) {
+        Ok(feeds) => String::from_utf8(feeds).unwrap(),
+        Err(_) => "".to_string(),
+    };
+    let blogroll_button = if blogroll_feeds.is_empty() {
+        ""
+    } else {
+        &format!(
+            "
+            <a href='/blogroll' class='unstyled-link' style='{style}'>
+                🔭 Blogroll
+            </a>&nbsp;
+            "
+        )
+    };
     format!(
         "
     <div class='introduction' style='padding: 10px; {}'>
@@ -381,9 +397,7 @@ async fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
                     <a href='/search' class='unstyled-link' style='{style}'>
                         🔍 Search
                     </a>&nbsp;
-                    <a href='/blogroll' class='unstyled-link' style='{style}'>
-                        🔭 Blogroll
-                    </a>&nbsp;
+                    {blogroll_button}
                     <a href='/feed.xml' class='unstyled-link' style='{style}'>
                         🔄 RSS
                     </a>&nbsp;

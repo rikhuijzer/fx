@@ -226,8 +226,6 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
     init_kv_data(conn, "author_name", b"John");
     let domain = if args.production { "" } else { "localhost" };
     init_kv_data(conn, "domain", domain.as_bytes());
-    let feeds = "https://simonwillison.net/atom/everything/";
-    init_kv_data(conn, BLOGROLL_SETTINGS_KEY, feeds.as_bytes());
 
     if !args.production {
         let now = chrono::Utc::now();
@@ -279,6 +277,9 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
             data: Bytes::from_static(b"example"),
         };
         File::insert(conn, &file).unwrap();
+
+        let feeds = "https://simonwillison.net/atom/everything/";
+        init_kv_data(conn, BLOGROLL_SETTINGS_KEY, feeds.as_bytes());
     }
 }
 
