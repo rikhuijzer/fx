@@ -49,7 +49,7 @@ Via Docker Compose:
 ```yml
 services:
   fx:
-    image: 'rikhuijzer/fx:0.1'
+    image: 'rikhuijzer/fx:1.0'
     container_name: 'fx'
     environment:
       FX_USERNAME: 'john'
