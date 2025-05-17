@@ -53,6 +53,9 @@ async fn rss(ctx: &ServerContext, posts: &[Post]) -> String {
     body.push_str(&format!(
         "<description>Posts by {author_name}</description>\n"
     ));
+    let atom_link = format!("{base}/feed.xml");
+    body.push_str(&format!("<atom:link rel=\"self\" href=\"{atom_link}\" \
+      type=\"application/rss+xml\"/>\n"));
     for post in posts {
         let title = escape_xml(&crate::md::extract_html_title(post));
         let description = escape_xml(&crate::md::extract_html_description(post));
