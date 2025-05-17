@@ -33,6 +33,7 @@ use rusqlite::Connection;
 use serde::Deserialize;
 use serde::Serialize;
 use std::sync::Arc;
+use std::time::Instant;
 use tokio::sync::Mutex;
 use tokio::sync::MutexGuard;
 use tokio_cron_scheduler::Job;
@@ -630,12 +631,10 @@ async fn init_blog_cache(conn: &Connection) -> BlogCache {
         .lines()
         .map(|line| RssFeed::new(line.trim()))
         .collect::<Vec<_>>();
-    let mut cache = BlogCache::new(feeds).await;
-    cache.update().await;
-    cache
+    BlogCache::new(feeds).await
 }
 
-async fn schedule_jobs(blog_cache: Arc<Mutex<BlogCache>>) {
+async fn schedule_jobs(blog_cache: Arc<Mutex<BlogCache>>, ctx: ServerContext) {
     let scheduler = match JobScheduler::new().await {
         Ok(scheduler) => scheduler,
         Err(e) => {
@@ -643,14 +642,25 @@ async fn schedule_jobs(blog_cache: Arc<Mutex<BlogCache>>) {
             return;
         }
     };
+    let ctx = Arc::new(Mutex::new(ctx));
     let task = move |_uuid, _l| {
         let blog_cache = blog_cache.clone();
+        let ctx = ctx.clone();
         async move {
             let mut blog_cache = blog_cache.lock().await;
-            blog_cache.update().await;
+            let ctx = ctx.lock().await;
+            blog_cache.update(&ctx).await;
         }
         .boxed()
     };
+    // Run once immediately.
+    let job = Job::new_one_shot_at_instant_async(Instant::now(), task.clone()).unwrap();
+    match scheduler.add(job).await {
+        Ok(_) => (),
+        Err(e) => {
+            tracing::error!("Failed to add job to scheduler: {}", e);
+        }
+    }
     // Run at the 8th minute of the hour.
     let job = Job::new_async("00 08 * * * *", task).unwrap();
     match scheduler.add(job).await {
@@ -668,8 +678,8 @@ pub async fn run(args: &ServeArgs) {
     let salt = obtain_salt(args, &conn);
     let blog_cache = init_blog_cache(&conn).await;
     let blog_cache = Arc::new(Mutex::new(blog_cache));
-    schedule_jobs(blog_cache.clone()).await;
-    let ctx = ServerContext::new(args.clone(), conn, salt, blog_cache).await;
+    let ctx = ServerContext::new(args.clone(), conn, salt, blog_cache.clone()).await;
+    schedule_jobs(blog_cache.clone(), ctx.clone()).await;
     let app = app(ctx);
     let addr = format!("0.0.0.0:{}", args.port);
     tracing::info!("Listening on {addr}");

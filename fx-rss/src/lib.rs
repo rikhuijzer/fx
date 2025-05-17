@@ -328,7 +328,7 @@ impl RssConfig {
             max_age_in_months,
         }
     }
-    async fn items(&self) -> Vec<Item> {
+    pub async fn download_items(&self) -> Vec<Item> {
         let futures: Vec<_> = self.feeds.iter().map(items_from_feed).collect();
         let results = futures::future::join_all(futures).await;
         results
@@ -337,10 +337,4 @@ impl RssConfig {
             .flatten()
             .collect()
     }
-}
-
-/// Read RSS feeds.
-pub async fn read_rss(config: &RssConfig) -> Feed {
-    let items = config.items().await;
-    Feed { items }
 }

@@ -36,9 +36,8 @@ fn show_item(item: &fx_rss::Item) -> Option<String> {
     Some(format!(
         "
         <span class='blogroll-item' style='font-size: 0.9rem;'>
-            {feed_name}: <a href=\"{link}\">{title}</a> ({pub_date})<br>
+            {feed_name}: <a href=\"{link}\">{title}</a> ({pub_date})
         </span>
-        <br>
         ",
     ))
 }
@@ -58,10 +57,22 @@ impl BlogCache {
             items: vec![],
         }
     }
-    pub async fn update(&mut self) {
-        let feed = fx_rss::read_rss(&self.config).await;
-        let mut items = feed
-            .items
+    pub async fn update(&mut self, ctx: &ServerContext) {
+        let key = crate::data::BLOGROLL_SETTINGS_KEY;
+        let feeds = Kv::get(&*ctx.conn().await, key);
+        if let Ok(feeds) = feeds {
+            let feeds = String::from_utf8(feeds).unwrap();
+            let feeds = feeds
+                .split("\n")
+                .map(|line| line.trim())
+                .collect::<Vec<_>>();
+            self.config.feeds = feeds
+                .into_iter()
+                .map(|line| RssFeed::new(line))
+                .collect::<Vec<_>>();
+        }
+        let items = self.config.download_items().await;
+        let mut items = items
             .iter()
             .filter(|item| item.pub_date.is_some())
             .collect::<Vec<_>>();
@@ -193,7 +204,6 @@ async fn post_settings(
     feeds.sort();
     let feeds = feeds.join("\n");
     Kv::insert(conn, key, feeds.as_bytes()).unwrap();
-    ctx.blog_cache.lock().await.update().await;
     crate::trigger::trigger_github_backup(&ctx).await;
     crate::serve::see_other(&ctx, "/blogroll")
 }
