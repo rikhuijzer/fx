@@ -43,6 +43,15 @@ pub struct BlogCache {
     pub items: Vec<Item>,
 }
 
+fn filter_old_items(items: &mut Vec<&Item>) {
+    items.retain(|item| {
+        let pub_date = item.pub_date.unwrap();
+        let now = Utc::now();
+        let diff = now.signed_duration_since(pub_date);
+        diff.num_days() <= 30
+    });
+}
+
 impl BlogCache {
     pub async fn new(feeds: Vec<RssFeed>) -> Self {
         let config = fx_rss::RssConfig::new(feeds, 1);
@@ -75,6 +84,7 @@ impl BlogCache {
             .iter()
             .filter(|item| item.pub_date.is_some())
             .collect::<Vec<_>>();
+        filter_old_items(&mut items);
         items.sort_by(|a, b| b.pub_date.cmp(&a.pub_date));
         self.items = items.into_iter().cloned().collect::<Vec<_>>();
         self.last_updated = Utc::now();
