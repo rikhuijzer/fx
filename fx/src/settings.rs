@@ -180,8 +180,8 @@ async fn post_settings(
     }
     {
         let conn = &*ctx.conn().await;
-        Kv::insert(conn, "site_name", form.site_name.as_bytes()).unwrap();
-        Kv::insert(conn, "author_name", form.author_name.as_bytes()).unwrap();
+        Kv::insert(conn, "site_name", form.site_name.trim().as_bytes()).unwrap();
+        Kv::insert(conn, "author_name", form.author_name.trim().as_bytes()).unwrap();
         let about = cleanup_content(&form.about);
         Kv::insert(conn, "about", about.as_bytes()).unwrap();
 
@@ -193,7 +193,7 @@ async fn post_settings(
             .collect::<Vec<_>>();
         feeds.sort();
         let feeds = feeds.join("\n");
-        Kv::insert(conn, key, feeds.as_bytes()).unwrap();
+        Kv::insert(conn, key, feeds.trim().as_bytes()).unwrap();
     }
     let ctx_clone = ctx.clone();
     tokio::spawn(async move {

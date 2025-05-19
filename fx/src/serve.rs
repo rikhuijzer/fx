@@ -438,6 +438,11 @@ pub fn see_other(ctx: &ServerContext, url: &str) -> Response<Body> {
     response(StatusCode::SEE_OTHER, headers, "", ctx)
 }
 
+/// Trim a given string and ensure it ends with a newline.
+pub fn trim_newline_suffix(s: &str) -> String {
+    format!("{}\n", s.trim())
+}
+
 async fn post_edit(
     State(ctx): State<ServerContext>,
     jar: CookieJar,
@@ -475,7 +480,7 @@ async fn post_edit(
         id,
         created,
         updated: Utc::now(),
-        content: form.content,
+        content: trim_newline_suffix(&form.content),
     };
     if publish {
         let post = post.update(&*ctx.conn().await);
@@ -532,7 +537,8 @@ async fn post_add(
     let form = serde_urlencoded::from_str::<AddPostForm>(&input).unwrap();
     if publish {
         let now = Utc::now();
-        let post_id = Post::insert(&*ctx.conn().await, now, now, &form.content);
+        let content = trim_newline_suffix(&form.content);
+        let post_id = Post::insert(&*ctx.conn().await, now, now, &content);
         if let Err(_e) = post_id {
             return response(
                 StatusCode::INTERNAL_SERVER_ERROR,
