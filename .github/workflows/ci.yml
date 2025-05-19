@@ -162,3 +162,6 @@ jobs:
     
       - uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631 # v2.2.2
         if: github.ref_type == 'tag'
+        with:
+          body: |
+            Notable changes since the last release are documented in the [CHANGELOG.md](https://github.com/rikhuijzer/fx/blob/main/CHANGELOG.md) file.
