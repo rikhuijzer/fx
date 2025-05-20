@@ -2,6 +2,7 @@ use chrono::DateTime;
 use chrono::Datelike;
 use chrono::Utc;
 use diligent_date_parser::parse_date;
+use http::Uri;
 use regex::Regex;
 use rss::Channel;
 use std::error::Error;
@@ -255,11 +256,22 @@ fn items_from_rss(content: &str) -> Option<Vec<Item>> {
 }
 
 fn domain_from_url(url: &str) -> String {
-    let domain = match url.split('/').next() {
-        Some(domain) => domain,
-        None => url,
+    let url = if !url.starts_with("http") {
+        format!("https://{}", url)
+    } else {
+        url.to_string()
     };
-    domain.to_string()
+    match url.parse::<Uri>() {
+        Ok(uri) => uri.host().unwrap_or(&url).to_string(),
+        Err(_) => url.to_string(),
+    }
+}
+
+#[test]
+fn test_domain_from_url() {
+    assert_eq!(domain_from_url("https://example.com/"), "example.com");
+    assert_eq!(domain_from_url("example.com"), "example.com");
+    assert_eq!(domain_from_url("example.com/foo"), "example.com");
 }
 
 fn items_from_atom(content: &str) -> Option<Vec<Item>> {
