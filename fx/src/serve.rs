@@ -358,8 +358,6 @@ async fn get_post_with_slug(
 }
 
 pub async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
-    // Should probably not show the login button at all on 404 pages.
-    let is_logged_in = false;
     let body = indoc::indoc! {"
         <div style='text-align: center; margin-top: 100px;'>
             <h1>Not found</h1>
@@ -369,7 +367,7 @@ pub async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
     let extra_head = &ctx.args.extra_head;
     let settings = PageSettings::new(
         "not found",
-        Some(is_logged_in),
+        None,
         false,
         Top::GoHome,
         extra_head,
