@@ -307,7 +307,16 @@ pub fn extract_html_title(post: &Post) -> String {
 pub fn extract_slug(post: &Post) -> String {
     let title = extract_html_title(post);
     let slug = title.replace(" ", "-");
-    let slug = slug.to_lowercase();
+    let slug = slug
+        .replace(",", "")
+        .replace("\"", "")
+        .replace("'", "")
+        .replace(":", "")
+        .replace(";", "")
+        .replace("!", "")
+        .replace("?", "")
+        .replace(".", "")
+        .to_lowercase();
     let max_length = 50;
     if slug.len() <= max_length {
         slug
@@ -318,13 +327,15 @@ pub fn extract_slug(post: &Post) -> String {
 
 #[test]
 fn test_extract_slug() {
-    let post = Post {
+    let mut post = Post {
         id: 0,
         content: "Foo Bar".to_string(),
         created: chrono::Utc::now(),
         updated: chrono::Utc::now(),
     };
     assert_eq!(extract_slug(&post), "foo-bar");
+    post.content = "Lorem, ipsum".to_string();
+    assert_eq!(extract_slug(&post), "lorem-ipsum");
 }
 
 pub fn extract_html_description(post: &Post) -> String {
