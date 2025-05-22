@@ -158,7 +158,7 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
             false,
         )
     );
-    let page_settings = PageSettings::new("Settings", is_logged_in, false, Top::GoHome, "");
+    let page_settings = PageSettings::new("Settings", Some(is_logged_in), false, Top::GoHome, "");
     let body = page(&ctx, &page_settings, &body).await;
     response(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }

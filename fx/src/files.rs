@@ -247,7 +247,7 @@ async fn get_files(State(ctx): State<ServerContext>, jar: CookieJar) -> Response
         </div>
         "
     );
-    let page_settings = PageSettings::new("Files", is_logged_in, false, Top::GoHome, "");
+    let page_settings = PageSettings::new("Files", Some(is_logged_in), false, Top::GoHome, "");
     let body = page(&ctx, &page_settings, &body).await;
     response(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
@@ -346,7 +346,7 @@ async fn get_delete(
     };
     let extra_head = &ctx.args.extra_head;
     let title = format!("Delete: {}", file.filename);
-    let settings = PageSettings::new(&title, false, false, Top::GoHome, extra_head);
+    let settings = PageSettings::new(&title, Some(is_logged_in), false, Top::GoHome, extra_head);
     let body = indoc::formatdoc! {r#"
         <div class='medium-text' style='text-align: center; font-weight: bold;'>
             <p>Are you sure you want to delete <code>{}</code>? This action cannot be undone.</p>
@@ -390,7 +390,7 @@ async fn get_rename(
     };
     let extra_head = &ctx.args.extra_head;
     let title = format!("Rename: {}", file.filename);
-    let settings = PageSettings::new(&title, false, false, Top::GoHome, extra_head);
+    let settings = PageSettings::new(&title, Some(is_logged_in), false, Top::GoHome, extra_head);
     let body = indoc::formatdoc! {r#"
         <div class='medium-text' style='text-align: center;'>
             <p>Rename file: <code>{}</code></p>

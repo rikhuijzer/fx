@@ -220,7 +220,10 @@ pub enum Top {
 
 pub struct PageSettings {
     title: String,
-    is_logged_in: bool,
+    /// Whether the user is logged in.
+    ///
+    /// None means don't show login/logout buttons.
+    is_logged_in: Option<bool>,
     show_about: bool,
     top: Top,
     extra_head: String,
@@ -229,7 +232,7 @@ pub struct PageSettings {
 impl PageSettings {
     pub fn new(
         title: &str,
-        is_logged_in: bool,
+        is_logged_in: Option<bool>,
         show_about: bool,
         top: Top,
         extra_head: &str,
@@ -377,7 +380,7 @@ async fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
     let author_name = Kv::get(&*ctx.conn().await, "author_name").unwrap();
     let author_name = String::from_utf8(author_name).unwrap();
     let style = "font-size: 0.8rem; padding-top: 0.1rem;";
-    let admin_buttons = if settings.is_logged_in {
+    let admin_buttons = if settings.is_logged_in.unwrap_or(false) {
         &format!(
             "
             <span>
@@ -548,14 +551,14 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
     } else {
         "".to_string()
     };
-    let loginout = if settings.is_logged_in {
-        r#"<a class="unstyled-link menu-space" href="/logout">Logout</a>"#
-    } else {
-        r#"<a class="unstyled-link menu-space" href="/login">Login</a>"#
+    let loginout = match settings.is_logged_in {
+        Some(true) => r#"<a class="unstyled-link menu-space" href="/logout">Logout</a>"#,
+        Some(false) => r#"<a class="unstyled-link menu-space" href="/login">Login</a>"#,
+        None => "",
     };
     let top = match settings.top {
         Top::Homepage => {
-            if settings.is_logged_in {
+            if settings.is_logged_in.unwrap_or(false) {
                 &add_post_form()
             } else {
                 ""
@@ -623,7 +626,7 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
 
 pub async fn login(ctx: &ServerContext, error: Option<&str>) -> String {
     let top = Top::Homepage;
-    let settings = PageSettings::new("login", false, false, top, "");
+    let settings = PageSettings::new("login", None, false, top, "");
     let error = match error {
         Some(error) => format!("<div style='font-style: italic;'>{error}</div>"),
         None => "".to_string(),

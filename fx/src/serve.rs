@@ -110,7 +110,7 @@ pub async fn error(
 ) -> Response<Body> {
     let body = msg.to_string();
     let headers = HeaderMap::new();
-    let settings = PageSettings::new(title, true, false, Top::GoHome, "");
+    let settings = PageSettings::new(title, None, false, Top::GoHome, "");
     let body = format!(
         "
         <div style='text-align: center;'>
@@ -168,7 +168,7 @@ pub fn is_logged_in(ctx: &ServerContext, jar: &CookieJar) -> bool {
     fx_auth::is_logged_in(&ctx.salt, &login, jar)
 }
 
-async fn list_posts(ctx: &ServerContext, _is_logged_in: bool) -> String {
+async fn list_posts(ctx: &ServerContext) -> String {
     let mut posts = { Post::list(&*ctx.conn().await).unwrap() };
     posts
         .iter_mut()
@@ -181,7 +181,6 @@ async fn list_posts(ctx: &ServerContext, _is_logged_in: bool) -> String {
 }
 
 async fn get_posts(State(ctx): State<ServerContext>, jar: CookieJar) -> Response<Body> {
-    let is_logged_in = is_logged_in(&ctx, &jar);
     let description = match Kv::get(&*ctx.conn().await, "about") {
         Ok(description) => String::from_utf8(description).unwrap(),
         Err(_) => "".to_string(),
@@ -194,8 +193,9 @@ async fn get_posts(State(ctx): State<ServerContext>, jar: CookieJar) -> Response
         ",
         &ctx.args.extra_head
     );
+    let is_logged_in = Some(is_logged_in(&ctx, &jar));
     let settings = PageSettings::new("", is_logged_in, true, Top::Homepage, &extra_head);
-    let posts = list_posts(&ctx, is_logged_in).await;
+    let posts = list_posts(&ctx).await;
     let body = page(&ctx, &settings, &posts).await;
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
@@ -260,7 +260,7 @@ async fn get_delete(
     };
     let extra_head = &ctx.args.extra_head;
     let title = crate::md::extract_html_title(&post);
-    let settings = PageSettings::new(&title, false, false, Top::GoHome, extra_head);
+    let settings = PageSettings::new(&title, Some(is_logged_in), false, Top::GoHome, extra_head);
     let delete_button = indoc::formatdoc! {r#"
         <div class='medium-text' style='text-align: center; font-weight: bold;'>
             <p>Are you sure you want to delete this post? This action cannot be undone.</p>
@@ -291,7 +291,7 @@ async fn get_edit(
     let body = crate::html::edit_post_form(&post);
     let settings = PageSettings::new(
         &title,
-        is_logged_in,
+        Some(is_logged_in),
         false,
         Top::GoBack,
         &ctx.args.extra_head,
@@ -335,7 +335,7 @@ async fn get_post(
         <link rel='canonical' href='{canonical}'/>
         {}
     "#, ctx.args.extra_head};
-    let settings = PageSettings::new(&title, is_logged_in, false, Top::GoHome, &extra_head);
+    let settings = PageSettings::new(&title, Some(is_logged_in), false, Top::GoHome, &extra_head);
     let mut body = wrap_post_content(&post, false);
     if is_logged_in {
         body = format!("{}\n{body}", crate::html::edit_post_buttons(&ctx, &post));
@@ -367,7 +367,13 @@ pub async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
         </div>
     "};
     let extra_head = &ctx.args.extra_head;
-    let settings = PageSettings::new("not found", is_logged_in, false, Top::GoHome, extra_head);
+    let settings = PageSettings::new(
+        "not found",
+        Some(is_logged_in),
+        false,
+        Top::GoHome,
+        extra_head,
+    );
     let body = page(&ctx, &settings, body).await;
     response::<String>(StatusCode::NOT_FOUND, HeaderMap::new(), body, &ctx)
 }
@@ -480,7 +486,7 @@ async fn post_edit(
         return not_found(State(ctx)).await;
     }
     let extra_head = &ctx.args.extra_head;
-    let settings = PageSettings::new("", is_logged_in, false, Top::GoBack, extra_head);
+    let settings = PageSettings::new("", Some(is_logged_in), false, Top::GoBack, extra_head);
     let (_, body) = req.into_parts();
     let bytes = body
         .collect()
@@ -543,7 +549,7 @@ async fn post_add(
         return not_found(State(ctx)).await;
     }
     let extra_head = &ctx.args.extra_head;
-    let settings = PageSettings::new("", is_logged_in, false, Top::GoBack, extra_head);
+    let settings = PageSettings::new("", Some(is_logged_in), false, Top::GoBack, extra_head);
     let (_, body) = req.into_parts();
     let bytes = body
         .collect()
