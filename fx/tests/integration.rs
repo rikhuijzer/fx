@@ -17,6 +17,10 @@ async fn test_home() {
     assert!(body.contains("Lorem"));
     assert!(body.contains("Dolor"));
     assert!(body.contains("<meta property='test' content='test'>"));
+    assert!(body.contains("<meta property='og:site_name' content='John&#39;s Weblog'/>"));
+    assert!(body.contains("<meta property='og:type' content='website'/>"));
+    assert!(body.contains("<meta property='og:title' content='John&#39;s Weblog'/>"));
+    assert!(body.contains("og:description"));
 }
 
 #[tokio::test]
@@ -31,6 +35,9 @@ async fn test_get_post() {
     assert!(body.contains("Dolor"));
     assert!(body.contains("<h2 id='more'>More</h2>"));
     assert!(body.contains("/posts/2/code"));
+    assert!(body.contains("<meta property='og:site_name' content='John&#39;s Weblog'/>"));
+    assert!(body.contains("<meta property='og:type' content='article'/>"));
+    assert!(body.contains("<meta property='og:title' content='Code'/>"));
 
     let (status, _body) = request_body("/posts/2/dolor").await;
     assert_eq!(status, StatusCode::PERMANENT_REDIRECT);

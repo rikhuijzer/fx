@@ -182,8 +182,19 @@ async fn list_posts(ctx: &ServerContext, _is_logged_in: bool) -> String {
 
 async fn get_posts(State(ctx): State<ServerContext>, jar: CookieJar) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
-    let extra_head = &ctx.args.extra_head;
-    let settings = PageSettings::new("", is_logged_in, true, Top::Homepage, extra_head);
+    let description = match Kv::get(&*ctx.conn().await, "about") {
+        Ok(description) => String::from_utf8(description).unwrap(),
+        Err(_) => "".to_string(),
+    };
+    let extra_head = format!(
+        "
+        <meta property='og:description' content='{description}'/>
+        <meta property='og:type' content='website'/>
+        {}
+        ",
+        &ctx.args.extra_head
+    );
+    let settings = PageSettings::new("", is_logged_in, true, Top::Homepage, &extra_head);
     let posts = list_posts(&ctx, is_logged_in).await;
     let body = page(&ctx, &settings, &posts).await;
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
@@ -319,6 +330,8 @@ async fn get_post(
         <meta property='article:author' content='{author}'/>
         <meta property='article:published_time' content='{created}'/>
         <meta property='article:modified_time' content='{updated}'/>
+        <meta property='og:url' content='{canonical}'/>
+        <meta property='og:type' content='article'/>
         <link rel='canonical' href='{canonical}'/>
         {}
     "#, ctx.args.extra_head};

@@ -578,6 +578,11 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
     let version = include_str!("version.txt").trim();
     let highlight = highlight_head(body);
     let katex = katex_head(body);
+    let og_title = if settings.title.is_empty() {
+        &site_name
+    } else {
+        &settings.title
+    };
     let page = indoc::formatdoc! {
         r#"
         <!DOCTYPE html>
@@ -591,6 +596,7 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
             <script src='/static/script.js' defer></script>
             <title>{full_title}</title>
             <meta property='og:site_name' content='{site_name}'/>
+            <meta property='og:title' content='{og_title}'/>
             {katex}
             {highlight}
             {extra_head}
