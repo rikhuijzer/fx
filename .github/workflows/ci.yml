@@ -12,6 +12,7 @@ env:
 jobs:
   test:
     runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
@@ -38,6 +39,7 @@ jobs:
     concurrency:
       group: ${{ github.workflow }}-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
@@ -115,6 +117,7 @@ jobs:
           retention-days: 1
   merge:
     runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
     permissions:
       # Required by softprops/action-gh-release.
       contents: write
