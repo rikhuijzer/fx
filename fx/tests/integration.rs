@@ -30,6 +30,9 @@ async fn test_get_post() {
     assert_eq!(status, StatusCode::OK);
     assert!(body.contains("Dolor"));
     assert!(body.contains("<h2 id='more'>More</h2>"));
+
+    let (status, _body) = request_body("/posts/2/dolor").await;
+    assert_eq!(status, StatusCode::PERMANENT_REDIRECT);
 }
 
 #[tokio::test]

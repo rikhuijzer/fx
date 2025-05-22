@@ -331,6 +331,16 @@ async fn get_post(
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
+async fn get_post_with_slug(
+    State(ctx): State<ServerContext>,
+    Path((id, _slug)): Path<(i64, String)>,
+) -> Response<Body> {
+     let url = format!("/posts/{}", id);
+     let mut headers = HeaderMap::new();
+     headers.insert("Location", HeaderValue::from_str(&url).unwrap());
+     response(StatusCode::PERMANENT_REDIRECT, headers, "", &ctx)
+}
+
 pub async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
     // Should probably not show the login button at all on 404 pages.
     let is_logged_in = false;
@@ -588,6 +598,7 @@ pub fn app(ctx: ServerContext) -> Router {
         .route("/posts/edit/{id}", post(post_edit))
         .route("/posts/add", post(post_add))
         .route("/posts/{id}", get(get_post))
+        .route("/posts/{id}/{slug}", get(get_post_with_slug))
         .route("/login", get(get_login))
         .route("/login", post(post_login))
         .route("/logout", get(get_logout))
