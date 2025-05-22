@@ -300,6 +300,33 @@ pub fn extract_html_title(post: &Post) -> String {
     }
 }
 
+/// Extract a slug (a short URL suffix to clarify the post) from the post.
+///
+/// For example, a post with the title `Foo Bar` and id `1` would receive the
+/// slug `foo-bar` so that the post can be shared as `/posts/1/foo-bar`.
+pub fn extract_slug(post: &Post) -> String {
+    let title = extract_html_title(post);
+    let slug = title.replace(" ", "-");
+    let slug = slug.to_lowercase();
+    let max_length = 50;
+    if slug.len() <= max_length {
+        slug
+    } else {
+        truncate(&slug, max_length)
+    }
+}
+
+#[test]
+fn test_extract_slug() {
+    let post = Post {
+        id: 0,
+        content: "Foo Bar".to_string(),
+        created: chrono::Utc::now(),
+        updated: chrono::Utc::now(),
+    };
+    assert_eq!(extract_slug(&post), "foo-bar");
+}
+
 pub fn extract_html_description(post: &Post) -> String {
     let content = post.content.trim();
     let title = extract_html_title(post);

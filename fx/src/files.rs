@@ -189,7 +189,7 @@ fn show_file(file: &File) -> String {
             <span style='font-size: var(--ui-font-size);'>
                 Markdown link
                 (<a id='copy-{sha}' href='javascript:void(0)' \
-                  onclick='copyCode(\"{sha}\")'>click to copy</a>):
+                  onclick='copyCode(\"{sha}\")'>copy</a>):
             </span><br>
             <pre style='margin-top: 6px; margin-bottom: 0px;'>
                 <code id='code-{sha}' class='language-md'>{link}</code>

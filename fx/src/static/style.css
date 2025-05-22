@@ -61,12 +61,6 @@ h1, h2, h3, h4, h5, h6 {
     line-height: 1.1;
 }
 
-.post-preview {
-    h1, h2, h3, h4, h5, h6 {
-        margin-top: 0.5em;
-    }
-}
-
 a {
     color: var(--accent);
 }
@@ -172,6 +166,14 @@ th, td {
 
 .post-content {
     font-size: var(--text-font-size);
+    margin-bottom: 30px;
+}
+
+.post-preview {
+    h1, h2, h3, h4, h5, h6 {
+        margin-top: 0.5em;
+    }
+    margin-bottom: 10px;
 }
 
 .top {

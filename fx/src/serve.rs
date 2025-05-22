@@ -335,13 +335,13 @@ async fn get_post_with_slug(
     State(ctx): State<ServerContext>,
     Path((id, _slug)): Path<(i64, String)>,
 ) -> Response<Body> {
-     let url = format!("/posts/{}", id);
-     // Same behavior as Reddit. Any slug is accepted and then redirected to the
-     // right page. I couldn't figure out the Reddit status code, but permanent
-     // redirect seems suitable.
-     let mut headers = HeaderMap::new();
-     headers.insert("Location", HeaderValue::from_str(&url).unwrap());
-     response(StatusCode::PERMANENT_REDIRECT, headers, "", &ctx)
+    let url = format!("/posts/{}", id);
+    // Same behavior as Reddit. Any slug is accepted and then redirected to the
+    // right page. I couldn't figure out the Reddit status code, but permanent
+    // redirect seems suitable.
+    let mut headers = HeaderMap::new();
+    headers.insert("Location", HeaderValue::from_str(&url).unwrap());
+    response(StatusCode::PERMANENT_REDIRECT, headers, "", &ctx)
 }
 
 pub async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
