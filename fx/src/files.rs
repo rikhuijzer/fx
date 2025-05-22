@@ -267,7 +267,10 @@ async fn get_file(State(ctx): State<ServerContext>, Path(sha): Path<String>) -> 
     let file = match File::get(&*ctx.conn().await, &name) {
         Ok(file) => file,
         Err(_) => {
-            return not_found(State(ctx.clone())).await;
+            return {
+                let body = "not found";
+                response(StatusCode::NOT_FOUND, HeaderMap::new(), body, &ctx)
+            };
         }
     };
     let mut headers = HeaderMap::new();
