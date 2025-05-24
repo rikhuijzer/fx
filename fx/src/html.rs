@@ -170,12 +170,6 @@ pub fn wrap_post_content(post: &Post, is_front_page_preview: bool) -> String {
             <div style='display: flex; justify-content: flex-end; \
               border-top: 1px solid var(--border); padding-top: 10px;
               font-size: var(--small-font-size);'>
-                 <a href='/posts/{id}' class='unstyled-link' id='short-url'>
-                    🔗 Short URL
-                 </a>&nbsp;(
-                 <a id='copy-short-url' href='javascript:void(0)' onclick='copyShortUrl()'>
-                    copy
-                 </a>)&nbsp;&nbsp;
                  <a href='/posts/{id}/{slug}' class='unstyled-link' id='long-url'>
                     🔗 Long URL
                  </a>&nbsp;(

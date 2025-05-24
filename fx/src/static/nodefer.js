@@ -18,9 +18,3 @@ function copyLongUrl() {
     navigator.clipboard.writeText(slug);
     showCopied('copy-long-url');
 }
-
-function copyShortUrl() {
-    const slug = document.getElementById('short-url').href;
-    navigator.clipboard.writeText(slug);
-    showCopied('copy-short-url');
-}
