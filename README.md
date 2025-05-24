@@ -68,6 +68,16 @@ services:
 Let me know when you are hosting this software, I'll happily link to you from <https://huijzer.xyz> to increase your search engine ranking.
 My email address is at the top of <https://huijzer.xyz>.
 
+## Syndication
+
+To share a post, you can either get the URL from the navigation bar or you can copy the longer link that is available below each post.
+The longer link includes a so called slug, which makes the URL more descriptive (for example, `/posts/1` versus `/posts/1/hello-world`).
+
+Next, Publish (on your) Own Site, Syndicate Everywhere (POSSE) can be used to make the posts seen by more people.
+For example, you can share the link to your article on Reddit, X, BlueSky, Hacker News, LinkedIn, or Mastodon.
+Then comments to the article can be made there and people can decide to share the post with other people.
+For example, Simon Willison uses this over at his [fedi instance](https://fedi.simonwillison.net/@simon).
+
 ## API
 
 ### Backup
