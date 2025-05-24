@@ -115,6 +115,10 @@ fn node_to_html(node: &Node) -> String {
         Node::InlineCode(inline_code) => {
             preview.push_str(&format!("<code>{}</code>", inline_code.value));
         }
+        Node::InlineMath(inline_math) => {
+            let value = &inline_math.value;
+            preview.push_str(&format!("<code class='language-math'>{value}</code>"));
+        }
         Node::List(list) => {
             let tag = if list.ordered { "ol" } else { "ul" };
             preview.push_str(&format!("<{tag}>"));
