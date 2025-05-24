@@ -53,7 +53,7 @@ async fn test_front_page_preview() {
     println!("body:\n{body}");
     let code_area = indoc::indoc! {
         r#"
-        <pre><code class='language-julia'>function f(x)
+        <pre><code class="language-julia">function f(x)
             println(1)
             return x
         end
