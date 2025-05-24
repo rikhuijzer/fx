@@ -16,7 +16,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - run: sudo snap install --edge just-an-installer@0.3.0
+      - run: sudo snap install just-an-installer --channel=0.3.2/stable
       - run: jas --version
       - run: >
           jas install
