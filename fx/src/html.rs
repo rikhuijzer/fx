@@ -171,7 +171,7 @@ pub fn wrap_post_content(post: &Post, is_front_page_preview: bool) -> String {
               border-top: 1px solid var(--border); padding-top: 10px;
               font-size: var(--small-font-size);'>
                  <a href='/posts/{id}/{slug}' class='unstyled-link' id='long-url'>
-                    🔗 Long URL
+                    🔗 Link
                  </a>&nbsp;(
                  <a id='copy-long-url' href='javascript:void(0)' onclick='copyLongUrl()'>
                     copy
