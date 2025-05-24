@@ -16,7 +16,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - run: cargo install --debug jas@0.3.1
+      - run: sudo snap install just-an-installer --channel=0.3.2/stable
+      - run: jas --version
       - run: >
           jas install
           --gh rustsec/rustsec@cargo-audit/v0.21.2
