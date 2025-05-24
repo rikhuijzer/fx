@@ -25,7 +25,7 @@ fn node_to_html(node: &Node) -> String {
             let class = if lang.is_empty() {
                 ""
             } else {
-                &format!("class='language-{lang}'")
+                &format!("class=\"language-{lang}\"")
             };
             let html = format!(
                 "

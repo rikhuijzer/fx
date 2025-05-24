@@ -21,6 +21,8 @@ async fn test_home() {
     assert!(body.contains("<meta property='og:type' content='website'/>"));
     assert!(body.contains("<meta property='og:title' content='John&#39;s Weblog'/>"));
     assert!(body.contains("og:description"));
+    // Assumes that the "Code" post shows a code block in the preview.
+    assert!(body.contains("highlight.js"));
 }
 
 #[tokio::test]
