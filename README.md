@@ -74,9 +74,11 @@ To share a post, you can either get the URL from the navigation bar or you can c
 The longer link includes a so called slug, which makes the URL more descriptive (for example, `/posts/1` versus `/posts/1/hello-world`).
 
 Next, Publish (on your) Own Site, Syndicate Everywhere (POSSE) can be used to make the posts seen by more people.
-For example, you can share the link to your article on Reddit, X, BlueSky, Hacker News, LinkedIn, or Mastodon.
+For example, you can share the link to your article on Reddit, X, BlueSky, Discord, Facebook, Hacker News, LinkedIn, or Mastodon.
+As long as you politely ask and try to add value, most sites are usually accepting links to blog posts.
 Then comments to the article can be made there and people can decide to share the post with other people.
 For example, Simon Willison uses this over at his [fedi instance](https://fedi.simonwillison.net/@simon).
+Another idea could be to politely ask another writer for a guest post or a shoutout.
 
 ## API
 
