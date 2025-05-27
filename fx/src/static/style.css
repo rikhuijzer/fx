@@ -63,10 +63,15 @@ h1, h2, h3, h4, h5, h6 {
 
 a {
     color: var(--accent);
+    text-decoration: none;
 }
 
 a:visited {
     color: var(--accent);
+}
+
+a:hover {
+    text-decoration: underline;
 }
 
 a.url {

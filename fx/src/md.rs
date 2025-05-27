@@ -187,7 +187,7 @@ pub fn preview(post: &mut Post, max_length: usize) {
     for node in tree.children().unwrap() {
         if max_length < preview.len() {
             let id = post.id;
-            let style = "text-decoration: underline; font-size: 0.8rem;";
+            let style = "font-size: 0.8rem;";
             let expand = format!(
                 "
                 <p>

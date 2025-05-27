@@ -31,7 +31,12 @@ fn show_item(item: &fx_rss::Item) -> Option<String> {
     Some(format!(
         "
         <span class='blogroll-item' style='font-size: 0.9rem;'>
-            {feed_name}: <a href=\"{link}\">{title}</a> ({pub_date})
+            <div style='line-height: 1em; padding-top: 0.5rem;'>
+                {feed_name} <span style='color: var(--border);'>({pub_date})</span>
+            </div>
+            <div style='padding-bottom: 0.3rem; border-bottom: 1px solid var(--border);'>
+                <a href=\"{link}\">{title}</a>
+            </div>
         </span>
         ",
     ))

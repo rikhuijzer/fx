@@ -280,7 +280,7 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
         File::insert(conn, &file).unwrap();
 
         let feeds = "https://simonwillison.net/atom/everything/";
-        init_kv_data(conn, BLOGROLL_SETTINGS_KEY, feeds.as_bytes());
+        Kv::insert(conn, BLOGROLL_SETTINGS_KEY, feeds.as_bytes()).unwrap();
     }
 }
 
