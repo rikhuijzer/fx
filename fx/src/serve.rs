@@ -12,6 +12,7 @@ use axum::Router;
 use axum::body::Body;
 use axum::extract::DefaultBodyLimit;
 use axum::extract::Path;
+use axum::extract::Query;
 use axum::extract::Request;
 use axum::extract::State;
 use axum::http::HeaderMap;
@@ -168,19 +169,40 @@ pub fn is_logged_in(ctx: &ServerContext, jar: &CookieJar) -> bool {
     fx_auth::is_logged_in(&ctx.salt, &login, jar)
 }
 
-async fn list_posts(ctx: &ServerContext) -> String {
+async fn list_posts(ctx: &ServerContext, page: usize) -> (bool, String) {
     let mut posts = { Post::list(&*ctx.conn().await).unwrap() };
-    posts
+    let results_per_page = 10;
+    let start = (page - 1) * results_per_page;
+    let end = start + results_per_page;
+    let has_next = end < posts.len();
+    let mut posts = posts.iter_mut().skip(start).take(end).collect::<Vec<_>>();
+    let posts = posts
         .iter_mut()
         .map(|post| {
             crate::md::preview(post, 600);
             wrap_post_content(post, true)
         })
-        .collect::<Vec<String>>()
-        .join("\n")
+        .collect::<Vec<String>>();
+    (has_next, posts.join("\n"))
 }
 
-async fn get_posts(State(ctx): State<ServerContext>, jar: CookieJar) -> Response<Body> {
+#[derive(Debug, Deserialize)]
+struct Pagination {
+    /// One-based page number.
+    ///
+    /// One-based since this index is visible to readers who are probably more
+    /// familiar with one-based numbering.
+    page: Option<usize>,
+}
+
+async fn get_posts(
+    State(ctx): State<ServerContext>,
+    jar: CookieJar,
+    pagination: Query<Pagination>,
+) -> Response<Body> {
+    let is_logged_in = Some(is_logged_in(&ctx, &jar));
+    let show_about = pagination.page.is_none();
+    let current_page = pagination.page.unwrap_or(1);
     let description = match Kv::get(&*ctx.conn().await, "about") {
         Ok(description) => String::from_utf8(description).unwrap(),
         Err(_) => "".to_string(),
@@ -193,10 +215,44 @@ async fn get_posts(State(ctx): State<ServerContext>, jar: CookieJar) -> Response
         ",
         &ctx.args.extra_head
     );
-    let is_logged_in = Some(is_logged_in(&ctx, &jar));
-    let settings = PageSettings::new("", is_logged_in, true, Top::Homepage, &extra_head);
-    let posts = list_posts(&ctx).await;
-    let body = page(&ctx, &settings, &posts).await;
+    let top = if show_about {
+        Top::Homepage
+    } else {
+        Top::GoHome
+    };
+    let settings = PageSettings::new("", is_logged_in, show_about, top, &extra_head);
+    let (has_next, posts) = list_posts(&ctx, current_page).await;
+    let prev_link = if current_page == 1 {
+        ""
+    } else {
+        let prev_page = current_page - 1;
+        let href = if prev_page == 1 {
+            "/"
+        } else {
+            &format!("/?page={prev_page}")
+        };
+        &format!("<a class='unstyled-link' href='{href}'>◀ prev</a>")
+    };
+    let next_link = if has_next {
+        let next_page = current_page + 1;
+        &format!("<a class='unstyled-link' href='/?page={next_page}'>▶ next</a>")
+    } else {
+        ""
+    };
+    let body = &format!(
+        "
+        {posts}
+        <div style='display: flex; justify-content: space-between;'>
+            <p>
+                {prev_link}
+            </p>
+            <p>
+                {next_link}
+            </p>
+        </div>
+        "
+    );
+    let body = page(&ctx, &settings, body).await;
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
