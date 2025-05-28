@@ -150,6 +150,7 @@ jobs:
             type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
 
       - name: Create manifest list and push
         working-directory: ${{ runner.temp }}/digests
