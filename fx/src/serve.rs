@@ -170,12 +170,17 @@ pub fn is_logged_in(ctx: &ServerContext, jar: &CookieJar) -> bool {
 }
 
 async fn list_posts(ctx: &ServerContext, page: usize) -> (bool, String) {
-    let mut posts = { Post::list(&*ctx.conn().await).unwrap() };
+    let posts = match Post::list(&*ctx.conn().await) {
+        Ok(posts) => posts,
+        Err(_) => return (false, "Database error".to_string()),
+    };
+    // Set this to 1 to test the logic locally.
     let results_per_page = 10;
     let start = (page - 1) * results_per_page;
     let end = start + results_per_page;
     let has_next = end < posts.len();
-    let mut posts = posts.iter_mut().skip(start).take(end).collect::<Vec<_>>();
+    let end = std::cmp::min(end, posts.len());
+    let mut posts = posts[start..end].to_vec();
     let posts = posts
         .iter_mut()
         .map(|post| {
