@@ -350,7 +350,9 @@ pub fn extract_html_description(post: &Post) -> String {
     let description = description.trim_start_matches("# ");
     let description = description.trim_start_matches(title).trim();
     let description = remove_urls(description);
-    let max_length = 150;
+    // This allows RSS readers to read the full quote when the page is a
+    // microblog and still truncates to avoid having a too heavy RSS feed.
+    let max_length = 600;
     if description.len() <= max_length {
         description
     } else {

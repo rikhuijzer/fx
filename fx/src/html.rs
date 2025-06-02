@@ -72,9 +72,19 @@ fn set_header_id(html: &str) -> String {
                 if line.contains(" id=") {
                     return line.to_string();
                 }
+                // --- is sometimes interpreted as a horizontal rule.
+                if line.contains("<hr />") {
+                    return line.to_string();
+                }
                 let title_start = line.find('>').unwrap() + 1;
                 let level = line[2..title_start - 1].to_string();
-                let title_end = line.find("</h").unwrap();
+                let title_end = match line.find("</h") {
+                    Some(end) => end,
+                    None => {
+                        tracing::warn!("could not find </h> in {line}");
+                        return line.to_string();
+                    }
+                };
                 let title = line[title_start..title_end].to_string();
                 let id = title.to_lowercase().replace(' ', "-");
                 format!("<h{level} id='{id}'>{title}</h{level}>")
@@ -112,6 +122,12 @@ fn test_set_header_id() {
         "#}
     .trim();
     assert_eq!(html, set_header_id(html), "code block has changed");
+
+    let html = indoc::indoc! {r#"
+        <hr />
+        "#}
+    .trim();
+    assert!(!set_header_id(html).is_empty());
 }
 
 pub fn wrap_post_content(post: &Post, is_front_page_preview: bool) -> String {
