@@ -24,7 +24,7 @@ indoc = "2"
 markdown = { version = "1.0.0-alpha.23", features = ["serde"] }
 regex = "1.11"
 reqwest = { version = "0.12", features = ["rustls-tls"], default-features = false }
-rusqlite = { version = "0.35", features = ["blob", "bundled", "chrono"] }
+rusqlite = { version = "0.36", features = ["blob", "bundled", "chrono"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.140"
 serde_urlencoded = "0.7"
