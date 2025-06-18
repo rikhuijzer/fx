@@ -278,6 +278,7 @@ fn add_post_form() -> String {
         <textarea \
           style='display: block; width: 100%; height: 180px; margin-top: 10px;' \
           class='boxsizing-border' \
+          oninput='disable_form_submit_if_empty(this);' \
           onchange='{SET_LEAVE_CONFIRMATION}' \
           id='content' name='content' placeholder='Your Markdown text..'>
         </textarea>
@@ -304,6 +305,7 @@ pub fn edit_post_form(post: &Post) -> String {
         <textarea \
           style='display: block; width: 100%; height: 60vh; margin-top: 10px;' \
           class='boxsizing-border' \
+          oninput='disable_form_submit_if_empty(this);' \
           id='content' name='content' placeholder='Your text..'>\n{content}
         </textarea>
         <br>
@@ -605,7 +607,6 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
             <meta name='viewport' content='width=device-width, initial-scale=1'>
             <link rel='stylesheet' href='/static/style.css'>
             <link rel='alternate' type='application/rss+xml' href='/feed.xml'>
-            <script src='/static/nodefer.js'></script>
             <script src='/static/script.js' defer></script>
             <title>{full_title}</title>
             <meta property='og:site_name' content='{site_name}'/>
@@ -628,6 +629,7 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
                     </div>
                 </div>
             </div>
+            <script src='/static/nodefer.js'></script>
         </body>
         "#,
     };

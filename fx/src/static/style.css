@@ -243,6 +243,10 @@ input[type="submit"]:hover {
     cursor: pointer;
 }
 
+input[type="submit"]:disabled {
+    opacity: 0.5;
+}
+
 .ui-text {
     font-size: var(--small-font-size);
 }
