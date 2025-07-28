@@ -24,15 +24,15 @@ indoc = "2"
 markdown = { version = "1.0.0-alpha.23", features = ["serde"] }
 regex = "1.11"
 reqwest = { version = "0.12", features = ["rustls-tls"], default-features = false }
-rusqlite = { version = "0.36", features = ["blob", "bundled", "chrono"] }
+rusqlite = { version = "0.37", features = ["blob", "bundled", "chrono"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.140"
 serde_urlencoded = "0.7"
 sha2 = "0.10"
 tar = "0.4"
-tokio = { version = "1.44", features = ["rt-multi-thread", "macros"] }
+tokio = { version = "1.47", features = ["rt-multi-thread", "macros"] }
 tokio-cron-scheduler = "0.14"
-toml = "0.8"
+toml = "0.9"
 tower = "0.5"
 tracing = "0.1"
 tracing-subscriber = "0.3"

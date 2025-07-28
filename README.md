@@ -16,7 +16,7 @@ A (micro)blogging server that you can self-host.
 - 📱 Publish and edit from desktop or mobile device.
 - 📁 Upload files and images to embed them in posts.
 - 🔒 Automatically backup to plain text files, see [Backup](#backup).
-- 🔭 Follow RSS feeds via the blogroll.
+- 🔭 Follow RSS feeds.
 
 ## Demo
 
