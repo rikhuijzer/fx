@@ -16,6 +16,7 @@ A (micro)blogging server that you can self-host.
 - 📱 Publish and edit from desktop or mobile device.
 - 📁 Upload files and images to embed them in posts.
 - 🔒 Automatically backup to plain text files, see [Backup](#backup).
+- 🔭 Follow RSS feeds via the blogroll.
 
 ## Demo
 
@@ -79,6 +80,12 @@ As long as you politely ask and try to add value, most sites are usually accepti
 Then comments to the article can be made there and people can decide to share the post with other people.
 For example, Simon Willison uses this over at his [fedi instance](https://fedi.simonwillison.net/@simon).
 Another idea could be to politely ask another writer for a guest post or a shoutout.
+
+## Blogroll
+
+The blogroll can be used to follow RSS feeds.
+Unlike social media, with RSS feeds all articles will show up on your feed.
+Conversely, the social media algorithm may hide certain articles without you realizing it.
 
 ## API
 
