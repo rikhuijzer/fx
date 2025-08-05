@@ -280,7 +280,7 @@ fn add_post_form() -> String {
           class='boxsizing-border' \
           oninput='disable_form_submit_if_empty(this);' \
           onchange='{SET_LEAVE_CONFIRMATION}' \
-          id='content' name='content' placeholder='Your Markdown text..'>
+          id='content' name='content' placeholder='Your Markdown text..' required>
         </textarea>
         <br>
         <div style='display: flex; justify-content: flex-end;'>
