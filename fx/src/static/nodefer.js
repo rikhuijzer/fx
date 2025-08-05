@@ -23,7 +23,7 @@ function disable_form_submit_if_empty(textarea) {
     const form = textarea.closest('form');
     const submitButtons = form.querySelectorAll('input[type="submit"]');
     const hasContent = 0 < textarea.value.trim().length;
-    
+
     submitButtons.forEach((button) => {
         button.disabled = !hasContent;
     });
