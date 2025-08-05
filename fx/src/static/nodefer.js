@@ -32,6 +32,7 @@ function disable_form_submit_if_empty(textarea) {
 function disable_form_submit_on_start() {
     const textareas = document.getElementsByTagName('textarea');
     for (let i = 0; i < textareas.length; i++) {
+        // Check to avoid incorrectly disabling save button on the settings page.
         if (textareas[i].hasAttribute('required')) {
             disable_form_submit_if_empty(textareas[i]);
         }
