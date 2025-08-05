@@ -32,7 +32,9 @@ function disable_form_submit_if_empty(textarea) {
 function disable_form_submit_on_start() {
     const textareas = document.getElementsByTagName('textarea');
     for (let i = 0; i < textareas.length; i++) {
-        disable_form_submit_if_empty(textareas[i]);
+        if (textareas[i].hasAttribute('required')) {
+            disable_form_submit_if_empty(textareas[i]);
+        }
     }
 }
 
