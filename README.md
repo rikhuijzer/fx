@@ -1,4 +1,4 @@
-# fx &emsp; [![build status]][actions] [![docker svg]][docker]
+# fx
 
 [build status]: https://img.shields.io/github/actions/workflow/status/rikhuijzer/fx/ci.yml?branch=main
 [actions]: https://github.com/rikhuijzer/fx/actions?query=branch%3Amain
