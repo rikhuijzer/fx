@@ -727,7 +727,6 @@ dependencies = [
  "http-body-util",
  "hyper",
  "indoc",
- "lazy_static",
  "markdown",
  "pretty_assertions",
  "regex",

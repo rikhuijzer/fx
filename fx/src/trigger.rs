@@ -3,17 +3,6 @@ use crate::serve::ServerContext;
 use hyper::HeaderMap;
 use hyper::header;
 use hyper::header::HeaderValue;
-use tokio::task::JoinHandle;
-use tokio::sync::Mutex;
-use std::collections::VecDeque;
-use std::sync::Arc;
-use lazy_static::lazy_static;
-
-lazy_static! {
-    static ref BACKGROUND_TASKS: Mutex<VecDeque<JoinHandle<Option<()>>>> = {
-        Mutex::new(VecDeque::new())
-    };
-}
 
 struct TriggerArgs {
     pub trigger_token: Option<String>,
@@ -82,10 +71,7 @@ pub async fn trigger_github_backup(ctx: &ServerContext) -> Option<()> {
     // Based on the docs, `tokio::spawn` will start running the task even when
     // not awaiting the future. However, it also states that the task will not
     // be executed to completion if the runtime is shutdown.
-    let handle = tokio::spawn(async { trigger_github_backup_workload(args).await });
-
-    let mut tasks_guard = BACKGROUND_TASKS.lock().await;
-    tasks_guard.push_back(handle);
+    tokio::spawn(async { trigger_github_backup_workload(args).await });
 
     Some(())
 }
