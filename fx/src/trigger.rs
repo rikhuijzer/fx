@@ -4,8 +4,14 @@ use hyper::HeaderMap;
 use hyper::header;
 use hyper::header::HeaderValue;
 
-pub async fn trigger_github_backup(ctx: &ServerContext) -> Option<()> {
-    let args = &ctx.args;
+struct TriggerArgs {
+    pub trigger_token: Option<String>,
+    pub trigger_owner_repo: Option<String>,
+    pub trigger_branch: String,
+    pub trigger_workflow_id: String,
+}
+
+async fn trigger_github_backup_workload(args: TriggerArgs) -> Option<()> {
     let token = match &args.trigger_token {
         Some(token) => token,
         None => return None,
@@ -53,4 +59,18 @@ pub async fn trigger_github_backup(ctx: &ServerContext) -> Option<()> {
         }
         Err(_) => None,
     }
+}
+
+pub async fn trigger_github_backup(ctx: &ServerContext) -> Option<()> {
+    let args = TriggerArgs {
+        trigger_token: ctx.args.trigger_token.clone(),
+        trigger_owner_repo: ctx.args.trigger_owner_repo.clone(),
+        trigger_branch: ctx.args.trigger_branch.clone(),
+        trigger_workflow_id: ctx.args.trigger_workflow_id.clone(),
+    };
+    // Based on the docs, `tokio::spawn` will start running the task even when
+    // not awaiting the future.  However, it also states that the task will not
+    // be executed to completion if the runtime is shutdown.
+    tokio::spawn(async { trigger_github_backup_workload(args) });
+    Some(())
 }
