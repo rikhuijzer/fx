@@ -68,6 +68,9 @@ pub async fn trigger_github_backup(ctx: &ServerContext) -> Option<()> {
         trigger_branch: ctx.args.trigger_branch.clone(),
         trigger_workflow_id: ctx.args.trigger_workflow_id.clone(),
     };
+    // Based on the docs, `tokio::spawn` will start running the task even when
+    // not awaiting the future.  However, it also states that the task will not
+    // be executed to completion if the runtime is shutdown.
     tokio::spawn(async { trigger_github_backup_workload(args) });
     Some(())
 }
