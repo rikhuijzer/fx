@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-09-13
+
+### Fixed
+
+- Avoid server getting stuck on requesting a backup ([#98](https://github.com/rikhuijzer/fx/pull/97)).
+- Avoid post deletion causes the search to break ([#100](https://github.com/rikhuijzer/fx/pull/100)).
+- Let the URL with slug be the canonical URL ([#103](https://github.com/rikhuijzer/fx/pull/103)).
+
+### Changed
+
+- Allow admin to disable dark mode ([#101](https://github.com/rikhuijzer/fx/pull/101)).
+
 ## [1.1.4] - 2025-08-05
 
 ### Fixed
