@@ -598,10 +598,17 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
     } else {
         &settings.title
     };
+    let data_theme = Kv::get(&*ctx.conn().await, "dark_mode").unwrap();
+    let data_theme = String::from_utf8(data_theme).unwrap();
+    let data_theme = if data_theme == "on" {
+        ""
+    } else {
+        "data-theme='light'"
+    };
     let page = indoc::formatdoc! {
         r#"
         <!DOCTYPE html>
-        <html lang='{html_lang}'>
+        <html lang='{html_lang}' {data_theme}>
         <head>
             <meta charset='UTF-8'>
             <meta name='viewport' content='width=device-width, initial-scale=1'>

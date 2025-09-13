@@ -25,6 +25,7 @@ pub struct Settings {
     pub site_name: String,
     pub author_name: String,
     pub about: String,
+    pub dark_mode: Option<String>,
     pub blogroll_feeds: String,
 }
 
@@ -33,11 +34,19 @@ impl Settings {
         let site_name = Kv::get(conn, "site_name")?;
         let author_name = Kv::get(conn, "author_name")?;
         let about = Kv::get(conn, "about")?;
+        let dark_mode = Kv::get(conn, "dark_mode")?;
+        let dark_mode = String::from_utf8(dark_mode).unwrap();
+        let dark_mode = if dark_mode == "on" {
+            Some("on".to_string())
+        } else {
+            None
+        };
         let blogroll_feeds = Kv::get(conn, crate::data::BLOGROLL_SETTINGS_KEY)?;
         Ok(Self {
             site_name: String::from_utf8(site_name).unwrap(),
             author_name: String::from_utf8(author_name).unwrap(),
             about: String::from_utf8(about).unwrap(),
+            dark_mode,
             blogroll_feeds: String::from_utf8(blogroll_feeds).unwrap(),
         })
     }
@@ -48,6 +57,7 @@ impl Settings {
 }
 
 pub enum InputType {
+    Checkbox,
     Text,
     Textarea,
 }
@@ -62,6 +72,17 @@ pub fn text_input(
 ) -> String {
     let required = if required { "required" } else { "" };
     let input = match input_type {
+        InputType::Checkbox => {
+            let value = if value == "on" { "checked" } else { "" };
+            format!(
+                "
+            <input id='{name}' name='{name}' \
+            style='margin-left: 0; \
+              margin-top: 0.5rem; margin-bottom: 0.2rem;' \
+            type='checkbox' {value} {required}/><br>
+            "
+            )
+        }
         InputType::Text => format!(
             "
             <input id='{name}' name='{name}' \
@@ -119,6 +140,7 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
             {}
             {}
             {}
+            {}
             <input style='margin-left: 0;' type='submit' value='Save'/>
         </form>
         ",
@@ -144,6 +166,18 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
             "About",
             &settings.about,
             &about_description,
+            false,
+        ),
+        text_input(
+            InputType::Checkbox,
+            "dark_mode",
+            "Allow dark mode",
+            if settings.dark_mode.is_some() {
+                "on"
+            } else {
+                "off"
+            },
+            "When enabled, the site will allow the browser to use the dark color-scheme.",
             false,
         ),
         text_input(
@@ -182,6 +216,12 @@ async fn post_settings(
         let conn = &*ctx.conn().await;
         Kv::insert(conn, "site_name", form.site_name.trim().as_bytes()).unwrap();
         Kv::insert(conn, "author_name", form.author_name.trim().as_bytes()).unwrap();
+        let dark_mode = if form.dark_mode.is_some() {
+            "on"
+        } else {
+            "off"
+        };
+        Kv::insert(conn, "dark_mode", dark_mode.as_bytes()).unwrap();
         let about = cleanup_content(&form.about);
         Kv::insert(conn, "about", about.as_bytes()).unwrap();
 

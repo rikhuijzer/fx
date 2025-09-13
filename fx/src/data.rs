@@ -225,6 +225,8 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
     };
     init_kv_data(conn, "about", about.as_bytes());
     init_kv_data(conn, "author_name", b"John");
+    init_kv_data(conn, "dark_mode", b"on");
+
     let domain = if args.production { "" } else { "localhost" };
     init_kv_data(conn, "domain", domain.as_bytes());
     init_kv_data(conn, BLOGROLL_SETTINGS_KEY, b"");
