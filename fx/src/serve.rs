@@ -402,7 +402,7 @@ async fn get_post(
         {}
     "#, ctx.args.extra_head};
     let settings = PageSettings::new(&title, Some(is_logged_in), false, Top::GoHome, &extra_head);
-    let mut body = wrap_post_content(&post, "", false);
+    let mut body = wrap_post_content(&post, &slug, false);
     if is_logged_in {
         body = format!("{}\n{body}", crate::html::edit_post_buttons(&ctx, &post));
     }

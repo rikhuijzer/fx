@@ -196,14 +196,14 @@ pub fn wrap_post_content(post: &Post, slug: &str, is_front_page_preview: bool) -
                     {updated}
                 </div>
             {post_link_end}
-            <div data-post-id='{}' class='post-content {post_preview_class}'>
+            <div data-post-link='{}' class='post-content {post_preview_class}'>
             {html}
             </div>
             {share_link}
         </div>
         ",
         show_date(&post.created),
-        post.id
+        post_link(post, slug)
     )
 }
 
