@@ -116,7 +116,7 @@ fn test_set_header_id() {
 }
 
 /// Generate a post link with given slug.
-/// 
+///
 /// Will also create a valid post link if the slug is empty.
 pub fn post_link(post: &Post, slug: &str) -> String {
     if slug.is_empty() {

@@ -309,7 +309,7 @@ pub fn extract_html_title(post: &Post) -> String {
 ///
 /// For example, a post with the title `Foo Bar` and id `1` would receive the
 /// slug `foo-bar` so that the post can be shared as `/posts/1/foo-bar`.
-/// 
+///
 /// This function should be called before `crate::md::preview` because otherwise
 /// the content is converted to Markdown and texts such as `<p><a href` will end
 /// up in the slug

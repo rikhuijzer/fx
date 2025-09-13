@@ -366,16 +366,12 @@ fn iso8601(dt: &chrono::DateTime<chrono::Utc>) -> String {
     dt.format("%Y-%m-%dT%H:%M:%SZ").to_string()
 }
 
-async fn get_post(
+async fn get_post_with_slug(
     State(ctx): State<ServerContext>,
-    Path(id): Path<String>,
+    Path((id, _slug)): Path<(i64, String)>,
     jar: CookieJar,
 ) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
-    let id = match id.parse::<i64>() {
-        Ok(id) => id,
-        Err(_) => return not_found(State(ctx)).await,
-    };
     let post = Post::get(&*ctx.conn().await, id);
     let post = match post {
         Ok(post) => post,
@@ -410,11 +406,17 @@ async fn get_post(
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
-async fn get_post_with_slug(
-    State(ctx): State<ServerContext>,
-    Path((id, _slug)): Path<(i64, String)>,
-) -> Response<Body> {
-    let url = format!("/posts/{}", id);
+async fn get_post(State(ctx): State<ServerContext>, Path(id): Path<i64>) -> Response<Body> {
+    let post = Post::get(&*ctx.conn().await, id);
+    let post = match post {
+        Ok(post) => post,
+        Err(_) => return not_found(State(ctx)).await,
+    };
+    if post.content == "<DELETED>" {
+        return not_found(State(ctx)).await;
+    }
+    let slug = crate::md::extract_slug(&post);
+    let url = crate::html::post_link(&post, &slug);
     // Same behavior as Reddit. Any slug is accepted and then redirected to the
     // right page. I couldn't figure out the Reddit status code, but permanent
     // redirect seems suitable.
@@ -686,7 +688,9 @@ pub fn app(ctx: ServerContext) -> Router {
         .route("/posts/edit/{id}", post(post_edit))
         .route("/posts/add", post(post_add))
         .route("/posts/{id}", get(get_post))
+        .route("/posts/{id}/", get(get_post))
         .route("/posts/{id}/{slug}", get(get_post_with_slug))
+        .route("/posts/{id}/{slug}/", get(get_post_with_slug))
         .route("/login", get(get_login))
         .route("/login", post(post_login))
         .route("/logout", get(get_logout))
