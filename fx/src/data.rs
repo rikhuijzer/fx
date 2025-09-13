@@ -225,7 +225,7 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
     };
     init_kv_data(conn, "about", about.as_bytes());
     init_kv_data(conn, "author_name", b"John");
-    init_kv_data(conn, "dark_mode", b"on");
+    init_kv_data(conn, "dark_mode", b"off");
 
     let domain = if args.production { "" } else { "localhost" };
     init_kv_data(conn, "domain", domain.as_bytes());
@@ -282,7 +282,7 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
         };
         File::insert(conn, &file).unwrap();
 
-        let feeds = "https://simonwillison.net/atom/everything/";
+        let feeds = "https://susam.net/feed.xml";
         Kv::insert(conn, BLOGROLL_SETTINGS_KEY, feeds.as_bytes()).unwrap();
     }
 }

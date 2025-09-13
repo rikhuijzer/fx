@@ -12,9 +12,8 @@ function make_post_previews_clickable() {
                 // Don't navigate if the user has selected text.
                 return;
             }
-            const post_id = post_preview.getAttribute("data-post-id");
-            window.location.href = `/posts/${post_id}`;
-
+            const post_id = post_preview.getAttribute("data-post-link");
+            window.location.href = `${post_id}`;
         });
         post_preview.style.cursor = "pointer";
     });

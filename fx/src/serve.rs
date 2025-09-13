@@ -184,8 +184,9 @@ async fn list_posts(ctx: &ServerContext, page: usize) -> (bool, String) {
     let posts = posts
         .iter_mut()
         .map(|post| {
+            let slug = crate::md::extract_slug(post);
             crate::md::preview(post, 600);
-            wrap_post_content(post, true)
+            wrap_post_content(post, &slug, true)
         })
         .collect::<Vec<String>>();
     (has_next, posts.join("\n"))
@@ -331,7 +332,7 @@ async fn get_delete(
             <br>
         </div>
     "#};
-    let body = format!("{}\n{}", delete_button, wrap_post_content(&post, false));
+    let body = format!("{}\n{}", delete_button, wrap_post_content(&post, "", false));
     let body = page(&ctx, &settings, &body).await;
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
@@ -365,16 +366,12 @@ fn iso8601(dt: &chrono::DateTime<chrono::Utc>) -> String {
     dt.format("%Y-%m-%dT%H:%M:%SZ").to_string()
 }
 
-async fn get_post(
+async fn get_post_with_slug(
     State(ctx): State<ServerContext>,
-    Path(id): Path<String>,
+    Path((id, _slug)): Path<(i64, String)>,
     jar: CookieJar,
 ) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
-    let id = match id.parse::<i64>() {
-        Ok(id) => id,
-        Err(_) => return not_found(State(ctx)).await,
-    };
     let post = Post::get(&*ctx.conn().await, id);
     let post = match post {
         Ok(post) => post,
@@ -389,7 +386,8 @@ async fn get_post(
     // Open Graph uses ISO 8601 according to <https://ogp.me/>.
     let created = iso8601(&post.created);
     let updated = iso8601(&post.updated);
-    let canonical = format!("{}/posts/{}", &ctx.base_url(), &post.id);
+    let slug = crate::md::extract_slug(&post);
+    let canonical = format!("{}/posts/{}/{slug}", &ctx.base_url(), &post.id);
     let extra_head = indoc::formatdoc! {r#"
         <meta property='article:author' content='{author}'/>
         <meta property='article:published_time' content='{created}'/>
@@ -400,7 +398,7 @@ async fn get_post(
         {}
     "#, ctx.args.extra_head};
     let settings = PageSettings::new(&title, Some(is_logged_in), false, Top::GoHome, &extra_head);
-    let mut body = wrap_post_content(&post, false);
+    let mut body = wrap_post_content(&post, &slug, false);
     if is_logged_in {
         body = format!("{}\n{body}", crate::html::edit_post_buttons(&ctx, &post));
     }
@@ -408,11 +406,21 @@ async fn get_post(
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
-async fn get_post_with_slug(
-    State(ctx): State<ServerContext>,
-    Path((id, _slug)): Path<(i64, String)>,
-) -> Response<Body> {
-    let url = format!("/posts/{}", id);
+async fn get_post(State(ctx): State<ServerContext>, Path(id): Path<String>) -> Response<Body> {
+    let id = match id.parse::<i64>() {
+        Ok(id) => id,
+        Err(_) => return not_found(State(ctx)).await,
+    };
+    let post = Post::get(&*ctx.conn().await, id);
+    let post = match post {
+        Ok(post) => post,
+        Err(_) => return not_found(State(ctx)).await,
+    };
+    if post.content == "<DELETED>" {
+        return not_found(State(ctx)).await;
+    }
+    let slug = crate::md::extract_slug(&post);
+    let url = crate::html::post_link(&post, &slug);
     // Same behavior as Reddit. Any slug is accepted and then redirected to the
     // right page. I couldn't figure out the Reddit status code, but permanent
     // redirect seems suitable.
@@ -592,7 +600,7 @@ async fn post_edit(
         crate::trigger::trigger_github_backup(&ctx).await;
         see_other(&ctx, &url)
     } else {
-        let preview = crate::html::wrap_post_content(&post, false);
+        let preview = crate::html::wrap_post_content(&post, "", false);
         let body = page(&ctx, &settings, &preview).await;
         response(StatusCode::OK, HeaderMap::new(), body, &ctx)
     }
@@ -654,7 +662,7 @@ async fn post_add(
             content: form.content,
         };
         let is_front_page_preview = false;
-        let preview = crate::html::wrap_post_content(&post, is_front_page_preview);
+        let preview = crate::html::wrap_post_content(&post, "", is_front_page_preview);
         let body = page(&ctx, &settings, &preview).await;
         response(StatusCode::OK, HeaderMap::new(), body, &ctx)
     }
@@ -684,7 +692,9 @@ pub fn app(ctx: ServerContext) -> Router {
         .route("/posts/edit/{id}", post(post_edit))
         .route("/posts/add", post(post_add))
         .route("/posts/{id}", get(get_post))
+        .route("/posts/{id}/", get(get_post))
         .route("/posts/{id}/{slug}", get(get_post_with_slug))
+        .route("/posts/{id}/{slug}/", get(get_post_with_slug))
         .route("/login", get(get_login))
         .route("/login", post(post_login))
         .route("/logout", get(get_logout))

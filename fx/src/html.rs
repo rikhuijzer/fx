@@ -43,21 +43,6 @@ pub fn show_date<Tz: chrono::TimeZone>(datetime: &DateTime<Tz>) -> String {
 const SET_LEAVE_CONFIRMATION: &str = "window.onbeforeunload = () => true;";
 const UNSET_LEAVE_CONFIRMATION: &str = "window.onbeforeunload = null;";
 
-fn turn_title_into_link(post: &Post, html: &str) -> String {
-    let html = html.trim();
-    let title = html.split("\n").next().unwrap();
-    let rest = html.split("\n").skip(1).collect::<Vec<&str>>().join("\n");
-    if title.starts_with("# ") {
-        let title = title.trim_start_matches("# ");
-        format!(
-            "<h1><a href='/posts/{}' class='unstyled-link'>{}</a></h1>\n{}",
-            post.id, title, rest
-        )
-    } else {
-        html.to_string()
-    }
-}
-
 /// Automatically set the `id` attribute for headers.
 ///
 /// pulldown-cmark supports header attributes, but markdown-rs does not. That's
@@ -130,22 +115,29 @@ fn test_set_header_id() {
     assert!(!set_header_id(html).is_empty());
 }
 
-pub fn wrap_post_content(post: &Post, is_front_page_preview: bool) -> String {
+/// Generate a post link with given slug.
+///
+/// Will also create a valid post link if the slug is empty.
+pub fn post_link(post: &Post, slug: &str) -> String {
+    if slug.is_empty() {
+        format!("/posts/{}", post.id)
+    } else {
+        format!("/posts/{}/{slug}", post.id)
+    }
+}
+
+/// Add extra information such as last update date around the post content.
+pub fn wrap_post_content(post: &Post, slug: &str, is_front_page_preview: bool) -> String {
     // Not wrapping the full post in a `href` because that prevents text
     // selection. I've tried all kinds of workarounds with putting a `position:
     // relative` object in front of the link with `z-index`, but that didn't
     // work. Either the area was clickable or the text was selectable but not
     // both.
     let html = if is_front_page_preview {
-        turn_title_into_link(post, &post.content)
-    } else {
-        post.content.clone()
-    };
-    let html = if is_front_page_preview {
         // Front page preview is already HTML.
-        html
+        post.content.clone()
     } else {
-        crate::md::content_to_html(&html)
+        crate::md::content_to_html(&post.content)
     };
     let html = set_header_id(&html);
     let style = if is_front_page_preview {
@@ -161,8 +153,8 @@ pub fn wrap_post_content(post: &Post, is_front_page_preview: bool) -> String {
             show_date(&post.updated)
         )
     };
-    let post_link = if is_front_page_preview {
-        format!("<a href='/posts/{}' class='unstyled-link'>", post.id)
+    let unstyled_link = if is_front_page_preview {
+        format!("<a href='{}' class='unstyled-link'>", post_link(post, slug))
     } else {
         "<span>".to_string()
     };
@@ -176,17 +168,15 @@ pub fn wrap_post_content(post: &Post, is_front_page_preview: bool) -> String {
     } else {
         ""
     };
-    let slug = crate::md::extract_slug(post);
     let share_link = if is_front_page_preview {
         "".to_string()
     } else {
-        let id = post.id;
         format!(
             "
             <div style='display: flex; justify-content: flex-end; \
               border-top: 1px solid var(--border); padding-top: 10px;
               font-size: var(--small-font-size);'>
-                 <a href='/posts/{id}/{slug}' class='unstyled-link' id='long-url'>
+                 <a href='{}' class='unstyled-link' id='long-url'>
                     🔗 Link
                  </a>&nbsp;(
                  <a id='copy-long-url' href='javascript:void(0)' onclick='copyLongUrl()'>
@@ -194,25 +184,26 @@ pub fn wrap_post_content(post: &Post, is_front_page_preview: bool) -> String {
                  </a>)
             </div>
             ",
+            post_link(post, slug)
         )
     };
     format!(
         "
         <div class='post' style='{style}'>
-            {post_link}
+            {unstyled_link}
                 <div class='post-header'>
                     <div class='created'>{}</div>
                     {updated}
                 </div>
             {post_link_end}
-            <div data-post-id='{}' class='post-content {post_preview_class}'>
+            <div data-post-link='{}' class='post-content {post_preview_class}'>
             {html}
             </div>
             {share_link}
         </div>
         ",
         show_date(&post.created),
-        post.id
+        post_link(post, slug)
     )
 }
 
