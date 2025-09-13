@@ -107,9 +107,10 @@ async fn get_search(
     let results = results
         .iter_mut()
         .map(|p| {
+            let slug = crate::md::extract_slug(p);
             crate::md::preview(p, 60);
             let is_front_page_preview = true;
-            wrap_post_content(p, is_front_page_preview)
+            wrap_post_content(p, &slug, is_front_page_preview)
         })
         .collect::<Vec<_>>();
     let results = results.join("\n");

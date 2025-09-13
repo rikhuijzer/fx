@@ -115,7 +115,19 @@ fn test_set_header_id() {
     assert!(!set_header_id(html).is_empty());
 }
 
-pub fn wrap_post_content(post: &Post, is_front_page_preview: bool) -> String {
+/// Generate a post link with given slug.
+/// 
+/// Will also create a valid post link if the slug is empty.
+pub fn post_link(post: &Post, slug: &str) -> String {
+    if slug.is_empty() {
+        format!("/posts/{}", post.id)
+    } else {
+        format!("/posts/{}/{slug}", post.id)
+    }
+}
+
+/// Add extra information such as last update date around the post content.
+pub fn wrap_post_content(post: &Post, slug: &str, is_front_page_preview: bool) -> String {
     // Not wrapping the full post in a `href` because that prevents text
     // selection. I've tried all kinds of workarounds with putting a `position:
     // relative` object in front of the link with `z-index`, but that didn't
@@ -141,8 +153,8 @@ pub fn wrap_post_content(post: &Post, is_front_page_preview: bool) -> String {
             show_date(&post.updated)
         )
     };
-    let post_link = if is_front_page_preview {
-        format!("<a href='/posts/{}' class='unstyled-link'>", post.id)
+    let unstyled_link = if is_front_page_preview {
+        format!("<a href='{}' class='unstyled-link'>", post_link(post, slug))
     } else {
         "<span>".to_string()
     };
@@ -156,17 +168,15 @@ pub fn wrap_post_content(post: &Post, is_front_page_preview: bool) -> String {
     } else {
         ""
     };
-    let slug = crate::md::extract_slug(post);
     let share_link = if is_front_page_preview {
         "".to_string()
     } else {
-        let id = post.id;
         format!(
             "
             <div style='display: flex; justify-content: flex-end; \
               border-top: 1px solid var(--border); padding-top: 10px;
               font-size: var(--small-font-size);'>
-                 <a href='/posts/{id}/{slug}' class='unstyled-link' id='long-url'>
+                 <a href='{}' class='unstyled-link' id='long-url'>
                     🔗 Link
                  </a>&nbsp;(
                  <a id='copy-long-url' href='javascript:void(0)' onclick='copyLongUrl()'>
@@ -174,12 +184,13 @@ pub fn wrap_post_content(post: &Post, is_front_page_preview: bool) -> String {
                  </a>)
             </div>
             ",
+            post_link(post, slug)
         )
     };
     format!(
         "
         <div class='post' style='{style}'>
-            {post_link}
+            {unstyled_link}
                 <div class='post-header'>
                     <div class='created'>{}</div>
                     {updated}
