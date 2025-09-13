@@ -406,7 +406,11 @@ async fn get_post_with_slug(
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
-async fn get_post(State(ctx): State<ServerContext>, Path(id): Path<i64>) -> Response<Body> {
+async fn get_post(State(ctx): State<ServerContext>, Path(id): Path<String>) -> Response<Body> {
+    let id = match id.parse::<i64>() {
+        Ok(id) => id,
+        Err(_) => return not_found(State(ctx)).await,
+    };
     let post = Post::get(&*ctx.conn().await, id);
     let post = match post {
         Ok(post) => post,

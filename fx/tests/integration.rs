@@ -29,12 +29,7 @@ async fn test_home() {
 
 #[tokio::test]
 async fn test_get_post() {
-    let (status, body) = request_body("/posts/1").await;
-    assert_eq!(status, StatusCode::OK);
-    println!("body:\n{body}");
-    assert!(body.contains("Lorem"));
-
-    let (status, body) = request_body("/posts/2").await;
+    let (status, body) = request_body("/posts/2/code").await;
     assert_eq!(status, StatusCode::OK);
     assert!(body.contains("Dolor"));
     assert!(body.contains("<h2 id='more'>More</h2>"));
@@ -43,7 +38,7 @@ async fn test_get_post() {
     assert!(body.contains("<meta property='og:type' content='article'/>"));
     assert!(body.contains("<meta property='og:title' content='Code'/>"));
 
-    let (status, _body) = request_body("/posts/2/dolor").await;
+    let (status, _body) = request_body("/posts/2").await;
     assert_eq!(status, StatusCode::PERMANENT_REDIRECT);
 }
 
@@ -76,7 +71,8 @@ async fn test_style() {
 
 #[tokio::test]
 async fn test_metadata() {
-    let (status, body) = request_body("/posts/1").await;
+    let url = "/posts/1/lorem-ipsum-ut-enim-ad-minim-veniam-sit-amet-ipsum";
+    let (status, body) = request_body(url).await;
     assert_eq!(status, StatusCode::OK);
     let lines = body.lines().collect::<Vec<_>>();
     let head_start = lines
