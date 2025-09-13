@@ -185,7 +185,7 @@ impl Post {
         conn.execute(stmt, [created, updated, content, id])
     }
     pub fn delete(conn: &Connection, id: i64) -> Result<usize> {
-        let stmt = "DELETE FROM posts WHERE id = ?";
+        let stmt = "UPDATE posts SET content = '<DELETED>' WHERE id = ?";
         conn.execute(stmt, [id])
     }
 }
