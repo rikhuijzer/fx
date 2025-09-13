@@ -601,7 +601,7 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
     let page = indoc::formatdoc! {
         r#"
         <!DOCTYPE html>
-        <html lang='{html_lang}'>
+        <html lang='{html_lang}' data-theme='light'>
         <head>
             <meta charset='UTF-8'>
             <meta name='viewport' content='width=device-width, initial-scale=1'>

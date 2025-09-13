@@ -48,6 +48,7 @@ impl Settings {
 }
 
 pub enum InputType {
+    Checkbox,
     Text,
     Textarea,
 }
@@ -62,6 +63,14 @@ pub fn text_input(
 ) -> String {
     let required = if required { "required" } else { "" };
     let input = match input_type {
+        InputType::Checkbox => format!(
+            "
+            <input id='{name}' name='{name}' \
+            style='margin-left: 0; \
+              margin-top: 0.5rem; margin-bottom: 0.2rem;' \
+            type='checkbox' {required}/><br>
+            "
+        ),
         InputType::Text => format!(
             "
             <input id='{name}' name='{name}' \
@@ -119,6 +128,7 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
             {}
             {}
             {}
+            {}
             <input style='margin-left: 0;' type='submit' value='Save'/>
         </form>
         ",
@@ -144,6 +154,14 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
             "About",
             &settings.about,
             &about_description,
+            false,
+        ),
+        text_input(
+            InputType::Checkbox,
+            "dark_mode",
+            "Allow dark mode",
+            &settings.about,
+            "When enabled, the site will allow the browser to use the dark color-scheme.",
             false,
         ),
         text_input(
