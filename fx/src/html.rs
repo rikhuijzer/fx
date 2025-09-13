@@ -512,24 +512,39 @@ fn contains_language(body: &str, language: &str) -> bool {
     body.contains(&text)
 }
 
-fn highlight_head(body: &str) -> String {
-    let prefix = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0";
+async fn highlight_head(ctx: &ServerContext, body: &str) -> String {
+    let prefix = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1";
     let julia = if contains_language(body, "julia") {
         format!(
             "
-        <script src='{prefix}/languages/julia.min.js' defer></script>
-        "
+            <script src='{prefix}/languages/julia.min.js' defer></script>
+            "
         )
     } else {
         "".to_string()
     };
     if has_code(body) {
+        let dark_mode = Kv::get(&*ctx.conn().await, "dark_mode").unwrap();
+        let dark_mode = String::from_utf8(dark_mode).unwrap();
+        let dark_stylesheet = if dark_mode == "on" {
+            format!(
+                "
+            <link rel='stylesheet' href='{prefix}/styles/github.min.css' \
+            media='(prefers-color-scheme: light)'>
+            <link rel='stylesheet' href='{prefix}/styles/github-dark.min.css' \
+            media='(prefers-color-scheme: dark)'>
+            "
+            )
+        } else {
+            format!(
+                "
+            <link rel='stylesheet' href='{prefix}/styles/github.min.css'>
+            "
+            )
+        };
         format!(
             "
-            <link rel='stylesheet' href='{prefix}/styles/default.min.css' \
-              media='(prefers-color-scheme: light)'>
-            <link rel='stylesheet' href='{prefix}/styles/github-dark.min.css' \
-              media='(prefers-color-scheme: dark)'>
+            {dark_stylesheet}
             <script src='{prefix}/highlight.min.js' defer></script>
             {julia}
             <script defer>
@@ -591,7 +606,7 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
     let html_lang = &ctx.args.html_lang;
     let extra_head = &settings.extra_head;
     let version = include_str!("version.txt").trim();
-    let highlight = highlight_head(body);
+    let highlight = highlight_head(ctx, body).await;
     let katex = katex_head(body);
     let og_title = if settings.title.is_empty() {
         &site_name
