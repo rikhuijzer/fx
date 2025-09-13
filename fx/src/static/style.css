@@ -8,7 +8,7 @@
     --text-font-size: 16px;
     /* Best stick to 100% white for plots that have white background. */
     --background: hsl(220, 60%, 100%);
-    --code-background: hsl(220, 27%, 98%);
+    --code-background: hsl(220, 27%, 97%);
     --button-background: hsl(0, 0%, 92%);
     --code-border: #dbdbdb;
     /* Never use black (https://huijzer.xyz/posts/design) */
