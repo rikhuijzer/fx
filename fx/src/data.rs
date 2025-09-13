@@ -135,6 +135,7 @@ impl Post {
         let stmt = "
             SELECT id, created, updated, content
             FROM posts
+            WHERE content != '<DELETED>'
             ORDER BY created DESC;
         ";
         let posts = conn

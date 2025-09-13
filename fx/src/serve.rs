@@ -380,6 +380,9 @@ async fn get_post(
         Ok(post) => post,
         Err(_) => return not_found(State(ctx)).await,
     };
+    if post.content == "<DELETED>" {
+        return not_found(State(ctx)).await;
+    }
     let title = crate::md::extract_html_title(&post);
     let author = Kv::get(&*ctx.conn().await, "author_name").unwrap();
     let author = String::from_utf8(author).unwrap();
