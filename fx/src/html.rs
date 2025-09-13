@@ -527,16 +527,20 @@ async fn highlight_head(ctx: &ServerContext, body: &str) -> String {
         let dark_mode = Kv::get(&*ctx.conn().await, "dark_mode").unwrap();
         let dark_mode = String::from_utf8(dark_mode).unwrap();
         let dark_stylesheet = if dark_mode == "on" {
-            format!("
+            format!(
+                "
             <link rel='stylesheet' href='{prefix}/styles/github.min.css' \
             media='(prefers-color-scheme: light)'>
             <link rel='stylesheet' href='{prefix}/styles/github-dark.min.css' \
             media='(prefers-color-scheme: dark)'>
-            ")
+            "
+            )
         } else {
-            format!("
+            format!(
+                "
             <link rel='stylesheet' href='{prefix}/styles/github.min.css'>
-            ")
+            "
+            )
         };
         format!(
             "
