@@ -389,7 +389,8 @@ async fn get_post(
     // Open Graph uses ISO 8601 according to <https://ogp.me/>.
     let created = iso8601(&post.created);
     let updated = iso8601(&post.updated);
-    let canonical = format!("{}/posts/{}", &ctx.base_url(), &post.id);
+    let slug = crate::md::extract_slug(&post);
+    let canonical = format!("{}/posts/{}/{slug}", &ctx.base_url(), &post.id);
     let extra_head = indoc::formatdoc! {r#"
         <meta property='article:author' content='{author}'/>
         <meta property='article:published_time' content='{created}'/>

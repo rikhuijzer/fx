@@ -43,21 +43,6 @@ pub fn show_date<Tz: chrono::TimeZone>(datetime: &DateTime<Tz>) -> String {
 const SET_LEAVE_CONFIRMATION: &str = "window.onbeforeunload = () => true;";
 const UNSET_LEAVE_CONFIRMATION: &str = "window.onbeforeunload = null;";
 
-fn turn_title_into_link(post: &Post, html: &str) -> String {
-    let html = html.trim();
-    let title = html.split("\n").next().unwrap();
-    let rest = html.split("\n").skip(1).collect::<Vec<&str>>().join("\n");
-    if title.starts_with("# ") {
-        let title = title.trim_start_matches("# ");
-        format!(
-            "<h1><a href='/posts/{}' class='unstyled-link'>{}</a></h1>\n{}",
-            post.id, title, rest
-        )
-    } else {
-        html.to_string()
-    }
-}
-
 /// Automatically set the `id` attribute for headers.
 ///
 /// pulldown-cmark supports header attributes, but markdown-rs does not. That's
@@ -137,15 +122,10 @@ pub fn wrap_post_content(post: &Post, is_front_page_preview: bool) -> String {
     // work. Either the area was clickable or the text was selectable but not
     // both.
     let html = if is_front_page_preview {
-        turn_title_into_link(post, &post.content)
-    } else {
-        post.content.clone()
-    };
-    let html = if is_front_page_preview {
         // Front page preview is already HTML.
-        html
+        post.content.clone()
     } else {
-        crate::md::content_to_html(&html)
+        crate::md::content_to_html(&post.content)
     };
     let html = set_header_id(&html);
     let style = if is_front_page_preview {

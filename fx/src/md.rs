@@ -184,6 +184,7 @@ pub fn preview(post: &mut Post, max_length: usize) {
     let options = parse_options();
     let tree = to_mdast(&post.content, &options).unwrap();
     let mut preview = String::new();
+    let slug = crate::md::extract_slug(post);
     for node in tree.children().unwrap() {
         if max_length < preview.len() {
             let id = post.id;
@@ -191,7 +192,7 @@ pub fn preview(post: &mut Post, max_length: usize) {
             let expand = format!(
                 "
                 <p>
-                    <a href='/posts/{id}' style='{style}'>
+                    <a href='/posts/{id}/{slug}' style='{style}'>
                         Show more
                     </a>
                 </p>
