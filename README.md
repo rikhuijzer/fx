@@ -42,6 +42,7 @@ With a static site generator, the publishing workflow often means that you have 
 Or you have to be on your desktop to run the server locally.
 With this server, you can write your posts inside the web interface.
 In my experience, this lowers the barrier to write posts since it is now possible to see the result of a change within seconds instead of minutes.
+Like Twitter/Bluesky or other social media platforms, with this site you can now just quickly write something down whenever it comes up.
 
 ## Installation
 
