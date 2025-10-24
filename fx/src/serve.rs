@@ -213,6 +213,13 @@ async fn get_posts(
         Ok(description) => String::from_utf8(description).unwrap(),
         Err(_) => "".to_string(),
     };
+    // Workaround to avoid content with HTML tags being inserted in the
+    // `og:description` meta tag.
+    let description = if description.contains("<div>") {
+        "".to_string()
+    } else {
+        description
+    };
     let extra_head = format!(
         "
         <meta property='og:description' content='{description}'/>
