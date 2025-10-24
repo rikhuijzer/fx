@@ -214,8 +214,9 @@ async fn get_posts(
         Err(_) => "".to_string(),
     };
     // Workaround to avoid content with HTML tags being inserted in the
-    // `og:description` meta tag.
-    let description = if description.contains("<div>") {
+    // `og:description` meta tag. Checking `</div>` since opening divs may
+    // contain other content.
+    let description = if description.contains("</div>") {
         "".to_string()
     } else {
         description
