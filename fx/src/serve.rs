@@ -433,7 +433,6 @@ async fn get_post(State(ctx): State<ServerContext>, Path(id): Path<String>) -> R
     // right page. I couldn't figure out the Reddit status code, but permanent
     // redirect seems suitable.
     let mut headers = HeaderMap::new();
-    tracing::info!("Setting redirect to '{url}'");
     let loc = match HeaderValue::from_str(&url) {
         Ok(loc) => loc,
         Err(e) => {

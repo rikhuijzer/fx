@@ -295,6 +295,8 @@ pub fn extract_html_title(post: &Post) -> String {
     } else {
         title
     };
+    // Remove trailing newlines.
+    let title = title.trim();
     let title = remove_urls(title);
     // Better a bit too long than too short. Google truncates anyway.
     let max_length = 60;
