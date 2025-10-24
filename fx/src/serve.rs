@@ -425,7 +425,13 @@ async fn get_post(State(ctx): State<ServerContext>, Path(id): Path<String>) -> R
     // right page. I couldn't figure out the Reddit status code, but permanent
     // redirect seems suitable.
     let mut headers = HeaderMap::new();
-    headers.insert("Location", HeaderValue::from_str(&url).unwrap());
+    let loc = match HeaderValue::from_str(&url) {
+        Ok(loc) => loc,
+        Err(_) => {
+            return response(StatusCode::INTERNAL_SERVER_ERROR, HeaderMap::new(), format!("Failed to set redirect to {url}"), &ctx);
+        }
+    };
+    headers.insert("Location", loc);
     response(StatusCode::PERMANENT_REDIRECT, headers, "", &ctx)
 }
 
