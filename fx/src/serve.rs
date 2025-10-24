@@ -434,8 +434,14 @@ async fn get_post(State(ctx): State<ServerContext>, Path(id): Path<String>) -> R
     let mut headers = HeaderMap::new();
     let loc = match HeaderValue::from_str(&url) {
         Ok(loc) => loc,
-        Err(_) => {
-            return response(StatusCode::INTERNAL_SERVER_ERROR, HeaderMap::new(), format!("Failed to set redirect to {url}"), &ctx);
+        Err(e) => {
+            tracing::error!("Failed to set redirect to {url}: {e}");
+            return response(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                HeaderMap::new(),
+                format!("Failed to set redirect URL to {url}"),
+                &ctx,
+            );
         }
     };
     headers.insert("Location", loc);
