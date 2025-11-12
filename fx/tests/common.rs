@@ -22,6 +22,7 @@ impl TestDefault for ServeArgs {
         Self {
             trigger_token: Some("trigger-token".to_string()),
             trigger_owner_repo: Some("test-owner/test-repo".to_string()),
+            trigger_host: "https://github.com".to_string(),
             trigger_branch: "main".to_string(),
             trigger_workflow_id: "ci.yml".to_string(),
             production: false,

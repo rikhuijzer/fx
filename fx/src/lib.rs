@@ -43,10 +43,13 @@ pub struct ServeArgs {
     /// The owner and repository for triggering GitHub Actions.
     #[arg(long, env = "FX_TRIGGER_OWNER_REPO")]
     pub trigger_owner_repo: Option<String>,
-    /// The branch for triggering GitHub Actions.
+    /// The host on which the workflow is triggered (defaults to GitHub).
+    #[arg(long, env = "FX_TRIGGER_HOST", default_value = "https://github.com")]
+    pub trigger_host: String,
+    /// The branch in which the workflow is triggered (defaults to `main`).
     #[arg(long, env = "FX_TRIGGER_BRANCH", default_value = "main")]
     pub trigger_branch: String,
-    /// The workflow ID for triggering GitHub Actions.
+    /// The workflow ID (filename) that is triggered (defaults to `backup.yml`).
     #[arg(long, env = "FX_TRIGGER_WORKFLOW_ID", default_value = "backup.yml")]
     pub trigger_workflow_id: String,
 }
