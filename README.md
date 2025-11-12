@@ -179,11 +179,12 @@ To trigger a backup for each change to the website, you can set the following en
 ```yml
 FX_TRIGGER_TOKEN: 'github_pat_...'
 FX_TRIGGER_OWNER_REPO: 'johndoe/fx-backup'
-FX_TRIGGER_BRANCH: 'main' # Optional
-FX_TRIGGER_WORKFLOW_ID: 'backup.yml' # Optional
+FX_TRIGGER_HOST: 'https://github.com' # Optional.
+FX_TRIGGER_BRANCH: 'main' # Optional.
+FX_TRIGGER_WORKFLOW_ID: 'backup.yml' # Optional.
 ```
 
-To obtain the token, you can use the following steps:
+To obtain the GitHub token, you can use the following steps:
 
 1. Go to <https://github.com/settings/personal-access-tokens/new>.
 1. Set name: `fx-backup-trigger`.
@@ -193,6 +194,16 @@ To obtain the token, you can use the following steps:
 1. Copy the token.
 
 See the [GitHub documentation](https://docs.github.com/en/rest/actions/workflows?apiVersion=2022-11-28#create-a-workflow-dispatch-event) for more information.
+
+It also supports triggering a workflow in a Forgejo instance.
+For that use set `FX_TRIGGER_HOST` to the URL of the Forgejo instance.
+To obtain the Forgejo token, use:
+
+1. Go to `https://<DOMAIN>/user/settings/applications`.
+1. Set name: `fx-backup-trigger`.
+1. Set repository access to `Public only` or `All (public, private, and limited)` depending on your needs.
+1. Set permissions: `repository` (Read and write).
+1. Copy the token.
 
 ### Update
 
