@@ -4,3 +4,5 @@ dist/
 public/
 **/*.sqlite
 tmp*
+**/*.typ
+**/*.pdf
