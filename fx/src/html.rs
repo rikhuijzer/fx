@@ -584,6 +584,7 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
     let site_name = Kv::get(&*ctx.conn().await, "site_name").unwrap();
     let site_name = String::from_utf8(site_name).unwrap();
     let site_name = escape_single_quote(&site_name);
+    let site_description = Kv::get_or_empty_string(&*ctx.conn().await, "site_description");
     let full_title = if settings.title.is_empty() {
         site_name.clone()
     } else {
@@ -641,12 +642,14 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
         <!DOCTYPE html>
         <html lang='{html_lang}' {data_theme}>
         <head>
-            <meta charset='UTF-8'>
+            <meta charset='utf-8'>
             <meta name='viewport' content='width=device-width, initial-scale=1'>
             <link rel='stylesheet' href='/static/style.css'>
             <link rel='alternate' type='application/rss+xml' href='/feed.xml'>
             <script src='/static/script.js' defer></script>
             <title>{full_title}</title>
+            <meta name='description' content='{site_description}'/>
+            <meta property='og:description' content='{site_description}'/>
             <meta property='og:site_name' content='{site_name}'/>
             <meta property='og:title' content='{og_title}'/>
             {katex}
