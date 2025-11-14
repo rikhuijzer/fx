@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2025-11-14
+
+### Added
+
+- Allow setting site description via settings ([#123](https://github.com/rikhuijzer/fx/pull/123)).
+- Support triggering Forgejo instances for backups ([#116](https://github.com/rikhuijzer/fx/pull/116)).
+
+### Changed
+
+- Set extra HTML head via settings instead of environment variable ([#122](https://github.com/rikhuijzer/fx/pull/122)).
+- Removed RSS button and button text when not having blogroll ([#118](https://github.com/rikhuijzer/fx/pull/118)).
+
 ## [1.2.1] - 2025-10-24
 
 ### Fixed
