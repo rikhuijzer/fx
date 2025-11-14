@@ -263,6 +263,7 @@ pub fn edit_post_buttons(_ctx: &ServerContext, post: &Post) -> String {
 }
 
 fn add_post_form() -> String {
+    let markdown_link = crate::md::markdown_link();
     format!(
         "
     <form style='width: 100%;' action='/posts/add' method='post'>
@@ -271,8 +272,11 @@ fn add_post_form() -> String {
           class='boxsizing-border' \
           oninput='disable_form_submit_if_empty(this);' \
           onchange='{SET_LEAVE_CONFIRMATION}' \
-          id='content' name='content' placeholder='Your Markdown text..' required>
+          id='content' name='content' placeholder='Your text..' required>
         </textarea>
+        <div style='font-size: 0.8rem; text-align: right;'>
+            This field supports {markdown_link}.
+        </div>
         <br>
         <div style='display: flex; justify-content: flex-end;'>
             <input type='submit' onclick='{UNSET_LEAVE_CONFIRMATION}' \
@@ -289,6 +293,7 @@ fn add_post_form() -> String {
 pub fn edit_post_form(post: &Post) -> String {
     let id = post.id;
     let content = &post.content;
+    let markdown_link = crate::md::markdown_link();
     format!(
         "
     <form style='width: 100%;' action='/posts/edit/{id}' \
@@ -299,6 +304,9 @@ pub fn edit_post_form(post: &Post) -> String {
           oninput='disable_form_submit_if_empty(this);' \
           id='content' name='content' placeholder='Your text..'>\n{content}
         </textarea>
+        <div style='font-size: 0.8rem; text-align: right;'>
+            This field supports {markdown_link}.
+        </div>
         <br>
         <div style='display: flex; justify-content: flex-end;'>
             <input type='submit' onclick='{UNSET_LEAVE_CONFIRMATION}' \
