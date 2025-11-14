@@ -205,7 +205,7 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
             "extra_head",
             "Extra HTML Head (optional)",
             &settings.extra_head,
-            &extra_head_description,
+            extra_head_description,
             false,
         ),
         text_input(
@@ -243,7 +243,12 @@ async fn post_settings(
     {
         let conn = &*ctx.conn().await;
         Kv::insert(conn, "site_name", form.site_name.trim().as_bytes()).unwrap();
-        Kv::insert(conn, "site_description", form.site_description.trim().as_bytes()).unwrap();
+        Kv::insert(
+            conn,
+            "site_description",
+            form.site_description.trim().as_bytes(),
+        )
+        .unwrap();
         Kv::insert(conn, "author_name", form.author_name.trim().as_bytes()).unwrap();
         let dark_mode = if form.dark_mode.is_some() {
             "on"

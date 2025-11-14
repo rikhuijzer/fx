@@ -229,7 +229,11 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
     } else {
         "About [example](https://example.com)"
     };
-    init_kv_data(conn, "site_description", b"This is a description of the website for search engines");
+    init_kv_data(
+        conn,
+        "site_description",
+        b"This is a description of the website for search engines",
+    );
     init_kv_data(conn, "about", about.as_bytes());
     let extra_head = "";
     init_kv_data(conn, "author_name", b"John");
