@@ -406,9 +406,29 @@ async fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
         Ok(feeds) => String::from_utf8(feeds).unwrap(),
         Err(_) => "".to_string(),
     };
-    let blogroll_button = if blogroll_feeds.is_empty() {
-        ""
+    let has_blogroll = !blogroll_feeds.is_empty();
+    let search_button = if has_blogroll {
+        // When there is a blogroll, we have to show the search button with the
+        // text "Search" to indicate what the button does.
+        &format!(
+            "
+            <a href='/search' class='unstyled-link' style='{style}'>
+                🔍 Search
+            </a>&nbsp;
+            "
+        )
     } else {
+        // When there is no blogroll, we can just show the search button without
+        // text. Substack for example also only shows a search icon.
+        &format!(
+            "
+            <a href='/search' class='unstyled-link' style='{style}'>
+                🔍
+            </a>&nbsp;
+            "
+        )
+    };
+    let blogroll_button = if has_blogroll {
         &format!(
             "
             <a href='/blogroll' class='unstyled-link' style='{style}'>
@@ -416,6 +436,8 @@ async fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
             </a>&nbsp;
             "
         )
+    } else {
+        ""
     };
     format!(
         "
@@ -427,13 +449,8 @@ async fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
             </div>
             <div>
                 <span>
-                    <a href='/search' class='unstyled-link' style='{style}'>
-                        🔍 Search
-                    </a>&nbsp;
+                    {search_button}
                     {blogroll_button}
-                    <a href='/feed.xml' class='unstyled-link' style='{style}'>
-                        🔄 RSS
-                    </a>&nbsp;
                 </span>
             </div>
         </div>
