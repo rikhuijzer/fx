@@ -17,6 +17,7 @@ async fn test_home() {
     assert!(body.contains("Lorem"));
     assert!(body.contains("Dolor"));
     assert!(body.contains("<meta property='og:description'"));
+    assert!(body.contains("<meta name='description'"));
     assert!(body.contains("<meta property='og:site_name' content='John&#39;s Weblog'/>"));
     assert!(body.contains("<meta property='og:type' content='website'/>"));
     assert!(body.contains("<meta property='og:title' content='John&#39;s Weblog'/>"));
