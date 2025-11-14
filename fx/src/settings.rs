@@ -23,19 +23,20 @@ use serde::Serialize;
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Settings {
     pub site_name: String,
+    pub site_description: String,
     pub author_name: String,
     pub about: String,
-    pub extra_head: String,
     pub dark_mode: Option<String>,
+    pub extra_head: String,
     pub blogroll_feeds: String,
 }
 
 impl Settings {
     pub fn from_db(conn: &Connection) -> rusqlite::Result<Self> {
         let site_name = Kv::get(conn, "site_name")?;
+        let site_description = Kv::get(conn, "site_description")?;
         let author_name = Kv::get(conn, "author_name")?;
         let about = Kv::get(conn, "about")?;
-        let extra_head = Kv::get(conn, "extra_head")?;
         let dark_mode = Kv::get(conn, "dark_mode")?;
         let dark_mode = String::from_utf8(dark_mode).unwrap();
         let dark_mode = if dark_mode == "on" {
@@ -43,13 +44,15 @@ impl Settings {
         } else {
             None
         };
+        let extra_head = Kv::get(conn, "extra_head")?;
         let blogroll_feeds = Kv::get(conn, crate::data::BLOGROLL_SETTINGS_KEY)?;
         Ok(Self {
             site_name: String::from_utf8(site_name).unwrap(),
+            site_description: String::from_utf8(site_description).unwrap(),
             author_name: String::from_utf8(author_name).unwrap(),
             about: String::from_utf8(about).unwrap(),
-            extra_head: String::from_utf8(extra_head).unwrap(),
             dark_mode,
+            extra_head: String::from_utf8(extra_head).unwrap(),
             blogroll_feeds: String::from_utf8(blogroll_feeds).unwrap(),
         })
     }
@@ -136,13 +139,14 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
         crate::md::markdown_link()
     );
     let extra_head_description = "
-        This is added to the <code>head</code> element of the HTML page. For example, you
-        can use it to set the <code>og:description</code> meta tag.
+        This is added to the <code>head</code> element of the HTML page. For
+        example, this can be used to modify the styling of the website via CSS.
     ";
     let body = format!(
         "
         <form style='{style}' \
           method='post' action='/settings'>
+            {}
             {}
             {}
             {}
@@ -162,6 +166,14 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
         ),
         text_input(
             InputType::Text,
+            "site_description",
+            "Site Description",
+            &settings.site_description,
+            "This is shown in the meta description and og:description meta tags and used by search engines to describe the website.",
+            false,
+        ),
+        text_input(
+            InputType::Text,
             "author_name",
             "Author Name",
             &settings.author_name,
@@ -177,14 +189,6 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
             false,
         ),
         text_input(
-            InputType::Textarea,
-            "extra_head",
-            "Extra HTML Head",
-            &settings.extra_head,
-            &extra_head_description,
-            false,
-        ),
-        text_input(
             InputType::Checkbox,
             "dark_mode",
             "Allow dark mode",
@@ -194,6 +198,14 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
                 "off"
             },
             "When enabled, the site will allow the browser to use the dark color-scheme.",
+            false,
+        ),
+        text_input(
+            InputType::Textarea,
+            "extra_head",
+            "Extra HTML Head (optional)",
+            &settings.extra_head,
+            &extra_head_description,
             false,
         ),
         text_input(
@@ -231,6 +243,7 @@ async fn post_settings(
     {
         let conn = &*ctx.conn().await;
         Kv::insert(conn, "site_name", form.site_name.trim().as_bytes()).unwrap();
+        Kv::insert(conn, "site_description", form.site_description.trim().as_bytes()).unwrap();
         Kv::insert(conn, "author_name", form.author_name.trim().as_bytes()).unwrap();
         let dark_mode = if form.dark_mode.is_some() {
             "on"

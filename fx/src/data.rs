@@ -229,13 +229,12 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
     } else {
         "About [example](https://example.com)"
     };
+    init_kv_data(conn, "site_description", b"This is a description of the website for search engines");
     init_kv_data(conn, "about", about.as_bytes());
-    let extra_head = "
-        <meta property='og:description' content='This is a description of the website for search engines.'>
-    ".trim();
-    init_kv_data(conn, "extra_head", extra_head.as_bytes());
+    let extra_head = "";
     init_kv_data(conn, "author_name", b"John");
     init_kv_data(conn, "dark_mode", b"off");
+    init_kv_data(conn, "extra_head", extra_head.as_bytes());
 
     let domain = if args.production { "" } else { "localhost" };
     init_kv_data(conn, "domain", domain.as_bytes());
