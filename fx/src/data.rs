@@ -65,6 +65,12 @@ impl Kv {
             .query_row([key], |row| row.get("value"))?;
         Ok(value)
     }
+    pub fn get_or_empty_string(conn: &Connection, key: &str) -> String {
+        match Kv::get(conn, key) {
+            Ok(value) => String::from_utf8(value).unwrap(),
+            Err(_) => "".to_string(),
+        }
+    }
 }
 
 #[test]

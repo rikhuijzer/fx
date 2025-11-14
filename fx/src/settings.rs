@@ -25,6 +25,7 @@ pub struct Settings {
     pub site_name: String,
     pub author_name: String,
     pub about: String,
+    pub extra_head: String,
     pub dark_mode: Option<String>,
     pub blogroll_feeds: String,
 }
@@ -34,6 +35,7 @@ impl Settings {
         let site_name = Kv::get(conn, "site_name")?;
         let author_name = Kv::get(conn, "author_name")?;
         let about = Kv::get(conn, "about")?;
+        let extra_head = Kv::get(conn, "extra_head")?;
         let dark_mode = Kv::get(conn, "dark_mode")?;
         let dark_mode = String::from_utf8(dark_mode).unwrap();
         let dark_mode = if dark_mode == "on" {
@@ -46,6 +48,7 @@ impl Settings {
             site_name: String::from_utf8(site_name).unwrap(),
             author_name: String::from_utf8(author_name).unwrap(),
             about: String::from_utf8(about).unwrap(),
+            extra_head: String::from_utf8(extra_head).unwrap(),
             dark_mode,
             blogroll_feeds: String::from_utf8(blogroll_feeds).unwrap(),
         })
@@ -132,10 +135,15 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
         "This is shown below the author name on the front page. This field supports {}.",
         crate::md::markdown_link()
     );
+    let extra_head_description = "
+        This is added to the `<head>` tag of the HTML page. For example, you can
+        use it to set the `og:description` meta tag.
+    ";
     let body = format!(
         "
         <form style='{style}' \
           method='post' action='/settings'>
+            {}
             {}
             {}
             {}
@@ -166,6 +174,14 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
             "About",
             &settings.about,
             &about_description,
+            false,
+        ),
+        text_input(
+            InputType::Textarea,
+            "extra_head",
+            "Extra HTML Head",
+            &settings.extra_head,
+            &extra_head_description,
             false,
         ),
         text_input(

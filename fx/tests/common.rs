@@ -32,7 +32,6 @@ impl TestDefault for ServeArgs {
             html_lang: "en".to_string(),
             password: Some("test-password".to_string()),
             domain: "".to_string(),
-            extra_head: "<meta property='test' content='test'>".to_string(),
         }
     }
 }
