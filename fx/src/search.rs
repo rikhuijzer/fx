@@ -1,7 +1,7 @@
 //! Search at `/search`.
+use crate::data::Kv;
 use crate::data::Post;
 use crate::data::SqliteDateTime;
-use crate::data::Kv;
 use crate::html::PageSettings;
 use crate::html::Top;
 use crate::html::page;

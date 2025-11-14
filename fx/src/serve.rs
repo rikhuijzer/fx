@@ -348,13 +348,7 @@ async fn get_edit(
     let title = format!("Edit '{title}'");
     let body = crate::html::edit_post_form(&post);
     let extra_head = Kv::get_or_empty_string(&*ctx.conn().await, "extra_head");
-    let settings = PageSettings::new(
-        &title,
-        Some(is_logged_in),
-        false,
-        Top::GoBack,
-        &extra_head,
-    );
+    let settings = PageSettings::new(&title, Some(is_logged_in), false, Top::GoBack, &extra_head);
     let body = page(&ctx, &settings, &body).await;
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }

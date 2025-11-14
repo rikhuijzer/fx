@@ -1,7 +1,7 @@
 //! File upload and download at `/files`.
+use crate::data::Kv;
 use crate::html::PageSettings;
 use crate::html::Top;
-use crate::data::Kv;
 use crate::html::page;
 use crate::serve::ServerContext;
 use crate::serve::is_logged_in;
