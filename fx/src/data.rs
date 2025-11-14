@@ -230,6 +230,10 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
         "About [example](https://example.com)"
     };
     init_kv_data(conn, "about", about.as_bytes());
+    let extra_head = "
+        <meta property='og:description' content='This is a description of the website for search engines.'>
+    ".trim();
+    init_kv_data(conn, "extra_head", extra_head.as_bytes());
     init_kv_data(conn, "author_name", b"John");
     init_kv_data(conn, "dark_mode", b"off");
 
