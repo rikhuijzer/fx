@@ -136,8 +136,8 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
         crate::md::markdown_link()
     );
     let extra_head_description = "
-        This is added to the `<head>` tag of the HTML page. For example, you can
-        use it to set the `og:description` meta tag.
+        This is added to the <code>head</code> element of the HTML page. For example, you
+        can use it to set the <code>og:description</code> meta tag.
     ";
     let body = format!(
         "
@@ -199,7 +199,7 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
         text_input(
             InputType::Textarea,
             "blogroll_feeds",
-            "Blogroll Feeds",
+            "Blogroll Feeds (optional)",
             &settings.blogroll_feeds,
             "Feeds that are shown on the blogroll page. One feed per line. For example,
             <pre><code>https://simonwillison.net/atom/everything/</code></pre>
@@ -240,6 +240,8 @@ async fn post_settings(
         Kv::insert(conn, "dark_mode", dark_mode.as_bytes()).unwrap();
         let about = cleanup_content(&form.about);
         Kv::insert(conn, "about", about.as_bytes()).unwrap();
+        let extra_head = cleanup_content(&form.extra_head);
+        Kv::insert(conn, "extra_head", extra_head.as_bytes()).unwrap();
 
         let key = crate::data::BLOGROLL_SETTINGS_KEY;
         let mut feeds = form

@@ -98,7 +98,7 @@ pub struct Post {
 
 /// Cleanup user-provided content before storing it.
 ///
-/// Removes trailing whitespace and trailing empty lines.
+/// Removes trailing whitespace and leading/trailing empty lines.
 pub fn cleanup_content(content: &str) -> String {
     let content = content
         .lines()
