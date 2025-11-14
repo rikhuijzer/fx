@@ -65,6 +65,12 @@ impl Kv {
             .query_row([key], |row| row.get("value"))?;
         Ok(value)
     }
+    pub fn get_or_empty_string(conn: &Connection, key: &str) -> String {
+        match Kv::get(conn, key) {
+            Ok(value) => String::from_utf8(value).unwrap(),
+            Err(_) => "".to_string(),
+        }
+    }
 }
 
 #[test]
@@ -92,7 +98,7 @@ pub struct Post {
 
 /// Cleanup user-provided content before storing it.
 ///
-/// Removes trailing whitespace and trailing empty lines.
+/// Removes trailing whitespace and leading/trailing empty lines.
 pub fn cleanup_content(content: &str) -> String {
     let content = content
         .lines()
@@ -224,6 +230,10 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
         "About [example](https://example.com)"
     };
     init_kv_data(conn, "about", about.as_bytes());
+    let extra_head = "
+        <meta property='og:description' content='This is a description of the website for search engines.'>
+    ".trim();
+    init_kv_data(conn, "extra_head", extra_head.as_bytes());
     init_kv_data(conn, "author_name", b"John");
     init_kv_data(conn, "dark_mode", b"off");
 

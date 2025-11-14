@@ -33,9 +33,6 @@ pub struct ServeArgs {
     /// The language of the website.
     #[arg(long, env = "FX_HTML_LANG", default_value = "en")]
     pub html_lang: String,
-    /// Content that is added to the `<head>` tag of the HTML page.
-    #[arg(long, env = "FX_EXTRA_HEAD", default_value = "")]
-    pub extra_head: String,
 
     /// The token for triggering GitHub Actions.
     #[arg(long, env = "FX_TRIGGER_TOKEN")]

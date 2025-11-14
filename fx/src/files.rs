@@ -1,6 +1,7 @@
 //! File upload and download at `/files`.
 use crate::html::PageSettings;
 use crate::html::Top;
+use crate::data::Kv;
 use crate::html::page;
 use crate::serve::ServerContext;
 use crate::serve::is_logged_in;
@@ -344,7 +345,7 @@ async fn get_delete(
         Ok(file) => file,
         Err(_) => return not_found(State(ctx.clone())).await,
     };
-    let extra_head = &ctx.args.extra_head;
+    let extra_head = &Kv::get_or_empty_string(&*ctx.conn().await, "extra_head");
     let title = format!("Delete: {}", file.filename);
     let settings = PageSettings::new(&title, Some(is_logged_in), false, Top::GoHome, extra_head);
     let body = indoc::formatdoc! {r#"
@@ -388,7 +389,7 @@ async fn get_rename(
         Ok(file) => file,
         Err(_) => return not_found(State(ctx.clone())).await,
     };
-    let extra_head = &ctx.args.extra_head;
+    let extra_head = &Kv::get_or_empty_string(&*ctx.conn().await, "extra_head");
     let title = format!("Rename: {}", file.filename);
     let settings = PageSettings::new(&title, Some(is_logged_in), false, Top::GoHome, extra_head);
     let body = indoc::formatdoc! {r#"

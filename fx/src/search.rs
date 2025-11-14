@@ -1,6 +1,7 @@
 //! Search at `/search`.
 use crate::data::Post;
 use crate::data::SqliteDateTime;
+use crate::data::Kv;
 use crate::html::PageSettings;
 use crate::html::Top;
 use crate::html::page;
@@ -123,7 +124,7 @@ async fn get_search(
     let mut headers = HeaderMap::new();
     content_type(&mut headers, "text/html");
     let title = "Search";
-    let extra_head = &ctx.args.extra_head;
+    let extra_head = &Kv::get_or_empty_string(&*ctx.conn().await, "extra_head");
     let settings = PageSettings::new(title, Some(is_logged_in), false, Top::GoHome, extra_head);
     let body = page(&ctx, &settings, &body).await;
     response(StatusCode::OK, headers, body, &ctx)

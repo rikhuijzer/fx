@@ -209,25 +209,13 @@ async fn get_posts(
     let is_logged_in = Some(is_logged_in(&ctx, &jar));
     let show_about = pagination.page.is_none();
     let current_page = pagination.page.unwrap_or(1);
-    let description = match Kv::get(&*ctx.conn().await, "about") {
-        Ok(description) => String::from_utf8(description).unwrap(),
-        Err(_) => "".to_string(),
-    };
-    // Workaround to avoid content with HTML tags being inserted in the
-    // `og:description` meta tag. Checking `</div>` since opening divs may
-    // contain other content.
-    let description = if description.contains("</div>") {
-        "".to_string()
-    } else {
-        description
-    };
+    let extra_head = Kv::get_or_empty_string(&*ctx.conn().await, "extra_head");
     let extra_head = format!(
         "
-        <meta property='og:description' content='{description}'/>
         <meta property='og:type' content='website'/>
         {}
         ",
-        &ctx.args.extra_head
+        &extra_head
     );
     let top = if show_about {
         Top::Homepage
@@ -328,7 +316,7 @@ async fn get_delete(
         Ok(post) => post,
         Err(_) => return not_found(State(ctx.clone())).await,
     };
-    let extra_head = &ctx.args.extra_head;
+    let extra_head = &Kv::get_or_empty_string(&*ctx.conn().await, "extra_head");
     let title = crate::md::extract_html_title(&post);
     let settings = PageSettings::new(&title, Some(is_logged_in), false, Top::GoHome, extra_head);
     let delete_button = indoc::formatdoc! {r#"
@@ -359,12 +347,13 @@ async fn get_edit(
     let title = crate::md::extract_html_title(&post);
     let title = format!("Edit '{title}'");
     let body = crate::html::edit_post_form(&post);
+    let extra_head = Kv::get_or_empty_string(&*ctx.conn().await, "extra_head");
     let settings = PageSettings::new(
         &title,
         Some(is_logged_in),
         false,
         Top::GoBack,
-        &ctx.args.extra_head,
+        &extra_head,
     );
     let body = page(&ctx, &settings, &body).await;
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
@@ -396,6 +385,7 @@ async fn get_post_with_slug(
     let updated = iso8601(&post.updated);
     let slug = crate::md::extract_slug(&post);
     let canonical = format!("{}/posts/{}/{slug}", &ctx.base_url(), &post.id);
+    let extra_head = Kv::get_or_empty_string(&*ctx.conn().await, "extra_head");
     let extra_head = indoc::formatdoc! {r#"
         <meta property='article:author' content='{author}'/>
         <meta property='article:published_time' content='{created}'/>
@@ -404,7 +394,7 @@ async fn get_post_with_slug(
         <meta property='og:type' content='article'/>
         <link rel='canonical' href='{canonical}'/>
         {}
-    "#, ctx.args.extra_head};
+    "#, &extra_head};
     let settings = PageSettings::new(&title, Some(is_logged_in), false, Top::GoHome, &extra_head);
     let mut body = wrap_post_content(&post, &slug, false);
     if is_logged_in {
@@ -458,13 +448,13 @@ pub async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
             <p>The page you are looking for does not exist.</p>
         </div>
     "};
-    let extra_head = &ctx.args.extra_head;
+    let extra_head = Kv::get_or_empty_string(&*ctx.conn().await, "extra_head");
     let settings = PageSettings::new(
         "not found",
         Some(is_logged_in),
         false,
         Top::GoHome,
-        extra_head,
+        &extra_head,
     );
     let body = page(&ctx, &settings, body).await;
     response::<String>(StatusCode::NOT_FOUND, HeaderMap::new(), body, &ctx)
@@ -577,7 +567,7 @@ async fn post_edit(
     if !is_logged_in {
         return not_found(State(ctx)).await;
     }
-    let extra_head = &ctx.args.extra_head;
+    let extra_head = &Kv::get_or_empty_string(&*ctx.conn().await, "extra_head");
     let settings = PageSettings::new("", Some(is_logged_in), false, Top::GoBack, extra_head);
     let (_, body) = req.into_parts();
     let bytes = body
@@ -640,7 +630,7 @@ async fn post_add(
     if !is_logged_in {
         return not_found(State(ctx)).await;
     }
-    let extra_head = &ctx.args.extra_head;
+    let extra_head = &Kv::get_or_empty_string(&*ctx.conn().await, "extra_head");
     let settings = PageSettings::new("", Some(is_logged_in), false, Top::GoBack, extra_head);
     let (_, body) = req.into_parts();
     let bytes = body

@@ -25,6 +25,7 @@ pub struct Settings {
     pub site_name: String,
     pub author_name: String,
     pub about: String,
+    pub extra_head: String,
     pub dark_mode: Option<String>,
     pub blogroll_feeds: String,
 }
@@ -34,6 +35,7 @@ impl Settings {
         let site_name = Kv::get(conn, "site_name")?;
         let author_name = Kv::get(conn, "author_name")?;
         let about = Kv::get(conn, "about")?;
+        let extra_head = Kv::get(conn, "extra_head")?;
         let dark_mode = Kv::get(conn, "dark_mode")?;
         let dark_mode = String::from_utf8(dark_mode).unwrap();
         let dark_mode = if dark_mode == "on" {
@@ -46,6 +48,7 @@ impl Settings {
             site_name: String::from_utf8(site_name).unwrap(),
             author_name: String::from_utf8(author_name).unwrap(),
             about: String::from_utf8(about).unwrap(),
+            extra_head: String::from_utf8(extra_head).unwrap(),
             dark_mode,
             blogroll_feeds: String::from_utf8(blogroll_feeds).unwrap(),
         })
@@ -132,10 +135,15 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
         "This is shown below the author name on the front page. This field supports {}.",
         crate::md::markdown_link()
     );
+    let extra_head_description = "
+        This is added to the <code>head</code> element of the HTML page. For example, you
+        can use it to set the <code>og:description</code> meta tag.
+    ";
     let body = format!(
         "
         <form style='{style}' \
           method='post' action='/settings'>
+            {}
             {}
             {}
             {}
@@ -169,6 +177,14 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
             false,
         ),
         text_input(
+            InputType::Textarea,
+            "extra_head",
+            "Extra HTML Head",
+            &settings.extra_head,
+            &extra_head_description,
+            false,
+        ),
+        text_input(
             InputType::Checkbox,
             "dark_mode",
             "Allow dark mode",
@@ -183,7 +199,7 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
         text_input(
             InputType::Textarea,
             "blogroll_feeds",
-            "Blogroll Feeds",
+            "Blogroll Feeds (optional)",
             &settings.blogroll_feeds,
             "Feeds that are shown on the blogroll page. One feed per line. For example,
             <pre><code>https://simonwillison.net/atom/everything/</code></pre>
@@ -224,6 +240,8 @@ async fn post_settings(
         Kv::insert(conn, "dark_mode", dark_mode.as_bytes()).unwrap();
         let about = cleanup_content(&form.about);
         Kv::insert(conn, "about", about.as_bytes()).unwrap();
+        let extra_head = cleanup_content(&form.extra_head);
+        Kv::insert(conn, "extra_head", extra_head.as_bytes()).unwrap();
 
         let key = crate::data::BLOGROLL_SETTINGS_KEY;
         let mut feeds = form

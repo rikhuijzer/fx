@@ -16,11 +16,10 @@ async fn test_home() {
     assert!(body.contains("<!DOCTYPE html>"));
     assert!(body.contains("Lorem"));
     assert!(body.contains("Dolor"));
-    assert!(body.contains("<meta property='test' content='test'>"));
+    assert!(body.contains("<meta property='og:description'"));
     assert!(body.contains("<meta property='og:site_name' content='John&#39;s Weblog'/>"));
     assert!(body.contains("<meta property='og:type' content='website'/>"));
     assert!(body.contains("<meta property='og:title' content='John&#39;s Weblog'/>"));
-    assert!(body.contains("og:description"));
     // Assumes that the "Code" post shows a code block in the preview.
     assert!(body.contains("highlight.js"));
     // Assumes that math is shown in one of the previews.
