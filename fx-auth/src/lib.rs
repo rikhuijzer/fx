@@ -85,7 +85,6 @@ fn encrypt_login(salt: &Salt, password: &str) -> Ciphertext {
 
 fn decrypt_login(salt: &Salt, password: &str, auth: &Ciphertext) -> Option<String> {
     let key = Key::new(salt, password);
-    // let nonce = Nonce::<Aes256GcmSiv>::from_slice(&auth.nonce);
     let nonce: Nonce<Aes256GcmSiv> = Array(auth.nonce);
     let ciphertext = auth.ciphertext.as_slice();
     let plaintext = match key.key.decrypt(&nonce, ciphertext) {
