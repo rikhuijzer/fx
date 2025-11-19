@@ -798,7 +798,9 @@ pub async fn run(args: &ServeArgs) {
     let ctx = ServerContext::new(args.clone(), conn, salt, blog_cache.clone()).await;
     schedule_jobs(blog_cache.clone(), ctx.clone()).await;
     let app = app(ctx);
-    let addr = format!("0.0.0.0:{}", args.port);
+    // Listen on both IPv4 and IPv6.
+    let addr = format!("[::]:{}", args.port);
+    let addr = addr.parse::<std::net::SocketAddr>().unwrap();
     tracing::info!("Listening on {addr}");
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();
