@@ -44,7 +44,7 @@ impl Settings {
         } else {
             None
         };
-        let extra_head = Kv::get(conn, "extra_head")?;
+        let extra_head = Kv::get_or_empty_string(conn, "extra_head");
         let blogroll_feeds = Kv::get(conn, crate::data::BLOGROLL_SETTINGS_KEY)?;
         Ok(Self {
             site_name: String::from_utf8(site_name).unwrap(),
@@ -52,7 +52,7 @@ impl Settings {
             author_name: String::from_utf8(author_name).unwrap(),
             about: String::from_utf8(about).unwrap(),
             dark_mode,
-            extra_head: String::from_utf8(extra_head).unwrap(),
+            extra_head,
             blogroll_feeds: String::from_utf8(blogroll_feeds).unwrap(),
         })
     }
@@ -141,6 +141,10 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
     let extra_head_description = "
         This is added to the <code>head</code> element of the HTML page. For
         example, this can be used to modify the styling of the website via CSS.
+        It can also be used to set a favicon. To do so, upload the favicon via
+        files and then link to it via <br>
+        <code>&lt;link rel='icon' href='/files/9f0b7bb83bd82946'&gt;</code>
+        where the <code>href</code> points to the file.
     ";
     let body = format!(
         "
