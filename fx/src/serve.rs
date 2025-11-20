@@ -798,7 +798,9 @@ pub async fn run(args: &ServeArgs) {
     let ctx = ServerContext::new(args.clone(), conn, salt, blog_cache.clone()).await;
     schedule_jobs(blog_cache.clone(), ctx.clone()).await;
     let app = app(ctx);
-    // Listen on both IPv4 and IPv6.
+    // Listen on both IPv4 and IPv6. This seems to not be necessary behind the
+    // Caddy reverse proxy for IPv6 to work, but could probably be useful for
+    // other situations.
     let addr = format!("[::]:{}", args.port);
     let addr = addr.parse::<std::net::SocketAddr>().unwrap();
     tracing::info!("Listening on {addr}");
