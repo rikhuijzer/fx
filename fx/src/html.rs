@@ -637,6 +637,14 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
     } else {
         "data-theme='light'"
     };
+    let show_branding = Kv::get_or_empty_string(&*ctx.conn().await, "show_branding");
+    let branding = if show_branding == "on" {
+        format!(
+            "<a class='unstyled-link menu-space' href='https://github.com/rikhuijzer/fx'><u>Running fx</u> version: {version}</a>"
+        )
+    } else {
+        "".to_string()
+    };
     let page = indoc::formatdoc! {
         r#"
         <!DOCTYPE html>
@@ -665,7 +673,7 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
                     </div>
                     {body}
                     <div class='bottom'>
-                        <a class='unstyled-link menu-space' href='https://github.com/rikhuijzer/fx'><u>Running fx</u> version: {version}</a>
+                        {branding}
                         {loginout}
                     </div>
                 </div>
