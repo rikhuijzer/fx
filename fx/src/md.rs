@@ -266,11 +266,18 @@ fn test_sanitize_preview() {
     assert!(post.content.contains("<p>Lorem"));
 }
 
-fn remove_urls(md: &str) -> String {
+fn remove_markdown_links(md: &str) -> String {
     // This will break on nested links, but commonmark does not support nested
     // links according to <https://spec.commonmark.org/0.31.2/#links>.
-    let re = regex::Regex::new(r"\[(.*?)\]\(https?://.*?\)").unwrap();
-    re.replace_all(md, "$1").to_string()
+    //
+    // First, remove image markdown entirely (no useful text to keep).
+    // Matches: ![alt](url) where url can be any content (not just http/https).
+    let re_img = regex::Regex::new(r"!\[[^\]]*\]\([^)]*\)").unwrap();
+    let md = re_img.replace_all(md, "");
+    // Then, remove link markdown but keep the link text.
+    // Matches: [text](url) where url can be any content.
+    let re_link = regex::Regex::new(r"\[([^\]]*)\]\([^)]*\)").unwrap();
+    re_link.replace_all(&md, "$1").to_string()
 }
 
 fn truncate(text: &str, max_length: usize) -> String {
@@ -297,7 +304,7 @@ pub fn extract_html_title(post: &Post) -> String {
     };
     // Remove trailing newlines.
     let title = title.trim();
-    let title = remove_urls(title);
+    let title = remove_markdown_links(title);
     // Better a bit too long than too short. Google truncates anyway.
     let max_length = 60;
     if title.len() <= max_length {
@@ -327,6 +334,30 @@ pub fn extract_slug(post: &Post) -> String {
         .replace("!", "")
         .replace("?", "")
         .replace(".", "")
+        // Forward slashes break URL routing by adding extra path segments.
+        .replace("/", "")
+        // Brackets and parentheses from markdown image/link syntax.
+        .replace("[", "")
+        .replace("]", "")
+        .replace("(", "")
+        .replace(")", "")
+        // Other URL-unsafe characters.
+        .replace("#", "")
+        .replace("&", "")
+        .replace("%", "")
+        .replace("@", "")
+        .replace("*", "")
+        .replace("~", "")
+        .replace("\\", "")
+        .replace("`", "")
+        .replace("^", "")
+        .replace("|", "")
+        .replace("<", "")
+        .replace(">", "")
+        .replace("{", "")
+        .replace("}", "")
+        .replace("=", "")
+        .replace("+", "")
         .to_lowercase();
     let max_length = 50;
     if slug.len() <= max_length {
@@ -347,16 +378,43 @@ fn test_extract_slug() {
     assert_eq!(extract_slug(&post), "foo-bar");
     post.content = "Lorem, ipsum".to_string();
     assert_eq!(extract_slug(&post), "lorem-ipsum");
+
+    // Forward slash in title should be removed to avoid breaking URL routing.
+    post.content = "C++/Rust comparison".to_string();
+    assert_eq!(extract_slug(&post), "c++rust-comparison");
+
+    post.content = "How to use / operator".to_string();
+    assert_eq!(extract_slug(&post), "how-to-use--operator");
+
+    // Image markdown as first line should result in empty slug (image removed).
+    post.content = "![](https://example.com/image.png)".to_string();
+    assert_eq!(extract_slug(&post), "");
+
+    // Image with protocol-less URL should also be removed.
+    post.content = "![](imageurl.tld)".to_string();
+    assert_eq!(extract_slug(&post), "");
+
+    // Image followed by text should keep only the text.
+    post.content = "![](image.png) Hello World".to_string();
+    assert_eq!(extract_slug(&post), "hello-world");
+
+    // Link with protocol-less URL should keep link text.
+    post.content = "[click here](page.html)".to_string();
+    assert_eq!(extract_slug(&post), "click-here");
+
+    // Brackets and parentheses should be removed as safety net.
+    post.content = "[important] news (breaking)".to_string();
+    assert_eq!(extract_slug(&post), "important-news-breaking");
 }
 
 pub fn extract_html_description(post: &Post) -> String {
     let content = post.content.trim();
     let title = extract_html_title(post);
     let title = title.trim_end_matches("...");
-    let description = remove_urls(content);
+    let description = remove_markdown_links(content);
     let description = description.trim_start_matches("# ");
     let description = description.trim_start_matches(title).trim();
-    let description = remove_urls(description);
+    let description = remove_markdown_links(description);
     // This allows RSS readers to read the full quote when the page is a
     // microblog and still truncates to avoid having a too heavy RSS feed.
     let max_length = 600;
