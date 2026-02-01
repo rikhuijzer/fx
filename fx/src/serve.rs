@@ -134,6 +134,10 @@ pub async fn internal_server_error(ctx: &ServerContext, msg: &str) -> Response<B
     .await
 }
 
+pub async fn bad_request(ctx: &ServerContext, msg: &str) -> Response<Body> {
+    error(ctx, StatusCode::BAD_REQUEST, "Bad Request", msg).await
+}
+
 pub async fn unauthorized(ctx: &ServerContext) -> Response<Body> {
     error(
         ctx,
@@ -525,7 +529,15 @@ async fn post_delete(
             &ctx,
         ));
     }
-    Post::delete(&*ctx.conn().await, id).unwrap();
+    if let Err(e) = Post::delete(&*ctx.conn().await, id) {
+        tracing::error!("Failed to delete post: {e}");
+        return Err(response(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            HeaderMap::new(),
+            "Failed to delete post",
+            &ctx,
+        ));
+    }
     crate::trigger::trigger_github_backup(&ctx).await;
     Ok(Redirect::to("/"))
 }
@@ -543,7 +555,11 @@ pub struct EditPostForm {
 /// request.
 pub fn see_other(ctx: &ServerContext, url: &str) -> Response<Body> {
     let mut headers = HeaderMap::new();
-    let dst = HeaderValue::from_str(url).unwrap();
+    // Fallback to root if URL contains invalid header characters
+    let dst = HeaderValue::from_str(url).unwrap_or_else(|_| {
+        tracing::warn!("Invalid redirect URL: {url}, falling back to /");
+        HeaderValue::from_static("/")
+    });
     headers.insert("Location", dst);
     response(StatusCode::SEE_OTHER, headers, "", ctx)
 }
@@ -582,22 +598,20 @@ async fn post_edit(
     let extra_head = &Kv::get_or_empty_string(&*ctx.conn().await, "extra_head");
     let settings = PageSettings::new("", Some(is_logged_in), false, Top::GoBack, extra_head);
     let (_, body) = req.into_parts();
-    let bytes = body
-        .collect()
-        .await
-        .map_err(|_err| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Failed to read request body",
-            )
-                .into_response()
-        })
-        .unwrap()
-        .to_bytes();
+    let bytes = match body.collect().await {
+        Ok(b) => b.to_bytes(),
+        Err(_) => return internal_server_error(&ctx, "Failed to read request body").await,
+    };
     let bytes = bytes.to_vec();
-    let input = String::from_utf8(bytes).unwrap();
+    let input = match String::from_utf8(bytes) {
+        Ok(s) => s,
+        Err(_) => return bad_request(&ctx, "Invalid UTF-8 in form data").await,
+    };
     let publish = input.contains("publish=Publish");
-    let form = serde_urlencoded::from_str::<EditPostForm>(&input).unwrap();
+    let form = match serde_urlencoded::from_str::<EditPostForm>(&input) {
+        Ok(f) => f,
+        Err(_) => return bad_request(&ctx, "Invalid form data").await,
+    };
     // Use the form's created date if provided, otherwise fall back to existing post date
     let created = if form.created.as_ref().is_some_and(|s| !s.is_empty()) {
         parse_datetime_local(form.created.as_deref())
@@ -651,22 +665,20 @@ async fn post_add(
     let extra_head = &Kv::get_or_empty_string(&*ctx.conn().await, "extra_head");
     let settings = PageSettings::new("", Some(is_logged_in), false, Top::GoBack, extra_head);
     let (_, body) = req.into_parts();
-    let bytes = body
-        .collect()
-        .await
-        .map_err(|_err| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Failed to read request body",
-            )
-                .into_response()
-        })
-        .unwrap()
-        .to_bytes();
+    let bytes = match body.collect().await {
+        Ok(b) => b.to_bytes(),
+        Err(_) => return internal_server_error(&ctx, "Failed to read request body").await,
+    };
     let bytes = bytes.to_vec();
-    let input = String::from_utf8(bytes).unwrap();
+    let input = match String::from_utf8(bytes) {
+        Ok(s) => s,
+        Err(_) => return bad_request(&ctx, "Invalid UTF-8 in form data").await,
+    };
     let publish = input.contains("publish=Publish");
-    let form = serde_urlencoded::from_str::<AddPostForm>(&input).unwrap();
+    let form = match serde_urlencoded::from_str::<AddPostForm>(&input) {
+        Ok(f) => f,
+        Err(_) => return bad_request(&ctx, "Invalid form data").await,
+    };
     if publish {
         let created = parse_datetime_local(form.created.as_deref());
         let now = Utc::now();

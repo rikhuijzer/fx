@@ -77,7 +77,13 @@ fn set_header_id(html: &str) -> String {
                 if line.contains("<hr />") {
                     return line.to_string();
                 }
-                let title_start = line.find('>').unwrap() + 1;
+                let title_start = match line.find('>') {
+                    Some(pos) => pos + 1,
+                    None => {
+                        tracing::warn!("malformed header tag (no >): {line}");
+                        return line.to_string();
+                    }
+                };
                 let level = line[2..title_start - 1].to_string();
                 let title_end = match line.find("</h") {
                     Some(end) => end,

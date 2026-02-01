@@ -294,24 +294,48 @@ async fn post_file(
     }
     let mut received_files = Vec::new();
     let mut prefix = String::new();
-    while let Some(field) = multipart.next_field().await.unwrap() {
+    loop {
+        let field = match multipart.next_field().await {
+            Ok(Some(f)) => f,
+            Ok(None) => break,
+            Err(e) => {
+                tracing::warn!("Failed to read multipart field: {e}");
+                return crate::serve::bad_request(&ctx, "Invalid multipart data").await;
+            }
+        };
         let name = field.name();
         if name == Some("file") {
-            let filename = field.file_name().unwrap().to_string();
+            let filename = match field.file_name() {
+                Some(f) => f.to_string(),
+                None => continue,
+            };
             if filename.is_empty() {
                 // Occurs when clicking "Upload" without selecting any files.
                 continue;
             }
-            let mime_type = field.content_type().unwrap().to_string();
-            let data = field
-                .bytes()
-                .await
-                .expect("Failed to read file; the file could be too large.");
+            let mime_type = field
+                .content_type()
+                .unwrap_or("application/octet-stream")
+                .to_string();
+            let data = match field.bytes().await {
+                Ok(d) => d,
+                Err(e) => {
+                    tracing::warn!("Failed to read file bytes: {e}");
+                    return crate::serve::bad_request(
+                        &ctx,
+                        "Failed to read file; the file could be too large.",
+                    )
+                    .await;
+                }
+            };
             let file = File::new(&mime_type, &filename, data);
             received_files.push(file);
         } else if name == Some("prefix") {
-            let bytes = field.bytes().await.unwrap();
-            prefix = String::from_utf8(bytes.to_vec()).unwrap();
+            let bytes = match field.bytes().await {
+                Ok(b) => b,
+                Err(_) => continue,
+            };
+            prefix = String::from_utf8(bytes.to_vec()).unwrap_or_default();
         } else {
             tracing::warn!("unknown field: {:?}", name);
         }
@@ -324,7 +348,10 @@ async fn post_file(
             file.filename
         };
         let file = File::new(&file.mime_type, &filename, file.data);
-        File::insert(&*ctx.conn().await, &file).unwrap();
+        if let Err(e) = File::insert(&*ctx.conn().await, &file) {
+            tracing::error!("Failed to insert file: {e}");
+            return crate::serve::internal_server_error(&ctx, "Failed to save file").await;
+        }
     }
 
     crate::trigger::trigger_github_backup(&ctx).await;
@@ -370,7 +397,10 @@ async fn post_delete(
     if !is_logged_in {
         return crate::serve::unauthorized(&ctx).await;
     }
-    File::delete(&*ctx.conn().await, &sha).unwrap();
+    if let Err(e) = File::delete(&*ctx.conn().await, &sha) {
+        tracing::error!("Failed to delete file: {e}");
+        return crate::serve::internal_server_error(&ctx, "Failed to delete file").await;
+    }
     crate::trigger::trigger_github_backup(&ctx).await;
     crate::serve::see_other(&ctx, "/files")
 }
@@ -427,7 +457,10 @@ async fn post_rename(
         return crate::serve::unauthorized(&ctx).await;
     }
     let filename = rename_form.filename;
-    File::rename(&*ctx.conn().await, &sha, &filename).unwrap();
+    if let Err(e) = File::rename(&*ctx.conn().await, &sha, &filename) {
+        tracing::error!("Failed to rename file: {e}");
+        return crate::serve::internal_server_error(&ctx, "Failed to rename file").await;
+    }
     crate::trigger::trigger_github_backup(&ctx).await;
     crate::serve::see_other(&ctx, "/files")
 }

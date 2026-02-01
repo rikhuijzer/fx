@@ -46,55 +46,61 @@ async fn search(ctx: &ServerContext, q: &str) -> Vec<Post> {
     }
     let conn = ctx.conn().await;
 
-    let stmt = "BEGIN TRANSACTION";
-    conn.execute(stmt, []).unwrap();
+    // Use a closure to handle errors and ensure rollback
+    let search_result = (|| -> Result<Vec<Post>, rusqlite::Error> {
+        conn.execute("BEGIN TRANSACTION", [])?;
 
-    // Creating a virtual table on each query to avoid having to manually keep
-    // track of updates to the fts table. For small sites, creating the index on
-    // each query should be fine.
-    let stmt = "
-        CREATE VIRTUAL TABLE posts_fts USING fts5(
-            id,
-            created,
-            updated,
-            content,
-            content=posts,
-            tokenize=trigram
-        );
-        ";
-    conn.execute(stmt, []).unwrap();
-
-    let stmt = "
-        INSERT INTO posts_fts (id, created, updated, content)
-        SELECT id, created, updated, content FROM posts;
-    ";
-    conn.execute(stmt, []).unwrap();
-
-    let mut results = conn
-        .prepare("SELECT * FROM posts_fts WHERE posts_fts MATCH ?")
-        .unwrap();
-    let results = results
-        .query_map([q], |row| {
-            let id: i64 = row.get("id")?;
-            let created: String = row.get("created")?;
-            let updated: String = row.get("updated")?;
-            let content: String = row.get("content")?;
-            let post = Post {
+        // Creating a virtual table on each query to avoid having to manually keep
+        // track of updates to the fts table. For small sites, creating the index on
+        // each query should be fine.
+        conn.execute(
+            "CREATE VIRTUAL TABLE posts_fts USING fts5(
                 id,
-                created: SqliteDateTime::from_sqlite(&created),
-                updated: SqliteDateTime::from_sqlite(&updated),
+                created,
+                updated,
                 content,
-            };
-            Ok(post)
-        })
-        .unwrap()
-        .collect::<Result<Vec<_>, _>>()
-        .unwrap();
+                content=posts,
+                tokenize=trigram
+            )",
+            [],
+        )?;
 
-    let stmt = "ROLLBACK";
-    conn.execute(stmt, []).unwrap();
+        conn.execute(
+            "INSERT INTO posts_fts (id, created, updated, content)
+             SELECT id, created, updated, content FROM posts",
+            [],
+        )?;
 
-    results
+        let mut stmt = conn.prepare("SELECT * FROM posts_fts WHERE posts_fts MATCH ?")?;
+        let results = stmt
+            .query_map([q], |row| {
+                let id: i64 = row.get("id")?;
+                let created: String = row.get("created")?;
+                let updated: String = row.get("updated")?;
+                let content: String = row.get("content")?;
+                let post = Post {
+                    id,
+                    created: SqliteDateTime::from_sqlite(&created),
+                    updated: SqliteDateTime::from_sqlite(&updated),
+                    content,
+                };
+                Ok(post)
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+
+        conn.execute("ROLLBACK", [])?;
+        Ok(results)
+    })();
+
+    match search_result {
+        Ok(results) => results,
+        Err(e) => {
+            tracing::error!("Search failed: {e}");
+            // Attempt to rollback in case of error
+            let _ = conn.execute("ROLLBACK", []);
+            vec![]
+        }
+    }
 }
 
 async fn get_search(
