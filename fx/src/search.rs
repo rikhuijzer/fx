@@ -52,12 +52,11 @@ async fn search(ctx: &ServerContext, q: &str) -> Vec<Post> {
     // Creating a virtual table on each query to avoid having to manually keep
     // track of updates to the fts table. For small sites, creating the index on
     // each query should be fine.
-    //
-    // Not copying updated since it's not shown in the preview.
     let stmt = "
         CREATE VIRTUAL TABLE posts_fts USING fts5(
             id,
             created,
+            updated,
             content,
             content=posts,
             tokenize=trigram
@@ -66,8 +65,8 @@ async fn search(ctx: &ServerContext, q: &str) -> Vec<Post> {
     conn.execute(stmt, []).unwrap();
 
     let stmt = "
-        INSERT INTO posts_fts (id, created, content)
-        SELECT id, created, content FROM posts;
+        INSERT INTO posts_fts (id, created, updated, content)
+        SELECT id, created, updated, content FROM posts;
     ";
     conn.execute(stmt, []).unwrap();
 
@@ -78,11 +77,12 @@ async fn search(ctx: &ServerContext, q: &str) -> Vec<Post> {
         .query_map([q], |row| {
             let id: i64 = row.get("id")?;
             let created: String = row.get("created")?;
+            let updated: String = row.get("updated")?;
             let content: String = row.get("content")?;
             let post = Post {
                 id,
                 created: SqliteDateTime::from_sqlite(&created),
-                updated: SqliteDateTime::from_sqlite(&created),
+                updated: SqliteDateTime::from_sqlite(&updated),
                 content,
             };
             Ok(post)

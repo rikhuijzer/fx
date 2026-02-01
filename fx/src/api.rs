@@ -49,7 +49,7 @@ fn is_authenticated(ctx: &ServerContext, headers: &HeaderMap) -> bool {
         .unwrap()
         .split_ascii_whitespace()
         .collect::<Vec<&str>>();
-    if !parts.len() == 2 {
+    if parts.len() != 2 {
         return false;
     }
     if parts[0] != "Bearer" {

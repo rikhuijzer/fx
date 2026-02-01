@@ -208,7 +208,8 @@ async fn get_posts(
 ) -> Response<Body> {
     let is_logged_in = Some(is_logged_in(&ctx, &jar));
     let show_about = pagination.page.is_none();
-    let current_page = pagination.page.unwrap_or(1);
+    // Ensure page is at least 1 to prevent issues with invalid page numbers
+    let current_page = pagination.page.unwrap_or(1).max(1);
     let extra_head = Kv::get_or_empty_string(&*ctx.conn().await, "extra_head");
     let extra_head = format!(
         "
