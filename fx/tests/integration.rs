@@ -199,6 +199,7 @@ async fn test_post_add() {
     let (ctx, auth) = request_cookie().await;
     let form = fx::serve::AddPostForm {
         content: "Lorem https://example.com".to_string(),
+        created: None,
     };
     let form_data = serde_urlencoded::to_string(&form).unwrap();
     let req = Request::builder()
@@ -242,6 +243,7 @@ async fn test_post_edit() {
     let (ctx, auth) = request_cookie().await;
     let form = fx::serve::EditPostForm {
         content: "Lorem https://example.com".to_string(),
+        created: None,
     };
     let form_data = serde_urlencoded::to_string(&form).unwrap();
     let req = Request::builder()
