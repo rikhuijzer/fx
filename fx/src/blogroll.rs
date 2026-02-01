@@ -115,11 +115,13 @@ async fn get_blogroll(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
         .collect::<Vec<_>>()
         .join("\n");
     let last_update = crate::html::show_date(&last_update);
+    let show_emojis = Kv::get_or_empty_string(&*ctx.conn().await, "show_emojis") == "on";
+    let emoji_settings = if show_emojis { "⚙️ " } else { "" };
     let settings_link = if is_logged_in {
-        "<a href='/settings#blogroll_feeds_label' class='unstyled-link'>⚙️ Settings</a>"
+        format!("<a href='/settings#blogroll_feeds_label' class='unstyled-link'>{emoji_settings}Settings</a>")
     } else {
         // Pushes the other element to the right.
-        "<span></span>"
+        "<span></span>".to_string()
     };
     let body = format!(
         "

@@ -390,16 +390,21 @@ async fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
     let about = crate::md::content_to_html(&about);
     let author_name = Kv::get(&*ctx.conn().await, "author_name").unwrap();
     let author_name = String::from_utf8(author_name).unwrap();
+    let show_emojis = Kv::get_or_empty_string(&*ctx.conn().await, "show_emojis") == "on";
+    let emoji_files = if show_emojis { "📁 " } else { "" };
+    let emoji_settings = if show_emojis { "⚙️ " } else { "" };
+    let emoji_search = if show_emojis { "🔍 " } else { "" };
+    let emoji_blogroll = if show_emojis { "🔭 " } else { "" };
     let style = "font-size: 0.8rem; padding-top: 0.1rem;";
     let admin_buttons = if settings.is_logged_in.unwrap_or(false) {
         &format!(
             "
             <span>
                 <a href='/files' class='unstyled-link' style='{style}'>
-                    📁 Files
+                    {emoji_files}Files
                 </a>&nbsp;
                 <a href='/settings' class='unstyled-link' style='{style}'>
-                    ⚙️ Settings
+                    {emoji_settings}Settings
                 </a>
             </span>
             "
@@ -421,7 +426,7 @@ async fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
         &format!(
             "
             <a href='/search' class='unstyled-link' style='{style}'>
-                🔍 Search
+                {emoji_search}Search
             </a>&nbsp;
             "
         )
@@ -431,7 +436,7 @@ async fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
         &format!(
             "
             <a href='/search' class='unstyled-link' style='{style}'>
-                🔍
+                {emoji_search}Search
             </a>&nbsp;
             "
         )
@@ -440,7 +445,7 @@ async fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
         &format!(
             "
             <a href='/blogroll' class='unstyled-link' style='{style}'>
-                🔭 Blogroll
+                {emoji_blogroll}Blogroll
             </a>&nbsp;
             "
         )

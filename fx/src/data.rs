@@ -244,6 +244,7 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
     init_kv_data(conn, "domain", domain.as_bytes());
     init_kv_data(conn, BLOGROLL_SETTINGS_KEY, b"");
     init_kv_data(conn, "show_branding", b"on");
+    init_kv_data(conn, "show_emojis", b"on");
 
     if !args.production {
         let now = chrono::Utc::now();

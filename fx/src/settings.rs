@@ -28,6 +28,7 @@ pub struct Settings {
     pub about: String,
     pub dark_mode: Option<String>,
     pub show_branding: Option<String>,
+    pub show_emojis: Option<String>,
     pub extra_head: String,
     pub blogroll_feeds: String,
 }
@@ -51,6 +52,12 @@ impl Settings {
         } else {
             None
         };
+        let show_emojis = Kv::get_or_empty_string(conn, "show_emojis");
+        let show_emojis = if show_emojis == "on" {
+            Some("on".to_string())
+        } else {
+            None
+        };
         let extra_head = Kv::get_or_empty_string(conn, "extra_head");
         let blogroll_feeds = Kv::get(conn, crate::data::BLOGROLL_SETTINGS_KEY)?;
         Ok(Self {
@@ -60,6 +67,7 @@ impl Settings {
             about: String::from_utf8(about).unwrap(),
             dark_mode,
             show_branding,
+            show_emojis,
             extra_head,
             blogroll_feeds: String::from_utf8(blogroll_feeds).unwrap(),
         })
@@ -166,6 +174,7 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
             {}
             {}
             {}
+            {}
             <input style='margin-left: 0;' type='submit' value='Save'/>
         </form>
         ",
@@ -223,6 +232,18 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
                 "off"
             },
             "When enabled, shows 'Running fx version: X' in the footer.",
+            false,
+        ),
+        text_input(
+            InputType::Checkbox,
+            "show_emojis",
+            "Show emojis in navigation",
+            if settings.show_emojis.is_some() {
+                "on"
+            } else {
+                "off"
+            },
+            "When enabled, shows emojis next to navigation items (Search, Files, Settings, Blogroll).",
             false,
         ),
         text_input(
@@ -287,6 +308,12 @@ async fn post_settings(
             "off"
         };
         Kv::insert(conn, "show_branding", show_branding.as_bytes()).unwrap();
+        let show_emojis = if form.show_emojis.is_some() {
+            "on"
+        } else {
+            "off"
+        };
+        Kv::insert(conn, "show_emojis", show_emojis.as_bytes()).unwrap();
         let about = cleanup_content(&form.about);
         Kv::insert(conn, "about", about.as_bytes()).unwrap();
         let extra_head = cleanup_content(&form.extra_head);
