@@ -379,9 +379,9 @@ fn test_extract_slug() {
     post.content = "Lorem, ipsum".to_string();
     assert_eq!(extract_slug(&post), "lorem-ipsum");
 
-    // Forward slash in title should be removed to avoid breaking URL routing.
+    // Forward slash and + in title should be removed to avoid breaking URL routing.
     post.content = "C++/Rust comparison".to_string();
-    assert_eq!(extract_slug(&post), "c++rust-comparison");
+    assert_eq!(extract_slug(&post), "crust-comparison");
 
     post.content = "How to use / operator".to_string();
     assert_eq!(extract_slug(&post), "how-to-use--operator");
