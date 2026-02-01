@@ -30,6 +30,8 @@ async fn get_api(State(ctx): State<ServerContext>) -> Response<Body> {
 }
 
 fn is_authenticated(ctx: &ServerContext, headers: &HeaderMap) -> bool {
+    use subtle::ConstantTimeEq;
+
     let password = &ctx.args.password;
     let password = if let Some(password) = password {
         password
@@ -54,7 +56,8 @@ fn is_authenticated(ctx: &ServerContext, headers: &HeaderMap) -> bool {
         return false;
     }
     let token = parts[1];
-    token == password
+    // Use constant-time comparison to prevent timing attacks
+    token.as_bytes().ct_eq(password.as_bytes()).into()
 }
 
 fn error(ctx: &ServerContext, status: StatusCode, message: &str) -> Response<Body> {

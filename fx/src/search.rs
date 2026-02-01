@@ -29,10 +29,11 @@ pub struct SearchForm {
 }
 
 fn search_form(q: &str) -> String {
+    let q_escaped = crate::html::escape_html(q);
     format!(
         "
         <form action='/search' method='get'>
-            <input type='text' name='q' value='{q}' />
+            <input type='text' name='q' value='{q_escaped}' />
             <button type='submit'>Search</button>
         </form>
         "

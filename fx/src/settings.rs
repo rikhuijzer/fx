@@ -93,6 +93,8 @@ pub fn text_input(
     required: bool,
 ) -> String {
     let required = if required { "required" } else { "" };
+    // Escape value to prevent XSS attacks
+    let value_escaped = crate::html::escape_html(value);
     let input = match input_type {
         InputType::Checkbox => {
             let value = if value == "on" { "checked" } else { "" };
@@ -110,7 +112,7 @@ pub fn text_input(
             <input id='{name}' name='{name}' \
             style='width: 100%; margin-left: 0; margin-right: 0; \
               margin-top: 0.5rem; margin-bottom: 0.2rem;' \
-            type='text' value='{value}' {required}/><br>
+            type='text' value='{value_escaped}' {required}/><br>
             "
         ),
         InputType::Textarea => format!(
@@ -118,7 +120,7 @@ pub fn text_input(
             <textarea id='{name}' name='{name}' rows='7' \
             style='width: 100%; font-size: 0.8rem; \
               margin-top: 0.5rem; margin-bottom: 0.2rem;' \
-            {required}>{value}</textarea><br>
+            {required}>{value_escaped}</textarea><br>
             "
         ),
     };

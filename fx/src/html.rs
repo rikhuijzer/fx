@@ -15,6 +15,22 @@ pub fn escape_single_quote(s: &str) -> String {
     s.replace('\'', "&#39;")
 }
 
+/// Escape HTML special characters to prevent XSS attacks.
+/// Use this for all user-controlled content rendered in HTML.
+pub fn escape_html(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
+}
+
+/// Escape content for use in HTML attributes (single-quoted).
+/// More restrictive than escape_html for attribute context.
+pub fn escape_attr(s: &str) -> String {
+    escape_html(s)
+}
+
 pub fn show_date<Tz: chrono::TimeZone>(datetime: &DateTime<Tz>) -> String {
     let now = chrono::Utc::now();
     let duration = now.signed_duration_since(datetime.clone());
@@ -71,7 +87,13 @@ fn set_header_id(html: &str) -> String {
                     }
                 };
                 let title = line[title_start..title_end].to_string();
-                let id = title.to_lowercase().replace(' ', "-");
+                // Sanitize ID to only allow alphanumeric chars and hyphens (prevent XSS)
+                let id: String = title
+                    .to_lowercase()
+                    .replace(' ', "-")
+                    .chars()
+                    .filter(|c| c.is_alphanumeric() || *c == '-')
+                    .collect();
                 format!("<h{level} id='{id}'>{title}</h{level}>")
             } else {
                 line.to_string()
