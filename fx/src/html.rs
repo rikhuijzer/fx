@@ -278,11 +278,18 @@ fn add_post_form() -> String {
             This field supports {markdown_link}.
         </div>
         <br>
-        <div style='display: flex; justify-content: flex-end;'>
-            <input type='submit' onclick='{UNSET_LEAVE_CONFIRMATION}' \
-              name='preview' value='Preview'/>
-            <input type='submit' onclick='{UNSET_LEAVE_CONFIRMATION}' \
-              name='publish' value='Publish'/>
+        <div style='display: flex; align-items: center; justify-content: space-between;'>
+            <div style='font-size: 0.8rem;'>
+                <label for='created'>Post date (optional):</label>
+                <input type='datetime-local' id='created' name='created' \
+                  style='font-size: 0.8rem;'/>
+            </div>
+            <div>
+                <input type='submit' onclick='{UNSET_LEAVE_CONFIRMATION}' \
+                  name='preview' value='Preview'/>
+                <input type='submit' onclick='{UNSET_LEAVE_CONFIRMATION}' \
+                  name='publish' value='Publish'/>
+            </div>
         </div>
     </form>
     "
@@ -294,6 +301,8 @@ pub fn edit_post_form(post: &Post) -> String {
     let id = post.id;
     let content = &post.content;
     let markdown_link = crate::md::markdown_link();
+    // Format date for datetime-local input: YYYY-MM-DDTHH:mm
+    let created_str = post.created.format("%Y-%m-%dT%H:%M").to_string();
     format!(
         "
     <form style='width: 100%;' action='/posts/edit/{id}' \
@@ -308,11 +317,18 @@ pub fn edit_post_form(post: &Post) -> String {
             This field supports {markdown_link}.
         </div>
         <br>
-        <div style='display: flex; justify-content: flex-end;'>
-            <input type='submit' onclick='{UNSET_LEAVE_CONFIRMATION}' \
-              name='preview' value='Preview'/>
-            <input type='submit' onclick='{UNSET_LEAVE_CONFIRMATION}' \
-              name='publish' value='Publish'/>
+        <div style='display: flex; align-items: center; justify-content: space-between;'>
+            <div style='font-size: 0.8rem;'>
+                <label for='created'>Post date:</label>
+                <input type='datetime-local' id='created' name='created' \
+                  value='{created_str}' style='font-size: 0.8rem;'/>
+            </div>
+            <div>
+                <input type='submit' onclick='{UNSET_LEAVE_CONFIRMATION}' \
+                  name='preview' value='Preview'/>
+                <input type='submit' onclick='{UNSET_LEAVE_CONFIRMATION}' \
+                  name='publish' value='Publish'/>
+            </div>
         </div>
     </form>
     "

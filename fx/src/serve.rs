@@ -532,6 +532,7 @@ async fn post_delete(
 #[derive(Debug, Deserialize, Serialize)]
 pub struct EditPostForm {
     pub content: String,
+    pub created: Option<String>,
 }
 
 /// Return a 303 redirect to the given url.
@@ -549,6 +550,22 @@ pub fn see_other(ctx: &ServerContext, url: &str) -> Response<Body> {
 /// Trim a given string and ensure it ends with a newline.
 pub fn trim_newline_suffix(s: &str) -> String {
     format!("{}\n", s.trim())
+}
+
+/// Parse a datetime-local form input (format: YYYY-MM-DDTHH:mm) to DateTime<Utc>.
+/// Returns the current time if parsing fails or input is empty.
+fn parse_datetime_local(input: Option<&str>) -> DateTime<Utc> {
+    match input {
+        Some(s) if !s.is_empty() => {
+            // datetime-local format: YYYY-MM-DDTHH:mm
+            let format = "%Y-%m-%dT%H:%M";
+            match chrono::NaiveDateTime::parse_from_str(s, format) {
+                Ok(naive) => DateTime::from_naive_utc_and_offset(naive, Utc),
+                Err(_) => Utc::now(),
+            }
+        }
+        _ => Utc::now(),
+    }
 }
 
 async fn post_edit(
@@ -580,9 +597,14 @@ async fn post_edit(
     let input = String::from_utf8(bytes).unwrap();
     let publish = input.contains("publish=Publish");
     let form = serde_urlencoded::from_str::<EditPostForm>(&input).unwrap();
-    let created = match Post::get(&*ctx.conn().await, id) {
-        Ok(post) => post.created,
-        Err(_) => Utc::now(),
+    // Use the form's created date if provided, otherwise fall back to existing post date
+    let created = if form.created.as_ref().is_some_and(|s| !s.is_empty()) {
+        parse_datetime_local(form.created.as_deref())
+    } else {
+        match Post::get(&*ctx.conn().await, id) {
+            Ok(post) => post.created,
+            Err(_) => Utc::now(),
+        }
     };
     let post = Post {
         id,
@@ -613,6 +635,7 @@ async fn post_edit(
 #[derive(Debug, Deserialize, Serialize)]
 pub struct AddPostForm {
     pub content: String,
+    pub created: Option<String>,
 }
 
 async fn post_add(
@@ -644,9 +667,10 @@ async fn post_add(
     let publish = input.contains("publish=Publish");
     let form = serde_urlencoded::from_str::<AddPostForm>(&input).unwrap();
     if publish {
+        let created = parse_datetime_local(form.created.as_deref());
         let now = Utc::now();
         let content = trim_newline_suffix(&form.content);
-        let post_id = Post::insert(&*ctx.conn().await, now, now, &content);
+        let post_id = Post::insert(&*ctx.conn().await, created, now, &content);
         if let Err(_e) = post_id {
             return response(
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -659,9 +683,10 @@ async fn post_add(
         crate::trigger::trigger_github_backup(&ctx).await;
         see_other(&ctx, url)
     } else {
+        let created = parse_datetime_local(form.created.as_deref());
         let post = Post {
             id: 0,
-            created: Utc::now(),
+            created,
             updated: Utc::now(),
             content: form.content,
         };
