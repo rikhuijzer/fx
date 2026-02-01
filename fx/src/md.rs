@@ -359,6 +359,8 @@ pub fn extract_slug(post: &Post) -> String {
         .replace("=", "")
         .replace("+", "")
         .to_lowercase();
+    // Remove leading and trailing hyphens (can occur when markdown is stripped).
+    let slug = slug.trim_matches('-').to_string();
     let max_length = 50;
     if slug.len() <= max_length {
         slug
