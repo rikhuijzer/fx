@@ -19,7 +19,7 @@ jobs:
       - run: cargo install --debug jas@0.3.1
       - run: >
           jas install
-          --gh rustsec/rustsec@cargo-audit/v0.21.2
+          --gh rustsec/rustsec@cargo-audit/v0.22.0
           --archive-filename cargo-audit
           --sha 5eaad156124e01d54ce937cbb2c069a8145b01e7fa29aef62bef1b386b4c1519
           --gh-token ${{ secrets.GITHUB_TOKEN }}
@@ -34,7 +34,7 @@ jobs:
       - run: cargo install --debug jas@0.3.1
       - run: >
           jas install
-          --gh EmbarkStudios/cargo-deny@0.18.2
+          --gh EmbarkStudios/cargo-deny@0.19.0
           --sha 43c4a79c4b9fd1fcb3dddb305a1b4d8f7ac4a72accd61bb50a0b698789ca894c
           --gh-token ${{ secrets.GITHUB_TOKEN }}
       - run: cargo-deny check advisories
