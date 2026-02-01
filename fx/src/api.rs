@@ -44,9 +44,11 @@ fn is_authenticated(ctx: &ServerContext, headers: &HeaderMap) -> bool {
     } else {
         return false;
     };
-    let parts = header
-        .to_str()
-        .unwrap()
+    let header_str = match header.to_str() {
+        Ok(s) => s,
+        Err(_) => return false,
+    };
+    let parts = header_str
         .split_ascii_whitespace()
         .collect::<Vec<&str>>();
     if parts.len() != 2 {

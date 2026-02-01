@@ -93,6 +93,15 @@ where
     let mut response: Response<Body> = Response::default();
     *response.status_mut() = status;
     *response.headers_mut() = headers;
+    // Security headers - always set regardless of production mode
+    response.headers_mut().insert(
+        "X-Content-Type-Options",
+        HeaderValue::from_static("nosniff"),
+    );
+    response.headers_mut().insert(
+        "X-Frame-Options",
+        HeaderValue::from_static("SAMEORIGIN"),
+    );
     if ctx.args.production {
         response.headers_mut().insert(
             "Strict-Transport-Security",
@@ -780,8 +789,7 @@ fn obtain_salt(args: &ServeArgs, conn: &Connection) -> Salt {
 
 async fn init_blog_cache(conn: &Connection) -> BlogCache {
     let key = crate::data::BLOGROLL_SETTINGS_KEY;
-    let data = data::Kv::get(conn, key).unwrap();
-    let feeds = String::from_utf8(data).unwrap();
+    let feeds = data::Kv::get_or_empty_string(conn, key);
     let feeds = feeds
         .lines()
         .map(|line| RssFeed::new(line.trim()))
@@ -809,22 +817,30 @@ async fn schedule_jobs(blog_cache: Arc<Mutex<BlogCache>>, ctx: ServerContext) {
         .boxed()
     };
     // Run once immediately.
-    let job = Job::new_one_shot_at_instant_async(Instant::now(), task.clone()).unwrap();
-    match scheduler.add(job).await {
-        Ok(_) => (),
+    let job = match Job::new_one_shot_at_instant_async(Instant::now(), task.clone()) {
+        Ok(job) => job,
         Err(e) => {
-            tracing::error!("Failed to add job to scheduler: {}", e);
+            tracing::error!("Failed to create one-shot job: {}", e);
+            return;
         }
+    };
+    if let Err(e) = scheduler.add(job).await {
+        tracing::error!("Failed to add job to scheduler: {}", e);
     }
     // Run at the 8th minute of the hour.
-    let job = Job::new_async("00 08 * * * *", task).unwrap();
-    match scheduler.add(job).await {
-        Ok(_) => (),
+    let job = match Job::new_async("00 08 * * * *", task) {
+        Ok(job) => job,
         Err(e) => {
-            tracing::error!("Failed to add job to scheduler: {}", e);
+            tracing::error!("Failed to create recurring job: {}", e);
+            return;
         }
+    };
+    if let Err(e) = scheduler.add(job).await {
+        tracing::error!("Failed to add job to scheduler: {}", e);
     }
-    scheduler.start().await.unwrap();
+    if let Err(e) = scheduler.start().await {
+        tracing::error!("Failed to start scheduler: {}", e);
+    }
 }
 
 pub async fn run(args: &ServeArgs) {

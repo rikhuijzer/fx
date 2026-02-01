@@ -429,11 +429,9 @@ fn test_minify() {
 }
 
 async fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
-    let about = Kv::get(&*ctx.conn().await, "about").unwrap();
-    let about = String::from_utf8(about).unwrap();
+    let about = Kv::get_or_empty_string(&*ctx.conn().await, "about");
     let about = crate::md::content_to_html(&about);
-    let author_name = Kv::get(&*ctx.conn().await, "author_name").unwrap();
-    let author_name = String::from_utf8(author_name).unwrap();
+    let author_name = Kv::get_or_empty_string(&*ctx.conn().await, "author_name");
     let show_emojis = Kv::get_or_empty_string(&*ctx.conn().await, "show_emojis") == "on";
     let emoji_files = if show_emojis { "📁 " } else { "" };
     let emoji_settings = if show_emojis { "⚙️ " } else { "" };
@@ -459,34 +457,17 @@ async fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
     let container_style = "display: flex; justify-content: space-between;";
     let name_style = "font-size: 1.2rem; margin-bottom: 10px; font-weight: bold;";
     let blogroll_key = crate::data::BLOGROLL_SETTINGS_KEY;
-    let blogroll_feeds = match Kv::get(&*ctx.conn().await, blogroll_key) {
-        Ok(feeds) => String::from_utf8(feeds).unwrap(),
-        Err(_) => "".to_string(),
-    };
+    let blogroll_feeds = Kv::get_or_empty_string(&*ctx.conn().await, blogroll_key);
     let has_blogroll = !blogroll_feeds.is_empty();
-    let search_button = if has_blogroll {
-        // When there is a blogroll, we have to show the search button with the
-        // text "Search" to indicate what the button does.
-        &format!(
-            "
-            <a href='/search' class='unstyled-link' style='{style}'>
-                {emoji_search}Search
-            </a>&nbsp;
-            "
-        )
-    } else {
-        // When there is no blogroll, we can just show the search button without
-        // text. Substack for example also only shows a search icon.
-        &format!(
-            "
-            <a href='/search' class='unstyled-link' style='{style}'>
-                {emoji_search}Search
-            </a>&nbsp;
-            "
-        )
-    };
+    let search_button = format!(
+        "
+        <a href='/search' class='unstyled-link' style='{style}'>
+            {emoji_search}Search
+        </a>&nbsp;
+        "
+    );
     let blogroll_button = if has_blogroll {
-        &format!(
+        format!(
             "
             <a href='/blogroll' class='unstyled-link' style='{style}'>
                 {emoji_blogroll}Blogroll
@@ -494,7 +475,7 @@ async fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
             "
         )
     } else {
-        ""
+        String::new()
     };
     format!(
         "

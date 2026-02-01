@@ -21,13 +21,13 @@ use fx_rss::RssConfig;
 use fx_rss::RssFeed;
 
 fn show_item(item: &fx_rss::Item) -> Option<String> {
-    let feed_name = item.feed_name.clone();
+    let feed_name = crate::html::escape_html(&item.feed_name);
     let pub_date = match item.pub_date {
         Some(date) => crate::html::show_date(&date),
         None => return None,
     };
-    let link = item.link.clone()?;
-    let title = item.title.clone()?;
+    let link = crate::html::escape_html(&item.link.clone()?);
+    let title = crate::html::escape_html(&item.title.clone()?);
     Some(format!(
         "
         <span class='blogroll-item' style='font-size: 0.9rem;'>
@@ -70,7 +70,13 @@ impl BlogCache {
         let key = crate::data::BLOGROLL_SETTINGS_KEY;
         let feeds = Kv::get(&*ctx.conn().await, key);
         if let Ok(feeds) = feeds {
-            let feeds = String::from_utf8(feeds).unwrap();
+            let feeds = match String::from_utf8(feeds) {
+                Ok(f) => f,
+                Err(e) => {
+                    tracing::error!("Invalid UTF-8 in blogroll feeds: {e}");
+                    return;
+                }
+            };
             if feeds.trim().is_empty() {
                 self.config.feeds = vec![];
                 self.items = vec![];

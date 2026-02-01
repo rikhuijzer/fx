@@ -172,13 +172,14 @@ fn md_link(file: &File) -> String {
 
 fn show_file(file: &File) -> String {
     let sha = &file.sha;
-    let link = md_link(file);
+    let link = crate::html::escape_html(&md_link(file));
     let ext = file_ext(file);
+    let filename_escaped = crate::html::escape_html(&file.filename);
     format!(
         "
         <div style='padding: 6px; padding-bottom: 0px; padding-top: 12px; \
           border-bottom: 1px solid var(--border); font-size: 0.8rem;'>
-            <a href='/files/{sha}{ext}'>{}</a>&nbsp;&nbsp;
+            <a href='/files/{sha}{ext}'>{filename_escaped}</a>&nbsp;&nbsp;
             <a class='unstyled-link' href='/files/rename/{sha}' \
               style='font-size: 0.8rem; padding-top: 0.1rem;'>
                 ✏️ Rename
@@ -197,7 +198,6 @@ fn show_file(file: &File) -> String {
             </pre>
         </div>
         ",
-        file.filename,
     )
 }
 
@@ -206,7 +206,13 @@ async fn get_files(State(ctx): State<ServerContext>, jar: CookieJar) -> Response
     if !is_logged_in {
         return crate::serve::unauthorized(&ctx).await;
     }
-    let files = File::list(&*ctx.conn().await).unwrap();
+    let files = match File::list(&*ctx.conn().await) {
+        Ok(files) => files,
+        Err(e) => {
+            tracing::error!("Failed to list files: {e}");
+            return crate::serve::internal_server_error(&ctx, "Failed to list files").await;
+        }
+    };
     let files = files
         .iter()
         .map(show_file)
@@ -373,7 +379,8 @@ async fn get_delete(
         Err(_) => return not_found(State(ctx.clone())).await,
     };
     let extra_head = &Kv::get_or_empty_string(&*ctx.conn().await, "extra_head");
-    let title = format!("Delete: {}", file.filename);
+    let filename_escaped = crate::html::escape_html(&file.filename);
+    let title = format!("Delete: {}", filename_escaped);
     let settings = PageSettings::new(&title, Some(is_logged_in), false, Top::GoHome, extra_head);
     let body = indoc::formatdoc! {r#"
         <div class='medium-text' style='text-align: center; font-weight: bold;'>
@@ -383,7 +390,7 @@ async fn get_delete(
             </form>
             <br>
         </div>
-    "#, file.filename};
+    "#, filename_escaped};
     let body = page(&ctx, &settings, &body).await;
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
@@ -420,7 +427,8 @@ async fn get_rename(
         Err(_) => return not_found(State(ctx.clone())).await,
     };
     let extra_head = &Kv::get_or_empty_string(&*ctx.conn().await, "extra_head");
-    let title = format!("Rename: {}", file.filename);
+    let filename_escaped = crate::html::escape_html(&file.filename);
+    let title = format!("Rename: {}", filename_escaped);
     let settings = PageSettings::new(&title, Some(is_logged_in), false, Top::GoHome, extra_head);
     let body = indoc::formatdoc! {r#"
         <div class='medium-text' style='text-align: center;'>
@@ -436,7 +444,7 @@ async fn get_rename(
             </form>
             <br>
         </div>
-    "#, file.filename, file.filename};
+    "#, filename_escaped, filename_escaped};
     let body = page(&ctx, &settings, &body).await;
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
