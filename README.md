@@ -7,13 +7,6 @@
 
 A Twitter/Bluesky-like (micro)blogging service that you can self-host.
 
-Sites that are running fx:
-
-- <https://huijzer.xyz/>
-- <https://hoekmanmilieuadvies.nl/>
-- <https://fadlaoui.fr/>
-- <https://rozumem.xyz/>
-
 ## Features
 
 - 🚀 Low costs due to small footprint (only a few MB of memory are required).
@@ -29,6 +22,15 @@ Sites that are running fx:
 
 There is a demo site where you can log in and create posts at <https://fx-demo.huijzer.xyz>.
 The demo site resets every hour.
+
+Other sites that are running fx:
+
+- <https://huijzer.xyz/>
+- <https://hoekmanmilieuadvies.nl/>
+- <https://fadlaoui.fr/>
+- <https://rozumem.xyz/>
+
+Feel free to submit a PR if you want your site to be listed here.
 
 ## Background
 
