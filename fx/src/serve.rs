@@ -93,6 +93,10 @@ where
     let mut response: Response<Body> = Response::default();
     *response.status_mut() = status;
     *response.headers_mut() = headers;
+    // Prevent framing the page in an iframe.
+    response
+        .headers_mut()
+        .insert("X-Frame-Options", HeaderValue::from_static("SAMEORIGIN"));
     if ctx.args.production {
         response.headers_mut().insert(
             "Strict-Transport-Security",
