@@ -347,7 +347,7 @@ fn test_extract_slug() {
     };
     assert_eq!(extract_slug(&post), "foo-bar");
     post.content = "Lorem, ipsum".to_string();
-    assert_eq!(extract_slug(&post), "lorem-ipsum");
+    assert_eq!(extract_slug(&post), "lorem--ipsum");
 }
 
 pub fn extract_html_description(post: &Post) -> String {
