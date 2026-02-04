@@ -16,6 +16,7 @@ use axum::routing::get;
 use axum::routing::put;
 use serde_json::json;
 use std::io::Read;
+use subtle::ConstantTimeEq;
 use tar::Builder;
 use tar::Header;
 use xz2::read::XzEncoder;
@@ -47,14 +48,14 @@ fn is_authenticated(ctx: &ServerContext, headers: &HeaderMap) -> bool {
         .unwrap()
         .split_ascii_whitespace()
         .collect::<Vec<&str>>();
-    if !parts.len() == 2 {
+    if parts.len() != 2 {
         return false;
     }
     if parts[0] != "Bearer" {
         return false;
     }
     let token = parts[1];
-    token == password
+    token.as_bytes().ct_eq(password.as_bytes()).into()
 }
 
 fn error(ctx: &ServerContext, status: StatusCode, message: &str) -> Response<Body> {

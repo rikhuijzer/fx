@@ -824,6 +824,7 @@ dependencies = [
  "serde_json",
  "serde_urlencoded",
  "sha2",
+ "subtle",
  "tar",
  "tokio",
  "tokio-cron-scheduler",
