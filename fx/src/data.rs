@@ -51,12 +51,8 @@ impl Kv {
         conn.execute(stmt, [])
     }
     pub fn insert(conn: &Connection, key: &str, value: &[u8]) -> Result<usize> {
-        let stmt = &format!(
-            "
-            INSERT OR REPLACE INTO kv (key, value) VALUES ('{key}', ?)
-        "
-        );
-        conn.execute(stmt, [value])
+        let stmt = "INSERT OR REPLACE INTO kv (key, value) VALUES (?1, ?2)";
+        conn.execute(stmt, rusqlite::params![key, value])
     }
     pub fn get(conn: &Connection, key: &str) -> Result<Vec<u8>> {
         let stmt = "SELECT key, value FROM kv WHERE key = ?";
