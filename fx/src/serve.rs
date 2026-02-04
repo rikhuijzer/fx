@@ -398,7 +398,11 @@ async fn get_post_with_slug(
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
-async fn get_post(State(ctx): State<ServerContext>, Path(id): Path<String>) -> Response<Body> {
+async fn get_post(
+    State(ctx): State<ServerContext>,
+    Path(id): Path<String>,
+    jar: CookieJar,
+) -> Response<Body> {
     let id = match id.parse::<i64>() {
         Ok(id) => id,
         Err(_) => return not_found(State(ctx)).await,
@@ -412,6 +416,10 @@ async fn get_post(State(ctx): State<ServerContext>, Path(id): Path<String>) -> R
         return not_found(State(ctx)).await;
     }
     let slug = crate::md::extract_slug(&post);
+    // Slug can be empty when all slug characters have been stripped.
+    if slug.is_empty() {
+        return get_post_with_slug(State(ctx), Path((id, slug)), jar).await;
+    }
     let url = crate::html::post_link(&post, &slug);
     // Same behavior as Reddit. Any slug is accepted and then redirected to the
     // right page. I couldn't figure out the Reddit status code, but permanent
