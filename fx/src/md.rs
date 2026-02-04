@@ -319,14 +319,15 @@ pub fn extract_slug(post: &Post) -> String {
     let title = extract_html_title(post);
     let slug = title.replace(" ", "-");
     let slug = slug
-        .replace(",", "")
-        .replace("\"", "")
+        .replace(",", "-")
+        .replace("\"", "-")
         .replace("'", "")
-        .replace(":", "")
-        .replace(";", "")
+        .replace(":", "-")
+        .replace(";", "-")
         .replace("!", "")
         .replace("?", "")
-        .replace(".", "")
+        .replace(".", "-")
+        .replace("/", "-")
         .to_lowercase();
     let max_length = 50;
     if slug.len() <= max_length {
