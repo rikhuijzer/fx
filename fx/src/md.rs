@@ -319,14 +319,15 @@ pub fn extract_slug(post: &Post) -> String {
     let title = extract_html_title(post);
     let slug = title.replace(" ", "-");
     let slug = slug
-        .replace(",", "")
-        .replace("\"", "")
+        .replace(",", "-")
+        .replace("\"", "-")
         .replace("'", "")
-        .replace(":", "")
-        .replace(";", "")
+        .replace(":", "-")
+        .replace(";", "-")
         .replace("!", "")
         .replace("?", "")
-        .replace(".", "")
+        .replace(".", "-")
+        .replace("/", "-")
         .to_lowercase();
     let max_length = 50;
     if slug.len() <= max_length {
@@ -346,7 +347,7 @@ fn test_extract_slug() {
     };
     assert_eq!(extract_slug(&post), "foo-bar");
     post.content = "Lorem, ipsum".to_string();
-    assert_eq!(extract_slug(&post), "lorem-ipsum");
+    assert_eq!(extract_slug(&post), "lorem--ipsum");
 }
 
 pub fn extract_html_description(post: &Post) -> String {
