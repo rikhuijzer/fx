@@ -57,7 +57,7 @@ release:
     fi
 
     cat > public/Dockerfile << EOF
-    FROM gcr.io/distroless/cc-debian12
+    FROM gcr.io/distroless/cc-debian13
     ENV FX_PRODUCTION="true"
     COPY fx /
     CMD ["/fx", "serve"]
