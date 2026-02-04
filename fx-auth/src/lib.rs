@@ -174,7 +174,12 @@ pub fn handle_login(
         let ciphertext = serde_json::to_string(&ciphertext).unwrap();
         // Secure ensures only HTTPS scheme (except on localhost).
         // Without secure, a man-in-the-middle could steal the cookie.
-        let cookie = format!("auth={ciphertext}; Max-Age={MAX_AGE_SEC}; Secure;");
+        // HttpOnly prevents the cookie from being accessed by JavaScript.
+        // SameSite=Strict prevents the cookie from being sent in a cross-site request.
+        let cookie = format!(
+            "auth={ciphertext}; Max-Age={MAX_AGE_SEC}; \
+            Secure; HttpOnly; SameSite=Strict;"
+        );
         let cookie = Cookie::parse(cookie).unwrap();
         let updated_jar = jar.add(cookie);
         Some(updated_jar)
