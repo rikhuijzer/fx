@@ -8,7 +8,7 @@ readme = "../README.md"
 publish = false
 
 [dependencies]
-aes-gcm-siv = "0.12.0-rc.2"
+aes-gcm-siv = { version = "0.12.0-rc.3", features = ["rand_core"] }
 argon2 = { version = "0.6.0-rc.2", features = ["getrandom"] }
 axum-extra = { version = "0.12", features = ["cookie"] }
 chrono = { version = "0.4.40", features = ["serde"] }
