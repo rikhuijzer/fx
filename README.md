@@ -76,8 +76,7 @@ services:
     restart: 'unless-stopped'
 ```
 
-Let me know when you are hosting this software, I'll happily link to you from <https://huijzer.xyz> to increase your search engine ranking.
-My email address is at the top of <https://huijzer.xyz>.
+For the full list of `FX_` environment variables, see [fx/src/lib.rs](https://github.com/rikhuijzer/fx/blob/main/fx/src/lib.rs).
 
 ## Syndication
 
