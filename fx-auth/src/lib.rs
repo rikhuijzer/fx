@@ -1,11 +1,12 @@
 //! Encryption and authentication.
 //!
 //! This was moved in a separate crate to speed up incremental compilation.
-use aes_gcm_siv::AeadCore;
 use aes_gcm_siv::Aes256GcmSiv;
+use aes_gcm_siv::Nonce;
+use aes_gcm_siv::aead;
 use aes_gcm_siv::aead::Aead;
+use aes_gcm_siv::aead::Generate;
 use aes_gcm_siv::aead::KeyInit;
-use aes_gcm_siv::aead::Nonce;
 use aes_gcm_siv::aead::array::Array;
 use argon2::Argon2;
 use argon2::password_hash::SaltString;
@@ -39,13 +40,13 @@ fn verify_login(actual: &Login, received: &Login) -> bool {
     username_eq && password_eq
 }
 
-struct Key {
+struct FxKey {
     key: Aes256GcmSiv,
 }
 
 pub type Salt = [u8; 22];
 
-impl Key {
+impl FxKey {
     fn new(salt: &Salt, password: &str) -> Self {
         // Salt can be public because it does not help the attacker.
         // It is only used to defend against rainbow tables.
@@ -54,7 +55,7 @@ impl Key {
         argon2
             .hash_password_into(password.as_bytes(), salt, &mut key)
             .unwrap();
-        Key {
+        FxKey {
             key: Aes256GcmSiv::new_from_slice(&key).unwrap(),
         }
     }
@@ -72,9 +73,10 @@ fn today() -> NaiveDate {
 
 fn encrypt_login(salt: &Salt, password: &str) -> Ciphertext {
     let plaintext = today();
-    let key = Key::new(salt, password);
+    let key = FxKey::new(salt, password);
     // Nonce should be unique per message.
-    let nonce = Aes256GcmSiv::generate_nonce().unwrap();
+    // let nonce = Aes256GcmSiv::generate_nonce().unwrap();
+    let nonce = Nonce::generate();
     let plaintext = plaintext.to_string();
     let ciphertext = key.key.encrypt(&nonce, plaintext.as_bytes()).unwrap();
     Ciphertext {
@@ -84,8 +86,8 @@ fn encrypt_login(salt: &Salt, password: &str) -> Ciphertext {
 }
 
 fn decrypt_login(salt: &Salt, password: &str, auth: &Ciphertext) -> Option<String> {
-    let key = Key::new(salt, password);
-    let nonce: Nonce<Aes256GcmSiv> = Array(auth.nonce);
+    let key = FxKey::new(salt, password);
+    let nonce: aead::Nonce<Aes256GcmSiv> = Array(auth.nonce);
     let ciphertext = auth.ciphertext.as_slice();
     let plaintext = match key.key.decrypt(&nonce, ciphertext) {
         Ok(plaintext) => plaintext,
