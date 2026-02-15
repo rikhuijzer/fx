@@ -196,7 +196,11 @@ impl Post {
 pub fn connect(args: &ServeArgs) -> Result<Connection> {
     let conn = if args.production {
         let path = &args.database_path;
-        Connection::open(path)?
+        let conn = Connection::open(path)?;
+        conn.execute("PRAGMA journal_mode = WAL;", [])?;
+        conn.execute("PRAGMA busy_timeout = 5000;", [])?;
+        conn.execute("PRAGMA synchronous = NORMAL;", [])?;
+        conn
     } else {
         Connection::open_in_memory()?
     };
