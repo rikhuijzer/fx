@@ -197,9 +197,24 @@ pub fn connect(args: &ServeArgs) -> Result<Connection> {
     let conn = if args.production {
         let path = &args.database_path;
         let conn = Connection::open(path)?;
-        conn.execute("PRAGMA journal_mode = WAL;", [])?;
-        conn.execute("PRAGMA busy_timeout = 5000;", [])?;
-        conn.execute("PRAGMA synchronous = NORMAL;", [])?;
+        match conn.execute("PRAGMA journal_mode = WAL;", []) {
+            Ok(_) => (),
+            Err(e) => {
+                tracing::error!("Failed to set journal mode to WAL: {}", e);
+            }
+        }
+        match conn.execute("PRAGMA busy_timeout = 5000;", []) {
+            Ok(_) => (),
+            Err(e) => {
+                tracing::error!("Failed to set busy timeout: {}", e);
+            }
+        }
+        match conn.execute("PRAGMA synchronous = NORMAL;", []) {
+            Ok(_) => (),
+            Err(e) => {
+                tracing::error!("Failed to set synchronous mode to NORMAL: {}", e);
+            }
+        }
         conn
     } else {
         Connection::open_in_memory()?
