@@ -136,17 +136,14 @@ fn compress(data: &[u8]) -> Vec<u8> {
     compressed
 }
 
-async fn get_download_all(State(ctx): State<ServerContext>, headers: HeaderMap) -> Response<Body> {
-    if !is_authenticated(&ctx, &headers) {
-        return unauthorized(&ctx);
-    }
+fn download_all(ctx: &ServerContext) -> Response<Body> {
     let conn = ctx.conn();
     let posts = Post::list(&conn);
     let posts = if let Ok(posts) = posts {
         posts
     } else {
         return error(
-            &ctx,
+            ctx,
             StatusCode::INTERNAL_SERVER_ERROR,
             "failed to get posts",
         );
@@ -156,7 +153,7 @@ async fn get_download_all(State(ctx): State<ServerContext>, headers: HeaderMap) 
         settings
     } else {
         return error(
-            &ctx,
+            ctx,
             StatusCode::INTERNAL_SERVER_ERROR,
             "failed to get settings",
         );
@@ -167,7 +164,7 @@ async fn get_download_all(State(ctx): State<ServerContext>, headers: HeaderMap) 
         files
     } else {
         return error(
-            &ctx,
+            ctx,
             StatusCode::INTERNAL_SERVER_ERROR,
             "failed to get files",
         );
@@ -184,7 +181,19 @@ async fn get_download_all(State(ctx): State<ServerContext>, headers: HeaderMap) 
         "Content-Type",
         HeaderValue::from_static("application/octet-stream"),
     );
-    response::<Vec<u8>>(StatusCode::OK, headers, body, &ctx)
+    response::<Vec<u8>>(StatusCode::OK, headers, body, ctx)
+}
+
+async fn get_download_all(State(ctx): State<ServerContext>, headers: HeaderMap) -> Response<Body> {
+    if !is_authenticated(&ctx, &headers) {
+        return unauthorized(&ctx);
+    }
+    tokio::task::spawn_blocking({
+        let ctx = ctx.clone();
+        move || download_all(&ctx)
+    })
+    .await
+    .unwrap()
 }
 
 async fn update_about(
