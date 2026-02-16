@@ -9,7 +9,6 @@ use fx::serve::LoginForm;
 use fx::serve::ServerContext;
 use fx::serve::app;
 use http_body_util::BodyExt;
-use rusqlite::Connection;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tower::util::ServiceExt;
