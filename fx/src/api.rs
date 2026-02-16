@@ -140,7 +140,7 @@ async fn get_download_all(State(ctx): State<ServerContext>, headers: HeaderMap) 
     if !is_authenticated(&ctx, &headers) {
         return unauthorized(&ctx);
     }
-    let conn = ctx.pool.get().unwrap();
+    let conn = ctx.conn();
     let posts = Post::list(&conn);
     let posts = if let Ok(posts) = posts {
         posts
@@ -162,6 +162,7 @@ async fn get_download_all(State(ctx): State<ServerContext>, headers: HeaderMap) 
         );
     };
     let files = File::list(&conn);
+    drop(conn);
     let files = if let Ok(files) = files {
         files
     } else {

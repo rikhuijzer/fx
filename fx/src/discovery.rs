@@ -40,8 +40,7 @@ fn test_escape_xml() {
 }
 
 async fn rss(ctx: &ServerContext, posts: &[Post]) -> String {
-    let conn = ctx.pool.get().unwrap();
-    let settings = Settings::from_db(&conn).unwrap();
+    let settings = Settings::from_db(&ctx.conn()).unwrap();
     let site_name = escape_xml(&settings.site_name);
     let author_name = escape_xml(&settings.author_name);
     let base = ctx.base_url();
