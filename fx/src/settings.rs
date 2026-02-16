@@ -123,7 +123,7 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
     if !is_logged_in {
         return crate::serve::unauthorized(&ctx).await;
     }
-    let settings = match Settings::from_db(&*ctx.conn().await) {
+    let settings = match Settings::from_db(&ctx.conn()) {
         Ok(settings) => settings,
         Err(e) => {
             let msg = "Could not get settings from database";
@@ -245,25 +245,25 @@ async fn post_settings(
         return crate::serve::unauthorized(&ctx).await;
     }
     {
-        let conn = &*ctx.conn().await;
-        Kv::insert(conn, "site_name", form.site_name.trim().as_bytes()).unwrap();
+        let conn = ctx.conn();
+        Kv::insert(&conn, "site_name", form.site_name.trim().as_bytes()).unwrap();
         Kv::insert(
-            conn,
+            &conn,
             "site_description",
             form.site_description.trim().as_bytes(),
         )
         .unwrap();
-        Kv::insert(conn, "author_name", form.author_name.trim().as_bytes()).unwrap();
+        Kv::insert(&conn, "author_name", form.author_name.trim().as_bytes()).unwrap();
         let dark_mode = if form.dark_mode.is_some() {
             "on"
         } else {
             "off"
         };
-        Kv::insert(conn, "dark_mode", dark_mode.as_bytes()).unwrap();
+        Kv::insert(&conn, "dark_mode", dark_mode.as_bytes()).unwrap();
         let about = cleanup_content(&form.about);
-        Kv::insert(conn, "about", about.as_bytes()).unwrap();
+        Kv::insert(&conn, "about", about.as_bytes()).unwrap();
         let extra_head = cleanup_content(&form.extra_head);
-        Kv::insert(conn, "extra_head", extra_head.as_bytes()).unwrap();
+        Kv::insert(&conn, "extra_head", extra_head.as_bytes()).unwrap();
 
         let key = crate::data::BLOGROLL_SETTINGS_KEY;
         let mut feeds = form
@@ -273,7 +273,7 @@ async fn post_settings(
             .collect::<Vec<_>>();
         feeds.sort();
         let feeds = feeds.join("\n");
-        Kv::insert(conn, key, feeds.trim().as_bytes()).unwrap();
+        Kv::insert(&conn, key, feeds.trim().as_bytes()).unwrap();
     }
     let ctx_clone = ctx.clone();
     tokio::spawn(async move {

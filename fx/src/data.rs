@@ -5,6 +5,8 @@ use chrono::DateTime;
 use chrono::NaiveDateTime;
 use chrono::TimeZone;
 use chrono::Utc;
+use r2d2::Pool;
+use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::Connection;
 use rusqlite::Result;
 
@@ -193,10 +195,14 @@ impl Post {
     }
 }
 
-pub fn connect(args: &ServeArgs) -> Result<Connection> {
-    let conn = if args.production {
+pub type DbPool = Pool<SqliteConnectionManager>;
+
+pub fn connect(args: &ServeArgs) -> Result<DbPool> {
+    let pool = if args.production {
         let path = &args.database_path;
-        let conn = Connection::open(path)?;
+        let manager = SqliteConnectionManager::file(path);
+        let pool = r2d2::Pool::builder().max_size(8).build(manager).unwrap();
+        let conn = pool.get().unwrap();
         match conn.pragma_update(None, "journal_mode", "WAL") {
             Ok(_) => (),
             Err(e) => {
@@ -215,11 +221,12 @@ pub fn connect(args: &ServeArgs) -> Result<Connection> {
                 tracing::error!("Failed to set synchronous mode to NORMAL: {}", e);
             }
         }
-        conn
+        pool
     } else {
-        Connection::open_in_memory()?
+        let manager = SqliteConnectionManager::memory();
+        r2d2::Pool::new(manager).unwrap()
     };
-    Ok(conn)
+    Ok(pool)
 }
 
 fn init_tables(conn: &Connection) {

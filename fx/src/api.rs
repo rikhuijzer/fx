@@ -140,7 +140,8 @@ async fn get_download_all(State(ctx): State<ServerContext>, headers: HeaderMap) 
     if !is_authenticated(&ctx, &headers) {
         return unauthorized(&ctx);
     }
-    let posts = Post::list(&*ctx.conn().await);
+    let conn = ctx.conn();
+    let posts = Post::list(&conn);
     let posts = if let Ok(posts) = posts {
         posts
     } else {
@@ -150,7 +151,7 @@ async fn get_download_all(State(ctx): State<ServerContext>, headers: HeaderMap) 
             "failed to get posts",
         );
     };
-    let settings = Settings::from_db(&*ctx.conn().await);
+    let settings = Settings::from_db(&conn);
     let settings = if let Ok(settings) = settings {
         settings
     } else {
@@ -160,7 +161,8 @@ async fn get_download_all(State(ctx): State<ServerContext>, headers: HeaderMap) 
             "failed to get settings",
         );
     };
-    let files = File::list(&*ctx.conn().await);
+    let files = File::list(&conn);
+    drop(conn);
     let files = if let Ok(files) = files {
         files
     } else {
@@ -193,7 +195,7 @@ async fn update_about(
     if !is_authenticated(&ctx, &headers) {
         return unauthorized(&ctx);
     }
-    let settings = Settings::from_db(&*ctx.conn().await);
+    let settings = Settings::from_db(&ctx.conn());
     if let Ok(settings) = settings {
         // Avoid update and backup trigger when no change to avoid infinite loop.
         if settings.about.trim() == body.trim() {
@@ -201,7 +203,7 @@ async fn update_about(
             return response_json(StatusCode::OK, "ok", &ctx);
         }
     }
-    let about = Settings::set_about(&*ctx.conn().await, &body);
+    let about = Settings::set_about(&ctx.conn(), &body);
     if let Err(e) = about {
         return error(
             &ctx,

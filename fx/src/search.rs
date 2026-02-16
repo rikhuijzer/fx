@@ -43,7 +43,7 @@ async fn search(ctx: &ServerContext, q: &str) -> Vec<Post> {
     if q.is_empty() {
         return vec![];
     }
-    let conn = ctx.conn().await;
+    let conn = ctx.conn();
 
     let stmt = "BEGIN TRANSACTION";
     conn.execute(stmt, []).unwrap();
@@ -124,7 +124,7 @@ async fn get_search(
     let mut headers = HeaderMap::new();
     content_type(&mut headers, "text/html");
     let title = "Search";
-    let extra_head = &Kv::get_or_empty_string(&*ctx.conn().await, "extra_head");
+    let extra_head = &Kv::get_or_empty_string(&ctx.conn(), "extra_head");
     let settings = PageSettings::new(title, Some(is_logged_in), false, Top::GoHome, extra_head);
     let body = page(&ctx, &settings, &body).await;
     response(StatusCode::OK, headers, body, &ctx)

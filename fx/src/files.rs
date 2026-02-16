@@ -206,7 +206,7 @@ async fn get_files(State(ctx): State<ServerContext>, jar: CookieJar) -> Response
     if !is_logged_in {
         return crate::serve::unauthorized(&ctx).await;
     }
-    let files = File::list(&*ctx.conn().await).unwrap();
+    let files = File::list(&ctx.conn()).unwrap();
     let files = files
         .iter()
         .map(show_file)
@@ -265,7 +265,7 @@ async fn get_file(State(ctx): State<ServerContext>, Path(sha): Path<String>) -> 
     } else {
         sha
     };
-    let file = match File::get(&*ctx.conn().await, &name) {
+    let file = match File::get(&ctx.conn(), &name) {
         Ok(file) => file,
         Err(_) => {
             return {
@@ -324,7 +324,7 @@ async fn post_file(
             file.filename
         };
         let file = File::new(&file.mime_type, &filename, file.data);
-        File::insert(&*ctx.conn().await, &file).unwrap();
+        File::insert(&ctx.conn(), &file).unwrap();
     }
 
     crate::trigger::trigger_github_backup(&ctx).await;
@@ -340,12 +340,12 @@ async fn get_delete(
     if !is_logged_in {
         return crate::serve::unauthorized(&ctx).await;
     }
-    let file = File::get(&*ctx.conn().await, &sha);
+    let file = File::get(&ctx.conn(), &sha);
     let file = match file {
         Ok(file) => file,
         Err(_) => return not_found(State(ctx.clone())).await,
     };
-    let extra_head = &Kv::get_or_empty_string(&*ctx.conn().await, "extra_head");
+    let extra_head = &Kv::get_or_empty_string(&ctx.conn(), "extra_head");
     let title = format!("Delete: {}", file.filename);
     let settings = PageSettings::new(&title, Some(is_logged_in), false, Top::GoHome, extra_head);
     let body = indoc::formatdoc! {r#"
@@ -370,7 +370,7 @@ async fn post_delete(
     if !is_logged_in {
         return crate::serve::unauthorized(&ctx).await;
     }
-    File::delete(&*ctx.conn().await, &sha).unwrap();
+    File::delete(&ctx.conn(), &sha).unwrap();
     crate::trigger::trigger_github_backup(&ctx).await;
     crate::serve::see_other(&ctx, "/files")
 }
@@ -384,12 +384,12 @@ async fn get_rename(
     if !is_logged_in {
         return crate::serve::unauthorized(&ctx).await;
     }
-    let file = File::get(&*ctx.conn().await, &sha);
+    let file = File::get(&ctx.conn(), &sha);
     let file = match file {
         Ok(file) => file,
         Err(_) => return not_found(State(ctx.clone())).await,
     };
-    let extra_head = &Kv::get_or_empty_string(&*ctx.conn().await, "extra_head");
+    let extra_head = &Kv::get_or_empty_string(&ctx.conn(), "extra_head");
     let title = format!("Rename: {}", file.filename);
     let settings = PageSettings::new(&title, Some(is_logged_in), false, Top::GoHome, extra_head);
     let body = indoc::formatdoc! {r#"
@@ -427,7 +427,7 @@ async fn post_rename(
         return crate::serve::unauthorized(&ctx).await;
     }
     let filename = rename_form.filename;
-    File::rename(&*ctx.conn().await, &sha, &filename).unwrap();
+    File::rename(&ctx.conn(), &sha, &filename).unwrap();
     crate::trigger::trigger_github_backup(&ctx).await;
     crate::serve::see_other(&ctx, "/files")
 }
