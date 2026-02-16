@@ -195,7 +195,7 @@ impl Post {
     }
 }
 
-type DbPool = Pool<SqliteConnectionManager>;
+pub type DbPool = Pool<SqliteConnectionManager>;
 
 pub fn connect(args: &ServeArgs) -> Result<DbPool> {
     let pool = if args.production {

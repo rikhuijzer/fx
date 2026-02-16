@@ -30,6 +30,8 @@ use fx_auth::Login;
 use fx_auth::Salt;
 use fx_rss::RssFeed;
 use http_body_util::BodyExt;
+use r2d2::PooledConnection;
+use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::Connection;
 use serde::Deserialize;
 use serde::Serialize;
@@ -37,13 +39,14 @@ use std::sync::Arc;
 use std::time::Instant;
 use tokio::sync::Mutex;
 use tokio::sync::MutexGuard;
+use crate::data::DbPool;
 use tokio_cron_scheduler::Job;
 use tokio_cron_scheduler::JobScheduler;
 
 #[derive(Clone)]
 pub struct ServerContext {
     pub args: ServeArgs,
-    pub conn: Arc<Mutex<Connection>>,
+    pub pool: DbPool,
     pub salt: Salt,
     pub blog_cache: Arc<Mutex<BlogCache>>,
 }
@@ -51,19 +54,19 @@ pub struct ServerContext {
 impl ServerContext {
     pub async fn new(
         args: ServeArgs,
-        conn: Connection,
+        pool: DbPool,
         salt: Salt,
         blog_cache: Arc<Mutex<BlogCache>>,
     ) -> Self {
         Self {
             args: args.clone(),
-            conn: Arc::new(Mutex::new(conn)),
+            pool,
             salt,
             blog_cache,
         }
     }
-    pub async fn conn(&self) -> MutexGuard<'_, Connection> {
-        self.conn.lock().await
+    pub fn conn(&self) -> PooledConnection<SqliteConnectionManager> {
+        self.pool.get().unwrap()
     }
     /// Returns the base URL of the server.
     ///
@@ -174,7 +177,7 @@ pub fn is_logged_in(ctx: &ServerContext, jar: &CookieJar) -> bool {
 }
 
 async fn list_posts(ctx: &ServerContext, page: usize) -> (bool, String) {
-    let posts = match Post::list(&*ctx.conn().await) {
+    let posts = match Post::list(&ctx.conn()) {
         Ok(posts) => posts,
         Err(_) => return (false, "Database error".to_string()),
     };
@@ -213,7 +216,7 @@ async fn get_posts(
     let is_logged_in = Some(is_logged_in(&ctx, &jar));
     let show_about = pagination.page.is_none();
     let current_page = pagination.page.unwrap_or(1);
-    let extra_head = Kv::get_or_empty_string(&*ctx.conn().await, "extra_head");
+    let extra_head = Kv::get_or_empty_string(&ctx.conn(), "extra_head");
     let extra_head = format!(
         "
         <meta property='og:type' content='website'/>
@@ -315,12 +318,12 @@ async fn get_delete(
     if !is_logged_in {
         return not_found(State(ctx.clone())).await;
     }
-    let post = Post::get(&*ctx.conn().await, id);
+    let post = Post::get(&ctx.conn(), id);
     let post = match post {
         Ok(post) => post,
         Err(_) => return not_found(State(ctx.clone())).await,
     };
-    let extra_head = &Kv::get_or_empty_string(&*ctx.conn().await, "extra_head");
+    let extra_head = &Kv::get_or_empty_string(&ctx.conn(), "extra_head");
     let title = crate::md::extract_html_title(&post);
     let settings = PageSettings::new(&title, Some(is_logged_in), false, Top::GoHome, extra_head);
     let delete_button = indoc::formatdoc! {r#"
@@ -343,7 +346,7 @@ async fn get_edit(
     jar: CookieJar,
 ) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
-    let post = Post::get(&*ctx.conn().await, id);
+    let post = Post::get(&ctx.conn(), id);
     let post = match post {
         Ok(post) => post,
         Err(_) => return not_found(State(ctx)).await,
@@ -351,7 +354,7 @@ async fn get_edit(
     let title = crate::md::extract_html_title(&post);
     let title = format!("Edit '{title}'");
     let body = crate::html::edit_post_form(&post);
-    let extra_head = Kv::get_or_empty_string(&*ctx.conn().await, "extra_head");
+    let extra_head = Kv::get_or_empty_string(&ctx.conn(), "extra_head");
     let settings = PageSettings::new(&title, Some(is_logged_in), false, Top::GoBack, &extra_head);
     let body = page(&ctx, &settings, &body).await;
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
@@ -367,7 +370,7 @@ async fn get_post_with_slug(
     jar: CookieJar,
 ) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
-    let post = Post::get(&*ctx.conn().await, id);
+    let post = Post::get(&ctx.conn(), id);
     let post = match post {
         Ok(post) => post,
         Err(_) => return not_found(State(ctx)).await,
@@ -376,14 +379,14 @@ async fn get_post_with_slug(
         return not_found(State(ctx)).await;
     }
     let title = crate::md::extract_html_title(&post);
-    let author = Kv::get(&*ctx.conn().await, "author_name").unwrap();
+    let author = Kv::get(&ctx.conn(), "author_name").unwrap();
     let author = String::from_utf8(author).unwrap();
     // Open Graph uses ISO 8601 according to <https://ogp.me/>.
     let created = iso8601(&post.created);
     let updated = iso8601(&post.updated);
     let slug = crate::md::extract_slug(&post);
     let canonical = format!("{}/posts/{}/{slug}", &ctx.base_url(), &post.id);
-    let extra_head = Kv::get_or_empty_string(&*ctx.conn().await, "extra_head");
+    let extra_head = Kv::get_or_empty_string(&ctx.conn(), "extra_head");
     let extra_head = indoc::formatdoc! {r#"
         <meta property='article:author' content='{author}'/>
         <meta property='article:published_time' content='{created}'/>
@@ -411,7 +414,7 @@ async fn get_post(
         Ok(id) => id,
         Err(_) => return not_found(State(ctx)).await,
     };
-    let post = Post::get(&*ctx.conn().await, id);
+    let post = Post::get(&ctx.conn(), id);
     let post = match post {
         Ok(post) => post,
         Err(_) => return not_found(State(ctx)).await,
@@ -454,7 +457,7 @@ pub async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
             <p>The page you are looking for does not exist.</p>
         </div>
     "};
-    let extra_head = Kv::get_or_empty_string(&*ctx.conn().await, "extra_head");
+    let extra_head = Kv::get_or_empty_string(&ctx.conn(), "extra_head");
     let settings = PageSettings::new(
         "not found",
         Some(is_logged_in),
@@ -536,7 +539,7 @@ async fn post_delete(
             &ctx,
         ));
     }
-    Post::delete(&*ctx.conn().await, id).unwrap();
+    Post::delete(&ctx.conn(), id).unwrap();
     crate::trigger::trigger_github_backup(&ctx).await;
     Ok(Redirect::to("/"))
 }
@@ -573,7 +576,7 @@ async fn post_edit(
     if !is_logged_in {
         return not_found(State(ctx)).await;
     }
-    let extra_head = &Kv::get_or_empty_string(&*ctx.conn().await, "extra_head");
+    let extra_head = &Kv::get_or_empty_string(&ctx.conn(), "extra_head");
     let settings = PageSettings::new("", Some(is_logged_in), false, Top::GoBack, extra_head);
     let (_, body) = req.into_parts();
     let bytes = body
@@ -592,7 +595,7 @@ async fn post_edit(
     let input = String::from_utf8(bytes).unwrap();
     let publish = input.contains("publish=Publish");
     let form = serde_urlencoded::from_str::<EditPostForm>(&input).unwrap();
-    let created = match Post::get(&*ctx.conn().await, id) {
+    let created = match Post::get(&ctx.conn(), id) {
         Ok(post) => post.created,
         Err(_) => Utc::now(),
     };
@@ -603,7 +606,7 @@ async fn post_edit(
         content: trim_newline_suffix(&form.content),
     };
     if publish {
-        let post = post.update(&*ctx.conn().await);
+        let post = post.update(&ctx.conn());
         if post.is_err() {
             return response(
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -636,7 +639,7 @@ async fn post_add(
     if !is_logged_in {
         return not_found(State(ctx)).await;
     }
-    let extra_head = &Kv::get_or_empty_string(&*ctx.conn().await, "extra_head");
+    let extra_head = &Kv::get_or_empty_string(&ctx.conn(), "extra_head");
     let settings = PageSettings::new("", Some(is_logged_in), false, Top::GoBack, extra_head);
     let (_, body) = req.into_parts();
     let bytes = body
@@ -658,7 +661,7 @@ async fn post_add(
     if publish {
         let now = Utc::now();
         let content = trim_newline_suffix(&form.content);
-        let post_id = Post::insert(&*ctx.conn().await, now, now, &content);
+        let post_id = Post::insert(&ctx.conn(), now, now, &content);
         if let Err(_e) = post_id {
             return response(
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -802,12 +805,14 @@ async fn schedule_jobs(blog_cache: Arc<Mutex<BlogCache>>, ctx: ServerContext) {
 }
 
 pub async fn run(args: &ServeArgs) {
-    let conn = data::connect(args).unwrap();
+    let pool = data::connect(args).unwrap();
+    let conn = pool.get().unwrap();
     data::init(args, &conn);
     let salt = obtain_salt(args, &conn);
     let blog_cache = init_blog_cache(&conn).await;
+    drop(conn);
     let blog_cache = Arc::new(Mutex::new(blog_cache));
-    let ctx = ServerContext::new(args.clone(), conn, salt, blog_cache.clone()).await;
+    let ctx = ServerContext::new(args.clone(), pool, salt, blog_cache.clone()).await;
     schedule_jobs(blog_cache.clone(), ctx.clone()).await;
     let app = app(ctx);
     // Listen on both IPv4 and IPv6. This seems to not be necessary behind the

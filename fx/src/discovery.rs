@@ -40,7 +40,8 @@ fn test_escape_xml() {
 }
 
 async fn rss(ctx: &ServerContext, posts: &[Post]) -> String {
-    let settings = Settings::from_db(&*ctx.conn().await).unwrap();
+    let conn = ctx.pool.get().unwrap();
+    let settings = Settings::from_db(&conn).unwrap();
     let site_name = escape_xml(&settings.site_name);
     let author_name = escape_xml(&settings.author_name);
     let base = ctx.base_url();
@@ -82,7 +83,7 @@ async fn rss(ctx: &ServerContext, posts: &[Post]) -> String {
 }
 
 async fn get_rss(State(ctx): State<ServerContext>) -> Response<Body> {
-    let posts = Post::list(&*ctx.conn().await).unwrap();
+    let posts = Post::list(&ctx.conn()).unwrap();
     let body = rss(&ctx, &posts).await;
     let mut headers = HeaderMap::new();
     // Forces download in Firefox unfortunately:
@@ -135,7 +136,7 @@ fn sitemap(ctx: &ServerContext, posts: &[Post]) -> String {
 }
 
 async fn get_sitemap(State(ctx): State<ServerContext>) -> Response<Body> {
-    let posts = Post::list(&*ctx.conn().await).unwrap();
+    let posts = Post::list(&ctx.conn()).unwrap();
     let body = sitemap(&ctx, &posts);
     let mut headers = HeaderMap::new();
     content_type(&mut headers, "text/xml");

@@ -68,7 +68,7 @@ impl BlogCache {
     }
     pub async fn update(&mut self, ctx: &ServerContext) {
         let key = crate::data::BLOGROLL_SETTINGS_KEY;
-        let feeds = Kv::get(&*ctx.conn().await, key);
+        let feeds = Kv::get(&ctx.conn(), key);
         if let Ok(feeds) = feeds {
             let feeds = String::from_utf8(feeds).unwrap();
             if feeds.trim().is_empty() {
@@ -98,7 +98,7 @@ impl BlogCache {
 
 async fn get_blogroll(State(ctx): State<ServerContext>, jar: CookieJar) -> Response<Body> {
     let is_logged_in = is_logged_in(&ctx, &jar);
-    let extra_head = Kv::get_or_empty_string(&*ctx.conn().await, "extra_head");
+    let extra_head = Kv::get_or_empty_string(&ctx.conn(), "extra_head");
     let title = "Blogroll";
     let settings = PageSettings::new(title, Some(is_logged_in), false, Top::GoHome, &extra_head);
 
