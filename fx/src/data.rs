@@ -1,11 +1,11 @@
 use crate::ServeArgs;
 use crate::files::File;
 use bytes::Bytes;
-use r2d2::Pool;
 use chrono::DateTime;
 use chrono::NaiveDateTime;
 use chrono::TimeZone;
 use chrono::Utc;
+use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::Connection;
 use rusqlite::Result;
@@ -224,8 +224,7 @@ pub fn connect(args: &ServeArgs) -> Result<DbPool> {
         pool
     } else {
         let manager = SqliteConnectionManager::memory();
-        let pool = r2d2::Pool::new(manager).unwrap();
-        pool
+        r2d2::Pool::new(manager).unwrap()
     };
     Ok(pool)
 }

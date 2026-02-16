@@ -1,6 +1,7 @@
 use crate::ServeArgs;
 use crate::blogroll::BlogCache;
 use crate::data;
+use crate::data::DbPool;
 use crate::data::Kv;
 use crate::data::Post;
 use crate::html::PageSettings;
@@ -38,8 +39,6 @@ use serde::Serialize;
 use std::sync::Arc;
 use std::time::Instant;
 use tokio::sync::Mutex;
-use tokio::sync::MutexGuard;
-use crate::data::DbPool;
 use tokio_cron_scheduler::Job;
 use tokio_cron_scheduler::JobScheduler;
 

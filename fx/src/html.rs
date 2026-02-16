@@ -385,10 +385,10 @@ fn test_minify() {
 }
 
 async fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
-    let about = Kv::get(&*ctx.conn().await, "about").unwrap();
+    let about = Kv::get(&ctx.conn(), "about").unwrap();
     let about = String::from_utf8(about).unwrap();
     let about = crate::md::content_to_html(&about);
-    let author_name = Kv::get(&*ctx.conn().await, "author_name").unwrap();
+    let author_name = Kv::get(&ctx.conn(), "author_name").unwrap();
     let author_name = String::from_utf8(author_name).unwrap();
     let style = "font-size: 0.8rem; padding-top: 0.1rem;";
     let admin_buttons = if settings.is_logged_in.unwrap_or(false) {
@@ -410,7 +410,7 @@ async fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
     let container_style = "display: flex; justify-content: space-between;";
     let name_style = "font-size: 1.2rem; margin-bottom: 10px; font-weight: bold;";
     let blogroll_key = crate::data::BLOGROLL_SETTINGS_KEY;
-    let blogroll_feeds = match Kv::get(&*ctx.conn().await, blogroll_key) {
+    let blogroll_feeds = match Kv::get(&ctx.conn(), blogroll_key) {
         Ok(feeds) => String::from_utf8(feeds).unwrap(),
         Err(_) => "".to_string(),
     };
@@ -540,7 +540,7 @@ async fn highlight_head(ctx: &ServerContext, body: &str) -> String {
         "".to_string()
     };
     if has_code(body) {
-        let dark_mode = Kv::get(&*ctx.conn().await, "dark_mode").unwrap();
+        let dark_mode = Kv::get(&ctx.conn(), "dark_mode").unwrap();
         let dark_mode = String::from_utf8(dark_mode).unwrap();
         let dark_stylesheet = if dark_mode == "on" {
             format!(
@@ -581,10 +581,10 @@ async fn highlight_head(ctx: &ServerContext, body: &str) -> String {
 }
 
 pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String {
-    let site_name = Kv::get(&*ctx.conn().await, "site_name").unwrap();
+    let site_name = Kv::get(&ctx.conn(), "site_name").unwrap();
     let site_name = String::from_utf8(site_name).unwrap();
     let site_name = escape_single_quote(&site_name);
-    let site_description = Kv::get_or_empty_string(&*ctx.conn().await, "site_description");
+    let site_description = Kv::get_or_empty_string(&ctx.conn(), "site_description");
     let full_title = if settings.title.is_empty() {
         site_name.clone()
     } else {
@@ -630,7 +630,7 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
     } else {
         &settings.title
     };
-    let data_theme = Kv::get(&*ctx.conn().await, "dark_mode").unwrap();
+    let data_theme = Kv::get(&ctx.conn(), "dark_mode").unwrap();
     let data_theme = String::from_utf8(data_theme).unwrap();
     let data_theme = if data_theme == "on" {
         ""

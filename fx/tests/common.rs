@@ -4,6 +4,7 @@ use axum::http::StatusCode;
 use fx::ServeArgs;
 use fx::blogroll::BlogCache;
 use fx::data;
+use fx::data::DbPool;
 use fx::serve::LoginForm;
 use fx::serve::ServerContext;
 use fx::serve::app;
@@ -36,18 +37,19 @@ impl TestDefault for ServeArgs {
     }
 }
 
-impl TestDefault for Connection {
+impl TestDefault for DbPool {
     fn test_default() -> Self {
         let args = ServeArgs::test_default();
-        let conn = data::connect(&args).unwrap();
+        let pool: DbPool = data::connect(&args).unwrap();
+        let conn = pool.get().unwrap();
         data::init(&args, &conn);
-        conn
+        pool
     }
 }
 
 pub async fn server_context() -> ServerContext {
     let args = ServeArgs::test_default();
-    let conn = Connection::test_default();
+    let conn = DbPool::test_default();
     let salt = fx_auth::generate_salt();
     let blog_cache = BlogCache::new(vec![]).await;
     let blog_cache = Arc::new(Mutex::new(blog_cache));
