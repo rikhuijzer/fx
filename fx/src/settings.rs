@@ -276,7 +276,7 @@ async fn post_settings(
         Kv::insert(&conn, key, feeds.trim().as_bytes()).unwrap();
     }
     let ctx_clone = ctx.clone();
-    tokio::spawn(async move {
+    tokio::task::spawn_blocking(async move || {
         update_feeds(&ctx_clone).await;
     });
     crate::trigger::trigger_github_backup(&ctx).await;
