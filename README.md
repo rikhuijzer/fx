@@ -74,7 +74,7 @@ services:
       # Stores the SQLite database.
       - './data:/data:rw'
     healthcheck:
-      test: 'fx check-health'
+      test: ['CMD', '/fx', 'check-health']
     restart: 'unless-stopped'
 ```
 
