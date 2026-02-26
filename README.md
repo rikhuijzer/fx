@@ -165,6 +165,7 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
         # Avoiding `actions/checkout` since it runs concurrently even when
         # concurrency group is set, see
