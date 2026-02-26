@@ -79,6 +79,8 @@ services:
 ```
 
 For the full list of `FX_` environment variables, see [fx/src/lib.rs](https://github.com/rikhuijzer/fx/blob/main/fx/src/lib.rs).
+Docker Compose does not restart containers when the healthcheck fails.
+To fix that, you can write your own CRON job script to check for failures, or use [autoheal](https://github.com/willfarrell/docker-autoheal).
 
 ## Syndication
 
