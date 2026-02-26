@@ -1,15 +1,18 @@
 use clap::Parser;
 use fx::ServeArgs;
+use fx::health::HealthArgs;
 use tracing::Level;
 use tracing::subscriber::SetGlobalDefaultError;
 
 #[derive(Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
 enum Task {
-    /// Start the server.
-    Serve(ServeArgs),
+    /// Run a health check on the given port.
+    CheckHealth(HealthArgs),
     /// Print the project's license.
     License,
+    /// Start the server.
+    Serve(ServeArgs),
 }
 
 #[derive(Debug, Parser)]
@@ -45,12 +48,15 @@ async fn main() {
     init_subscriber(Level::INFO, args.ansi.unwrap_or(true)).unwrap();
 
     match &args.task {
-        Task::Serve(args) => {
-            fx::serve::run(args).await;
+        Task::CheckHealth(args) => {
+            fx::health::check_health(args).await;
         }
         Task::License => {
             let license_content = include_str!("../../LICENSE");
             println!("{}", license_content);
+        }
+        Task::Serve(args) => {
+            fx::serve::run(args).await;
         }
     }
 }
