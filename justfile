@@ -72,8 +72,3 @@ serve:
     #!{{shebang}}
 
     cargo watch -x "run -- serve --password=test-password"
-
-check-health:
-    #!{{shebang}}
-
-    cargo run -- check-health
