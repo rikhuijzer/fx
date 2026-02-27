@@ -55,7 +55,7 @@ Like Twitter/Bluesky or other social media platforms, with this site you can now
 
 ## Installation
 
-Via Docker Compose:
+Via Docker Compose (if you're not used to managing Linux servers, [here is a howto](https://huijzer.xyz/posts/150/how-to-run-services-on-a-linux-server)):
 
 ```yml
 services:
