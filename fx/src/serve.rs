@@ -468,8 +468,23 @@ pub async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
     response::<String>(StatusCode::NOT_FOUND, HeaderMap::new(), body, &ctx)
 }
 
-async fn get_login(State(ctx): State<ServerContext>) -> Response<Body> {
-    let body = crate::html::login(&ctx, None).await;
+fn is_https(headers: &HeaderMap) -> bool {
+    // Check X-Forwarded-Proto header.
+    if let Some(proto) = headers.get("X-Forwarded-Proto") {
+        return proto == "https";
+    }
+    false
+}
+
+async fn get_login(State(ctx): State<ServerContext>, headers: HeaderMap) -> Response<Body> {
+    let error = if ctx.args.production && !is_https(&headers) {
+        Some(
+            "Did not find X-Forwarded-Proto header which suggests the request is not over HTTPS. Login will probably fail. Use a reverse proxy like Caddy with HTTPS to fix this.",
+        )
+    } else {
+        None
+    };
+    let body = crate::html::login(&ctx, error).await;
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
