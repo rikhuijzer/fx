@@ -8,6 +8,7 @@ use rss::Channel;
 use std::error::Error;
 use std::io::BufReader;
 use std::io::ErrorKind;
+use std::time::Duration;
 
 /// An RSS item after it has been extracted from a feed.
 ///
@@ -306,7 +307,11 @@ fn items_from_atom(content: &str) -> Option<Vec<Item>> {
 
 async fn items_from_feed(feed: &RssFeed) -> Result<Vec<Item>, Box<dyn Error + Send>> {
     let url = feed.url.clone();
-    let client = reqwest::Client::builder().build().unwrap();
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(10))
+        .connect_timeout(Duration::from_secs(5))
+        .build()
+        .unwrap();
     let response = match client.get(url).send().await {
         Ok(response) => response,
         Err(e) => {

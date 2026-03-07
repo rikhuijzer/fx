@@ -1,4 +1,5 @@
 use clap::Parser;
+use std::time::Duration;
 
 #[derive(Clone, Debug, Parser)]
 pub struct HealthArgs {
@@ -19,7 +20,14 @@ pub async fn check_health(args: &HealthArgs) {
     // Requesting the main page since this is the most important page of the
     // site.
     let url = format!("http://localhost:{port}");
-    let body = reqwest::get(url)
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(10))
+        .connect_timeout(Duration::from_secs(5))
+        .build()
+        .unwrap();
+    let body = client
+        .get(url)
+        .send()
         .await
         .expect("Server did not respond")
         .text()

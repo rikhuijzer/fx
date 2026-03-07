@@ -3,6 +3,7 @@ use crate::serve::ServerContext;
 use hyper::HeaderMap;
 use hyper::header;
 use hyper::header::HeaderValue;
+use std::time::Duration;
 
 struct TriggerArgs {
     pub trigger_token: Option<String>,
@@ -26,7 +27,11 @@ async fn trigger_github_backup_workload(args: TriggerArgs) -> Option<()> {
 
     let domain = "https://api.github.com";
     let url = format!("{domain}/repos/{owner_repo}/actions/workflows/{workflow}/dispatches",);
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(10))
+        .connect_timeout(Duration::from_secs(5))
+        .build()
+        .unwrap();
     let mut headers = HeaderMap::new();
     headers.insert(
         header::ACCEPT,
@@ -78,7 +83,11 @@ async fn trigger_forgejo_backup_workload(args: TriggerArgs) -> Option<()> {
     let url = format!(
         "{domain}/api/v1/repos/{owner_repo}/actions/workflows/{workflowfilename}/dispatches"
     );
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(10))
+        .connect_timeout(Duration::from_secs(5))
+        .build()
+        .unwrap();
     let mut headers = HeaderMap::new();
     headers.insert(header::ACCEPT, "application/json".parse().unwrap());
     headers.insert(
