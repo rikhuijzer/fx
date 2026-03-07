@@ -37,6 +37,7 @@ use rusqlite::Connection;
 use serde::Deserialize;
 use serde::Serialize;
 use std::sync::Arc;
+use std::time::Duration;
 use std::time::Instant;
 use tokio::sync::Mutex;
 use tokio_cron_scheduler::Job;
@@ -730,7 +731,9 @@ pub fn app(ctx: ServerContext) -> Router {
     let router = router.fallback(not_found);
     // Files larger than this will be rejected during upload.
     let limit = 15 * 1024 * 1024;
-    router.with_state(ctx).layer(DefaultBodyLimit::max(limit))
+    router
+        .with_state(ctx)
+        .layer(DefaultBodyLimit::max(limit))
 }
 
 /// Return the salt by either generating a new one or reading it from the db.
@@ -803,6 +806,68 @@ async fn schedule_jobs(blog_cache: Arc<Mutex<BlogCache>>, ctx: ServerContext) {
     scheduler.start().await.unwrap();
 }
 
+/// Accept connections and serve them with HTTP-level idle timeouts and TCP
+/// keepalive. This replaces `axum::serve` which has no idle connection timeout,
+/// causing connections to accumulate indefinitely.
+async fn serve_with_timeouts(listener: tokio::net::TcpListener, app: Router) {
+    use hyper_util::rt::{TokioExecutor, TokioIo};
+    use hyper_util::server::conn::auto;
+    use tower::ServiceExt;
+
+    loop {
+        let (stream, _remote_addr) = match listener.accept().await {
+            Ok(conn) => conn,
+            Err(e) => {
+                tracing::error!("Failed to accept connection: {e}");
+                continue;
+            }
+        };
+
+        // Set TCP keepalive to detect dead peers (crashed client, network
+        // partition). The OS will probe idle connections after 60s, then every
+        // 10s, and close them if the peer doesn't respond.
+        let sock_ref = socket2::SockRef::from(&stream);
+        let keepalive = socket2::TcpKeepalive::new()
+            .with_time(Duration::from_secs(60))
+            .with_interval(Duration::from_secs(10));
+        let _ = sock_ref.set_tcp_keepalive(&keepalive);
+        let _ = stream.set_nodelay(true);
+
+        let app = app.clone();
+        tokio::spawn(async move {
+            let io = TokioIo::new(stream);
+
+            let service =
+                hyper::service::service_fn(move |req: hyper::Request<hyper::body::Incoming>| {
+                    let app = app.clone();
+                    async move {
+                        let req = req.map(Body::new);
+                        Ok::<_, std::convert::Infallible>(
+                            app.oneshot(req).await.unwrap_or_else(|e| match e {}),
+                        )
+                    }
+                });
+
+            let mut builder = auto::Builder::new(TokioExecutor::new());
+            // Close connections that don't send request headers within 30
+            // seconds. Between keep-alive requests, this acts as an idle
+            // connection timeout — the primary fix for the connection leak.
+            builder
+                .http1()
+                .header_read_timeout(Duration::from_secs(30))
+                .keep_alive(true);
+
+            if let Err(err) = builder.serve_connection_with_upgrades(io, service).await {
+                // Filter out normal connection closures to avoid log noise.
+                let msg = format!("{err}");
+                if !msg.contains("connection closed") && !msg.contains("not ready") {
+                    tracing::debug!("connection error: {err}");
+                }
+            }
+        });
+    }
+}
+
 pub async fn run(args: &ServeArgs) {
     let pool = data::connect(args).unwrap();
     let conn = pool.get().unwrap();
@@ -821,5 +886,5 @@ pub async fn run(args: &ServeArgs) {
     let addr = addr.parse::<std::net::SocketAddr>().unwrap();
     tracing::info!("Listening on {addr}");
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    serve_with_timeouts(listener, app).await;
 }
