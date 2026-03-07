@@ -776,14 +776,27 @@ async fn schedule_jobs(blog_cache: Arc<Mutex<BlogCache>>, ctx: ServerContext) {
             return;
         }
     };
-    let ctx = Arc::new(Mutex::new(ctx));
+    let ctx = Arc::new(ctx);
     let task = move |_uuid, _l| {
         let blog_cache = blog_cache.clone();
         let ctx = ctx.clone();
         async move {
-            let mut blog_cache = blog_cache.lock().await;
-            let ctx = ctx.lock().await;
-            blog_cache.update(&ctx).await;
+            // Read feed URLs while holding the lock briefly, then release.
+            let feed_urls = {
+                let mut cache = blog_cache.lock().await;
+                cache.read_feed_urls(&ctx)
+            };
+            // Download feeds WITHOUT holding any lock.
+            let feed_urls = match feed_urls {
+                Some(urls) => urls,
+                None => return, // No feeds configured.
+            };
+            let feeds: Vec<RssFeed> = feed_urls.iter().map(|u| RssFeed::new(u)).collect();
+            let config = fx_rss::RssConfig::new(feeds, 1);
+            let items = config.download_items().await;
+            // Re-acquire lock briefly to store results.
+            let mut cache = blog_cache.lock().await;
+            cache.apply_downloaded_items(feed_urls, items);
         }
         .boxed()
     };

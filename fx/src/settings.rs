@@ -230,9 +230,25 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
 }
 
 async fn update_feeds(ctx: &ServerContext) {
+    use fx_rss::RssFeed;
+
     let blog_cache = ctx.blog_cache.clone();
-    let mut blog_cache = blog_cache.lock().await;
-    blog_cache.update(ctx).await;
+    // Lock briefly to read feed URLs, then release.
+    let feed_urls = {
+        let mut cache = blog_cache.lock().await;
+        cache.read_feed_urls(ctx)
+    };
+    let feed_urls = match feed_urls {
+        Some(urls) => urls,
+        None => return,
+    };
+    // Download without holding the lock.
+    let feeds: Vec<RssFeed> = feed_urls.iter().map(|u| RssFeed::new(u)).collect();
+    let config = fx_rss::RssConfig::new(feeds, 1);
+    let items = config.download_items().await;
+    // Re-acquire lock briefly to store results.
+    let mut cache = blog_cache.lock().await;
+    cache.apply_downloaded_items(feed_urls, items);
 }
 
 async fn post_settings(
@@ -276,7 +292,7 @@ async fn post_settings(
         Kv::insert(&conn, key, feeds.trim().as_bytes()).unwrap();
     }
     let ctx_clone = ctx.clone();
-    tokio::task::spawn_blocking(async move || {
+    tokio::spawn(async move {
         update_feeds(&ctx_clone).await;
     });
     crate::trigger::trigger_github_backup(&ctx).await;
