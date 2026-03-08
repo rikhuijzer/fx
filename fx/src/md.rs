@@ -77,7 +77,7 @@ fn node_to_html(node: &Node) -> String {
         Node::Link(link) => {
             let text = node_to_html(link.children.first().unwrap());
             let url = &link.url;
-            preview.push_str(&format!("<a href='{url}'>{text}</a>"));
+            preview.push_str(&format!("<a href=\"{url}\">{text}</a>"));
         }
         Node::Math(math) => {
             preview.push_str(&format!(
@@ -137,7 +137,7 @@ fn node_to_html(node: &Node) -> String {
         Node::Image(image) => {
             let url = &image.url;
             let alt = &image.alt;
-            preview.push_str(&format!("<img src='{url}' alt='{alt}' />"));
+            preview.push_str(&format!("<img src=\"{url}\" alt=\"{alt}\" />"));
         }
         Node::FootnoteDefinition(_footnote_definition) => {}
         Node::Blockquote(blockquote) => {
@@ -224,7 +224,7 @@ fn test_keep_link() {
     let expected = indoc::indoc! {"
         <h1>Title</h1>
 
-        <p>Lorem ipsum <a href='https://example.com/foo'>foo</a> dolor sit amet</p>
+        <p>Lorem ipsum <a href=\"https://example.com/foo\">foo</a> dolor sit amet</p>
     "};
     assert_eq!(post.content, expected.trim());
 }
