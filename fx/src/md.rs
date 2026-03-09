@@ -208,7 +208,6 @@ pub fn preview(post: &mut Post, max_length: usize) {
 
 #[test]
 fn test_keep_link() {
-    use chrono::Utc;
     let content = indoc::indoc! {"
         # Title
 
@@ -217,8 +216,8 @@ fn test_keep_link() {
     let mut post = Post {
         id: 0,
         content: content.to_string(),
-        created: Utc::now(),
-        updated: Utc::now(),
+        created: chrono::Utc::now(),
+        updated: chrono::Utc::now(),
     };
     preview(&mut post, 600);
     let expected = indoc::indoc! {"
@@ -227,6 +226,20 @@ fn test_keep_link() {
         <p>Lorem ipsum <a href='https://example.com/foo'>foo</a> dolor sit amet</p>
     "};
     assert_eq!(post.content, expected.trim());
+}
+
+#[test]
+fn test_title_link() {
+    let content = "# [foo](/bar)";
+    let mut post = Post {
+        id: 0,
+        content: content.to_string(),
+        created: chrono::Utc::now(),
+        updated: chrono::Utc::now(),
+    };
+    preview(&mut post, 600);
+    let expected = "<h1><a href='/bar'>foo</a></h1>";
+    assert_eq!(post.content.trim(), expected);
 }
 
 #[test]

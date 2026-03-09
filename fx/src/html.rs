@@ -57,6 +57,10 @@ fn set_header_id(html: &str) -> String {
                 if line.contains(" id=") {
                     return line.to_string();
                 }
+                if line.contains("<a href=") {
+                    // Bail for this complex case.
+                    return line.to_string();
+                }
                 // --- is sometimes interpreted as a horizontal rule.
                 if line.contains("<hr />") {
                     return line.to_string();
@@ -87,6 +91,7 @@ fn test_set_header_id() {
     <h1>Hello</h1>
     <h2>Bar baz</h2>
     <h3 id='quux'>Quux</h3>
+    <h1><a href='/bar'>foo</a></h1>
 
     "#};
     let actual = set_header_id(html);
@@ -95,6 +100,7 @@ fn test_set_header_id() {
     <h1 id='hello'>Hello</h1>
     <h2 id='bar-baz'>Bar baz</h2>
     <h3 id='quux'>Quux</h3>
+    <h1><a href='/bar'>foo</a></h1>
 
     "#};
     assert_eq!(actual.trim(), expected.trim());
@@ -139,6 +145,7 @@ pub fn wrap_post_content(post: &Post, slug: &str, is_front_page_preview: bool) -
     } else {
         crate::md::content_to_html(&post.content)
     };
+    println!("html: {:?}", html);
     let html = set_header_id(&html);
     let style = if is_front_page_preview {
         &border_style(1)
