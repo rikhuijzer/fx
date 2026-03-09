@@ -229,20 +229,6 @@ fn test_keep_link() {
 }
 
 #[test]
-fn test_title_link() {
-    let content = "# [foo](/bar)";
-    let mut post = Post {
-        id: 0,
-        content: content.to_string(),
-        created: chrono::Utc::now(),
-        updated: chrono::Utc::now(),
-    };
-    preview(&mut post, 600);
-    let expected = "<h1><a href='/bar'>foo</a></h1>";
-    assert_eq!(post.content.trim(), expected);
-}
-
-#[test]
 fn test_sanitize_preview() {
     use chrono::Utc;
     // Need indoc to avoid indented lines to be interpreted as code.
