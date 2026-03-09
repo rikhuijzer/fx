@@ -35,7 +35,7 @@ subtle = "2.6"
 tar = "0.4"
 tokio = { version = "1.47", features = ["rt-multi-thread", "macros"] }
 tokio-cron-scheduler = "0.15"
-toml = "0.9"
+toml = "1.0"
 tower = "0.5"
 tracing = "0.1"
 tracing-subscriber = "0.3"
