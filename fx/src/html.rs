@@ -145,7 +145,6 @@ pub fn wrap_post_content(post: &Post, slug: &str, is_front_page_preview: bool) -
     } else {
         crate::md::content_to_html(&post.content)
     };
-    println!("html: {:?}", html);
     let html = set_header_id(&html);
     let style = if is_front_page_preview {
         &border_style(1)
