@@ -469,7 +469,6 @@ pub async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
 }
 
 fn is_https(headers: &HeaderMap) -> bool {
-    // Check X-Forwarded-Proto header.
     if let Some(proto) = headers.get("X-Forwarded-Proto") {
         return proto == "https";
     }

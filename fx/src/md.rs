@@ -208,7 +208,6 @@ pub fn preview(post: &mut Post, max_length: usize) {
 
 #[test]
 fn test_keep_link() {
-    use chrono::Utc;
     let content = indoc::indoc! {"
         # Title
 
@@ -217,8 +216,8 @@ fn test_keep_link() {
     let mut post = Post {
         id: 0,
         content: content.to_string(),
-        created: Utc::now(),
-        updated: Utc::now(),
+        created: chrono::Utc::now(),
+        updated: chrono::Utc::now(),
     };
     preview(&mut post, 600);
     let expected = indoc::indoc! {"
