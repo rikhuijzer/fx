@@ -66,7 +66,13 @@ impl BlogCache {
             items: vec![],
         }
     }
-    pub async fn update(&mut self, ctx: &ServerContext) {
+    /// Read feed URLs from the database and return them as strings.
+    ///
+    /// Returns `None` when there are no feeds configured (empty string in DB),
+    /// in which case the cache is cleared immediately. Returns `Some` with the
+    /// list of feed URL strings so the caller can release the lock before
+    /// performing network I/O.
+    pub fn read_feed_urls(&mut self, ctx: &ServerContext) -> Option<Vec<String>> {
         let key = crate::data::BLOGROLL_SETTINGS_KEY;
         let feeds = Kv::get(&ctx.conn(), key);
         if let Ok(feeds) = feeds {
@@ -75,16 +81,22 @@ impl BlogCache {
                 self.config.feeds = vec![];
                 self.items = vec![];
                 self.last_updated = Utc::now();
-                return;
+                return None;
             } else {
-                let feeds = feeds
+                let urls: Vec<String> = feeds
                     .split("\n")
-                    .map(|line| line.trim())
-                    .collect::<Vec<_>>();
-                self.config.feeds = feeds.into_iter().map(RssFeed::new).collect::<Vec<_>>();
+                    .map(|line| line.trim().to_string())
+                    .filter(|line| !line.is_empty())
+                    .collect();
+                return Some(urls);
             }
         }
-        let items = self.config.download_items().await;
+        None
+    }
+
+    /// Apply downloaded items to the cache.
+    pub fn apply_downloaded_items(&mut self, feed_urls: Vec<String>, items: Vec<Item>) {
+        self.config.feeds = feed_urls.iter().map(|u| RssFeed::new(u)).collect();
         let mut items = items
             .iter()
             .filter(|item| item.pub_date.is_some())
@@ -102,8 +114,14 @@ async fn get_blogroll(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
     let title = "Blogroll";
     let settings = PageSettings::new(title, Some(is_logged_in), false, Top::GoHome, &extra_head);
 
-    let last_update = ctx.blog_cache.lock().await.last_updated;
-    let items = &ctx.blog_cache.lock().await.items;
+    // Clone data out of the lock immediately so the Mutex is released before
+    // page rendering. Without this, Rust's temporary lifetime extension keeps
+    // the MutexGuard alive for the rest of the function, blocking the
+    // scheduler and other requests.
+    let (last_update, items) = {
+        let cache = ctx.blog_cache.lock().await;
+        (cache.last_updated, cache.items.clone())
+    };
     let mut items = items
         .iter()
         .filter(|item| item.pub_date.is_some())

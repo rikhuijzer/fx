@@ -197,28 +197,38 @@ impl Post {
 
 pub type DbPool = Pool<SqliteConnectionManager>;
 
+/// Apply per-connection SQLite pragmas to every connection in the pool.
+///
+/// Without this, only the initial connection gets `busy_timeout` and
+/// `synchronous` settings, while the other 7 connections use defaults
+/// (busy_timeout=0 means immediate SQLITE_BUSY errors on write contention).
+#[derive(Debug)]
+struct SqlitePragmaCustomizer;
+
+impl r2d2::CustomizeConnection<Connection, rusqlite::Error> for SqlitePragmaCustomizer {
+    fn on_acquire(&self, conn: &mut Connection) -> Result<()> {
+        conn.pragma_update(None, "busy_timeout", "5000")?;
+        conn.pragma_update(None, "synchronous", "NORMAL")?;
+        Ok(())
+    }
+}
+
 pub fn connect(args: &ServeArgs) -> Result<DbPool> {
     let pool = if args.production {
         let path = &args.database_path;
         let manager = SqliteConnectionManager::file(path);
-        let pool = r2d2::Pool::builder().max_size(8).build(manager).unwrap();
+        let pool = r2d2::Pool::builder()
+            .max_size(8)
+            .connection_customizer(Box::new(SqlitePragmaCustomizer))
+            .build(manager)
+            .unwrap();
+        // WAL mode is database-level (persisted in the file), so setting it
+        // once on any connection is sufficient.
         let conn = pool.get().unwrap();
         match conn.pragma_update(None, "journal_mode", "WAL") {
             Ok(_) => (),
             Err(e) => {
                 tracing::error!("Failed to set journal mode to WAL: {}", e);
-            }
-        }
-        match conn.pragma_update(None, "busy_timeout", "5000") {
-            Ok(_) => (),
-            Err(e) => {
-                tracing::error!("Failed to set busy timeout: {}", e);
-            }
-        }
-        match conn.pragma_update(None, "synchronous", "NORMAL") {
-            Ok(_) => (),
-            Err(e) => {
-                tracing::error!("Failed to set synchronous mode to NORMAL: {}", e);
             }
         }
         pool
