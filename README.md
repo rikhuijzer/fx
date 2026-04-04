@@ -75,6 +75,11 @@ services:
       - './data:/data:rw'
     healthcheck:
       test: ['CMD', '/fx', 'check-health']
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '5m'
+        max-file: '10'
     restart: 'unless-stopped'
 ```
 
