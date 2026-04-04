@@ -1,8 +1,8 @@
 use clap::Parser;
 use fx::ServeArgs;
 use fx::health::HealthArgs;
-use tracing::subscriber::SetGlobalDefaultError;
 use tracing::Level;
+use tracing::subscriber::SetGlobalDefaultError;
 
 #[derive(Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
