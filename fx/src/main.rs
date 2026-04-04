@@ -1,7 +1,7 @@
 use clap::Parser;
 use fx::ServeArgs;
 use fx::health::HealthArgs;
-use tracing::Level;
+use tracing_core::Level;
 use tracing::subscriber::SetGlobalDefaultError;
 
 #[derive(Debug, clap::Subcommand)]
@@ -28,6 +28,10 @@ struct Args {
     task: Task,
 }
 
+pub fn now() -> String {
+    chrono::Utc::now().format("%Y-%m-%d %H:%M:%S%.3f UTC").to_string()
+}
+
 /// Initialize logging with the given level.
 pub fn init_subscriber(level: Level, ansi: bool) -> Result<(), SetGlobalDefaultError> {
     let subscriber = tracing_subscriber::FmtSubscriber::builder()
@@ -45,7 +49,6 @@ pub fn init_subscriber(level: Level, ansi: bool) -> Result<(), SetGlobalDefaultE
 #[tokio::main]
 async fn main() {
     let args = Args::parse();
-    init_subscriber(Level::INFO, args.ansi.unwrap_or(true)).unwrap();
 
     match &args.task {
         Task::CheckHealth(args) => {
@@ -55,8 +58,16 @@ async fn main() {
             let license_content = include_str!("../../LICENSE");
             println!("{}", license_content);
         }
-        Task::Serve(args) => {
-            fx::serve::run(args).await;
+        Task::Serve(serve_args) => {
+            let log_level = match serve_args.log_level.as_str() {
+                "error" => Level::ERROR,
+                "warn"  => Level::WARN,
+                "info"  => Level::INFO,
+                "debug" => Level::DEBUG,
+                _ => Level::INFO,
+            };
+            init_subscriber(log_level, args.ansi.unwrap_or(true)).unwrap();
+            fx::serve::run(serve_args).await;
         }
     }
 }
