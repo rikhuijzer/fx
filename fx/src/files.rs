@@ -371,6 +371,7 @@ async fn post_delete(
         return crate::serve::unauthorized(&ctx).await;
     }
     File::delete(&ctx.conn(), &sha).unwrap();
+    tracing::info!("\"POST /files/delete/{sha} HTTP/1.1\" 303");
     crate::trigger::trigger_github_backup(&ctx).await;
     crate::serve::see_other(&ctx, "/files")
 }
@@ -408,6 +409,7 @@ async fn get_rename(
         </div>
     "#, file.filename, file.filename};
     let body = page(&ctx, &settings, &body).await;
+    tracing::info!("\"GET /files/rename/{sha} HTTP/1.1\" 200");
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
