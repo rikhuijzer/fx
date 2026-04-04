@@ -38,7 +38,7 @@ tokio-cron-scheduler = "0.15"
 toml = "1.1"
 tower = "0.5"
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["time"] }
+tracing-subscriber = "0.3"
 xz2 = "0.1"
 
 [dev-dependencies]
