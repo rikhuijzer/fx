@@ -853,7 +853,6 @@ dependencies = [
  "toml",
  "tower",
  "tracing",
- "tracing-core",
  "tracing-subscriber",
  "xz2",
 ]
