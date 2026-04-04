@@ -261,6 +261,7 @@ async fn get_posts(
         "
     );
     let body = page(&ctx, &settings, body).await;
+    tracing::info!("\"GET / HTTP/1.1\" 200");
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
@@ -401,6 +402,8 @@ async fn get_post_with_slug(
         body = format!("{}\n{body}", crate::html::edit_post_buttons(&ctx, &post));
     }
     let body = page(&ctx, &settings, &body).await;
+    // Can safely assume HTTP/1.1 because we're not handling TLS.
+    tracing::info!("\"GET /posts/{id} HTTP/1.1\" 200");
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
@@ -484,6 +487,7 @@ async fn get_login(State(ctx): State<ServerContext>, headers: HeaderMap) -> Resp
         None
     };
     let body = crate::html::login(&ctx, error).await;
+    tracing::info!("\"GET /login HTTP/1.1\" 200");
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
@@ -520,9 +524,13 @@ async fn post_login(
     };
     let new_jar = fx_auth::handle_login(&ctx.salt, &actual, &received, jar.clone());
     match new_jar {
-        Some(jar) => Ok((jar, Redirect::to("/"))),
+        Some(jar) => {
+            tracing::info!("\"POST /login HTTP/1.1\" 200");
+            Ok((jar, Redirect::to("/")))
+        }
         None => {
             let body = crate::html::login(&ctx, Some("Invalid username or password"));
+            tracing::info!("\"POST /login HTTP/1.1\" 401");
             Err(response::<String>(
                 StatusCode::UNAUTHORIZED,
                 HeaderMap::new(),
@@ -535,6 +543,7 @@ async fn post_login(
 
 async fn get_logout(State(_ctx): State<ServerContext>, jar: CookieJar) -> (CookieJar, Redirect) {
     let updated_jar = fx_auth::handle_logout(jar.clone());
+    tracing::info!("\"GET /logout HTTP/1.1\" 200");
     (updated_jar, Redirect::to("/"))
 }
 
