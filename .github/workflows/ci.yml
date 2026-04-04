@@ -51,10 +51,12 @@ jobs:
             target/
           key: ${{ runner.os }}-build-${{ hashFiles('**/Cargo.toml') }}
       - uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        if: github.ref == 'refs/heads/main'
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Extract metadata (tags, labels) for Docker
+        if: github.ref == 'refs/heads/main'
         id: meta
         uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804
         with:
@@ -85,6 +87,7 @@ jobs:
       - run: date +'%Y-%m-%d %H:%M' > fx/src/version.txt
       - run: just release
       - uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+        if: github.ref == 'refs/heads/main'
       - id: platform
         run: |
           PLATFORM=""
@@ -95,6 +98,7 @@ jobs:
           fi
           echo "PLATFORM=$PLATFORM" >> $GITHUB_OUTPUT
       - name: Build and push Docker image
+        if: github.ref == 'refs/heads/main'
         id: build
         uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
         with:
@@ -104,11 +108,13 @@ jobs:
           tags: ${{ env.REGISTRY_IMAGE }}
           outputs: type=image,push-by-digest=true,name-canonical=true,push=true
       - name: Export digest
+        if: github.ref == 'refs/heads/main'
         run: |
           mkdir -p ${{ runner.temp }}/digests
           digest="${{ steps.build.outputs.digest }}"
           touch "${{ runner.temp }}/digests/${digest#sha256:}"
       - name: Upload digest
+        if: github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
           name: digests-${{ matrix.os }}
@@ -118,6 +124,7 @@ jobs:
   merge:
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 15
+    if: github.ref == 'refs/heads/main'
     permissions:
       # Required by softprops/action-gh-release.
       contents: write
@@ -154,13 +161,11 @@ jobs:
 
       - name: Create manifest list and push
         working-directory: ${{ runner.temp }}/digests
-        if: github.event_name != 'pull_request'
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
             $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
 
       - name: Inspect image
-        if: github.event_name != 'pull_request'
         run: |
           docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }}
     
