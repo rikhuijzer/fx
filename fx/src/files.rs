@@ -250,20 +250,19 @@ async fn get_files(State(ctx): State<ServerContext>, jar: CookieJar) -> Response
     );
     let page_settings = PageSettings::new("Files", Some(is_logged_in), false, Top::GoHome, "");
     let body = page(&ctx, &page_settings, &body).await;
+    tracing::info!("\"GET /files HTTP/1.1\" 200");
     response(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
 
 async fn get_file(State(ctx): State<ServerContext>, Path(sha): Path<String>) -> Response<Body> {
     // Anything after the sha is allowed. This allows anyone to decide the
     // filename. For security purposes, this should be okay since the only
-    // person that can upload files is the site owner. So in the worst case, a
-    // "malicious" filename is added but this would be a problem for the system
-    // to handle and not the users.
+    // person that can upload files is the site owner.
     let trim_len = 16;
     let name = if trim_len < sha.len() {
         sha[..trim_len].to_string()
     } else {
-        sha
+        sha.clone()
     };
     let file = match File::get(&ctx.conn(), &name) {
         Ok(file) => file,
@@ -280,6 +279,7 @@ async fn get_file(State(ctx): State<ServerContext>, Path(sha): Path<String>) -> 
     // which could be confusing for the user.
     let max_age = 300;
     crate::serve::enable_caching(&mut headers, max_age);
+    tracing::info!("\"GET /files/{sha} HTTP/1.1\" 200");
     response(StatusCode::OK, headers, file.data, &ctx)
 }
 
