@@ -6,6 +6,7 @@ mod discovery;
 mod files;
 pub mod health;
 pub mod html;
+pub mod log;
 mod md;
 mod search;
 pub mod serve;

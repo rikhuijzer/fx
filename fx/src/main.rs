@@ -1,8 +1,8 @@
 use clap::Parser;
 use fx::ServeArgs;
 use fx::health::HealthArgs;
+use fx::log::init_subscriber;
 use tracing_core::Level;
-use tracing::subscriber::SetGlobalDefaultError;
 
 #[derive(Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
@@ -28,24 +28,6 @@ struct Args {
     task: Task,
 }
 
-pub fn now() -> String {
-    chrono::Utc::now().format("%Y-%m-%d %H:%M:%S%.3f UTC").to_string()
-}
-
-/// Initialize logging with the given level.
-pub fn init_subscriber(level: Level, ansi: bool) -> Result<(), SetGlobalDefaultError> {
-    let subscriber = tracing_subscriber::FmtSubscriber::builder()
-        .with_max_level(level)
-        .with_test_writer()
-        .without_time()
-        .with_target(false)
-        .with_ansi(ansi)
-        // Write logs to stderr to allow writing sha output to stdout.
-        .with_writer(std::io::stderr)
-        .finish();
-    tracing::subscriber::set_global_default(subscriber)
-}
-
 #[tokio::main]
 async fn main() {
     let args = Args::parse();
@@ -61,8 +43,8 @@ async fn main() {
         Task::Serve(serve_args) => {
             let log_level = match serve_args.log_level.as_str() {
                 "error" => Level::ERROR,
-                "warn"  => Level::WARN,
-                "info"  => Level::INFO,
+                "warn" => Level::WARN,
+                "info" => Level::INFO,
                 "debug" => Level::DEBUG,
                 _ => Level::INFO,
             };
