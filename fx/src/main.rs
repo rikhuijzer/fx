@@ -1,7 +1,7 @@
 use clap::Parser;
 use fx::ServeArgs;
 use fx::health::HealthArgs;
-use fx::log::init_subscriber;
+use tracing::subscriber::SetGlobalDefaultError;
 use tracing_core::Level;
 
 #[derive(Debug, clap::Subcommand)]
@@ -26,6 +26,19 @@ struct Args {
     ansi: Option<bool>,
     #[command(subcommand)]
     task: Task,
+}
+
+/// Initialize logging with the given level.
+pub fn init_subscriber(level: Level, ansi: bool) -> Result<(), SetGlobalDefaultError> {
+    let subscriber = tracing_subscriber::FmtSubscriber::builder()
+        .with_max_level(level)
+        .with_test_writer()
+        .with_target(false)
+        .with_ansi(ansi)
+        // Write logs to stderr to allow writing sha output to stdout.
+        .with_writer(std::io::stderr)
+        .finish();
+    tracing::subscriber::set_global_default(subscriber)
 }
 
 #[tokio::main]

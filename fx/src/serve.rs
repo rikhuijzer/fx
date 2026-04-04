@@ -8,7 +8,6 @@ use crate::html::PageSettings;
 use crate::html::Top;
 use crate::html::page;
 use crate::html::wrap_post_content;
-use crate::log::now;
 use axum::Form;
 use axum::Router;
 use axum::body::Body;
@@ -834,7 +833,7 @@ pub async fn run(args: &ServeArgs) {
     // other situations.
     let addr = format!("[::]:{}", args.port);
     let addr = addr.parse::<std::net::SocketAddr>().unwrap();
-    tracing::info!("{}, Listening on {addr}", now());
+    tracing::info!("Listening on {addr}");
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }
