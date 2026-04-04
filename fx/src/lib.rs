@@ -34,6 +34,9 @@ pub struct ServeArgs {
     /// The language of the website.
     #[arg(long, env = "FX_HTML_LANG", default_value = "en")]
     pub html_lang: String,
+    /// The logging level.
+    #[arg(long, env = "FX_LOG_LEVEL", default_value = "info")]
+    pub log_level: String,
 
     /// The token for triggering GitHub Actions.
     #[arg(long, env = "FX_TRIGGER_TOKEN")]

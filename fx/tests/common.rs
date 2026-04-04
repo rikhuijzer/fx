@@ -30,6 +30,7 @@ impl TestDefault for ServeArgs {
             database_path: "".to_string(),
             username: "test-admin".to_string(),
             html_lang: "en".to_string(),
+            log_level: "info".to_string(),
             password: Some("test-password".to_string()),
             domain: "".to_string(),
         }

@@ -33,7 +33,6 @@ pub fn init_subscriber(level: Level, ansi: bool) -> Result<(), SetGlobalDefaultE
     let subscriber = tracing_subscriber::FmtSubscriber::builder()
         .with_max_level(level)
         .with_test_writer()
-        .without_time()
         .with_target(false)
         .with_ansi(ansi)
         // Write logs to stderr to allow writing sha output to stdout.
@@ -45,7 +44,6 @@ pub fn init_subscriber(level: Level, ansi: bool) -> Result<(), SetGlobalDefaultE
 #[tokio::main]
 async fn main() {
     let args = Args::parse();
-    init_subscriber(Level::INFO, args.ansi.unwrap_or(true)).unwrap();
 
     match &args.task {
         Task::CheckHealth(args) => {
@@ -55,8 +53,16 @@ async fn main() {
             let license_content = include_str!("../../LICENSE");
             println!("{}", license_content);
         }
-        Task::Serve(args) => {
-            fx::serve::run(args).await;
+        Task::Serve(serve_args) => {
+            let log_level = match serve_args.log_level.as_str() {
+                "error" => Level::ERROR,
+                "warn" => Level::WARN,
+                "info" => Level::INFO,
+                "debug" => Level::DEBUG,
+                _ => Level::INFO,
+            };
+            init_subscriber(log_level, args.ansi.unwrap_or(true)).unwrap();
+            fx::serve::run(serve_args).await;
         }
     }
 }
