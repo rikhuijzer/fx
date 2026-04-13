@@ -201,7 +201,7 @@ pub fn connect(args: &ServeArgs) -> Result<DbPool> {
     let pool = if args.production {
         let path = &args.database_path;
         let manager = SqliteConnectionManager::file(path);
-        let pool = r2d2::Pool::builder().max_size(8).build(manager).unwrap();
+        let pool = r2d2::Pool::builder().max_size(4).build(manager).unwrap();
         let conn = pool.get().unwrap();
         match conn.pragma_update(None, "journal_mode", "WAL") {
             Ok(_) => (),
