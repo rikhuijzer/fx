@@ -8,11 +8,9 @@ readme = "../README.md"
 publish = false
 
 [dependencies]
-# For the `axum::debug_handler` enable "macros".
-axum = { version = "0.8", features = ["form", "multipart", "query"] }
 axum-extra = { version = "0.12", features = ["cookie"] }
 bytes = { version = "1", features = ["serde"] }
-chrono = { version = "0.4.40", features = ["serde"] }
+chrono = { version = "0.4.40", default-features = false, features = ["serde"] }
 clap = { version = "4.6", features = ["derive", "env"] }
 futures-util = "0.3"
 fx-auth = { path = "../fx-auth" }
@@ -26,7 +24,7 @@ r2d2_sqlite = "0.33"
 r2d2 = "0.8"
 regex = "1.11"
 reqwest = "0.13"
-rusqlite = { version = "0.39", features = ["blob", "bundled", "chrono"] }
+rusqlite = { version = "0.39", features = ["bundled"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_urlencoded = "0.7"
@@ -38,8 +36,18 @@ tokio-cron-scheduler = "0.15"
 toml = "1.1"
 tower = "0.5"
 tracing = "0.1"
-tracing-subscriber = "0.3"
 xz2 = "0.1"
+
+# For the `axum::debug_handler` enable "macros".
+[dependencies.axum]
+version = "0.8"
+default-features = false
+features = ["form", "http1", "multipart", "query", "tokio"]
+
+[dependencies.tracing-subscriber]
+version = "0.3"
+default-features = false
+features = ["ansi", "fmt"]
 
 [dev-dependencies]
 pretty_assertions = "1"
