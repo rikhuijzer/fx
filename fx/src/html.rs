@@ -653,6 +653,7 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
             <link rel='stylesheet' href='/static/style.css'>
             <link rel='alternate' type='application/rss+xml' href='/feed.xml'>
             <script src='/static/script.js' defer></script>
+            <script src='/static/overtype.js'></script>
             <title>{full_title}</title>
             <meta name='description' content='{site_description}'/>
             <meta property='og:description' content='{site_description}'/>
