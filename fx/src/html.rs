@@ -273,13 +273,10 @@ fn add_post_form() -> String {
     format!(
         "
     <form style='width: 100%;' action='/posts/add' method='post'>
-        <textarea \
-          style='display: block; width: 100%; height: 180px; margin-top: 10px;' \
-          class='boxsizing-border' \
-          oninput='disable_form_submit_if_empty(this);' \
-          onchange='{SET_LEAVE_CONFIRMATION}' \
-          id='content' name='content' placeholder='Your text..' required>
-        </textarea>
+        <div id='content' style='display: block; width: 100%; margin-top: 240px;'></div>
+        <script>
+            new OverType('#content', {{toolbar: true}});
+        </script>
         <div style='font-size: 0.8rem; text-align: right;'>
             This field supports {markdown_link}.
         </div>
