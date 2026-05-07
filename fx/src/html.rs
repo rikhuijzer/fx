@@ -271,6 +271,7 @@ pub fn edit_post_buttons(_ctx: &ServerContext, post: &Post) -> String {
 fn add_post_form() -> String {
     let markdown_link = crate::md::markdown_link();
     // TODO: Does not look good on mobile yet.
+    // TODO: Textarea is not submitted via POST yet.
     format!(
         "
     <form style='width: 100%;' action='/posts/add' method='post'>
