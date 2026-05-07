@@ -270,10 +270,15 @@ pub fn edit_post_buttons(_ctx: &ServerContext, post: &Post) -> String {
 
 fn add_post_form() -> String {
     let markdown_link = crate::md::markdown_link();
+    // TODO: Does not look good on mobile yet.
     format!(
         "
     <form style='width: 100%;' action='/posts/add' method='post'>
-        <div id='content' style='display: block; width: 100%; margin-top: 240px;'></div>
+        <div id='content' \
+          style='display: block; width: 97%; height: 180px; \
+          margin-top: 40px; border: 1px solid var(--border); \
+          border-radius: 4px; padding: 10px;'>
+        </div>
         <script>
             new OverType('#content', {{toolbar: true}});
         </script>
@@ -583,6 +588,23 @@ async fn highlight_head(ctx: &ServerContext, body: &str) -> String {
     }
 }
 
+fn overtype_head(body: &str) -> String {
+    let url = "https://cdn.jsdelivr.net/npm/overtype@2.3.10";
+    println!("body: {}", body);
+    // TODO: Needs debugging.
+    if body.contains("id='editor'") {
+        println!("has editor");
+        format!(
+            "<script src='{url}'></script>"
+        )
+    } else {
+        println!("no editor");
+        format!(
+            "<script src='{url}'></script>"
+        )
+    }
+}
+
 pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> String {
     let site_name = Kv::get(&ctx.conn(), "site_name").unwrap();
     let site_name = String::from_utf8(site_name).unwrap();
@@ -628,6 +650,7 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
     let version = include_str!("version.txt").trim();
     let highlight = highlight_head(ctx, body).await;
     let katex = katex_head(body);
+    let overtype = overtype_head(body);
     let og_title = if settings.title.is_empty() {
         &site_name
     } else {
@@ -650,7 +673,6 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
             <link rel='stylesheet' href='/static/style.css'>
             <link rel='alternate' type='application/rss+xml' href='/feed.xml'>
             <script src='/static/script.js' defer></script>
-            <script src='/static/overtype.js'></script>
             <title>{full_title}</title>
             <meta name='description' content='{site_description}'/>
             <meta property='og:description' content='{site_description}'/>
@@ -658,6 +680,7 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
             <meta property='og:title' content='{og_title}'/>
             {katex}
             {highlight}
+            {overtype}
             {extra_head}
         </head>
         <body>
