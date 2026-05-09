@@ -307,14 +307,8 @@ async fn test_rss() {
     assert_eq!(status, StatusCode::OK);
     println!("body:\n{body}");
     assert!(body.starts_with("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"));
-    assert!(
-        !body.contains("<description>Lorem ipsum"),
-        "description without title"
-    );
-    assert!(
-        body.contains("<description>`Dolor sit amet"),
-        "description with title"
-    );
+    assert!(body.contains("<description><![CDATA[<p><a href='https://example.com"),);
+    assert!(body.contains("<description><![CDATA[<h1>Code</h1>"));
 }
 
 #[tokio::test]

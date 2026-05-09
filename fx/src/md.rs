@@ -311,14 +311,22 @@ pub fn extract_html_description(post: &Post) -> String {
     let content = &post.content;
     // This also would make a post with a single word on the first line have
     // that as the title which I guess makes sense.
-    let first_line = content.split("\n").next().unwrap();
-    let has_title = first_line.starts_with("# ");
+    let lines = content.lines().collect::<Vec<&str>>();
+    let has_title = lines.first().unwrap().starts_with("# ");
     let description = if has_title {
-        content.trim_start_matches(first_line).trim()
+        lines[1..].join("\n")
     } else {
-        content.trim()
+        lines.join("\n")
     };
-    let description = remove_urls(description);
+    let description = remove_urls(&description);
+    let mut description = description
+        .replace("<", "")
+        .replace(">", "")
+        .replace("\n", " ")
+        .replace("'", "\"");
+    while description.contains("  ") {
+        description = description.replace("  ", " ");
+    }
     // Better a bit too long than too short. Google truncates anyway.
     let max_length = 200;
     if description.len() <= max_length {
@@ -338,6 +346,15 @@ fn test_extract_html_description() {
     };
     let description = extract_html_description(&post);
     assert_eq!(description, "ipsum");
+
+    let post = Post {
+        id: 0,
+        content: "<example.com> ipsum".to_string(),
+        created: chrono::Utc::now(),
+        updated: chrono::Utc::now(),
+    };
+    let description = extract_html_description(&post);
+    assert_eq!(description, "example.com ipsum");
 }
 
 /// Extract a slug (a short URL suffix to clarify the post) from the post.
@@ -420,6 +437,6 @@ mod test {
         let title = extract_html_title(&post);
         assert_eq!(title, "Title");
         let description = extract_rss_description(&post);
-        assert_eq!(description, "ipsum");
+        assert_eq!(description, "<h1>Title</h1>\n<p>ipsum</p>");
     }
 }
