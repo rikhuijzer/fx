@@ -60,7 +60,7 @@ async fn rss(ctx: &ServerContext, posts: &[Post]) -> String {
     ));
     for post in posts {
         let title = escape_xml(&crate::md::extract_html_title(post));
-        let description = escape_xml(&crate::md::extract_html_description(post));
+        let description = &crate::md::extract_rss_description(post);
         let url = format!("{base}/posts/{}", post.id);
         let created = rfc822_datetime(&post.created);
         let entry = format!(
@@ -70,7 +70,7 @@ async fn rss(ctx: &ServerContext, posts: &[Post]) -> String {
             <link>{url}</link>
             <guid>{url}</guid>
             <pubDate>{created}</pubDate>
-            <description>{description}</description>
+            <description><![CDATA[{description}]]</description>
             </item>
             "
         );

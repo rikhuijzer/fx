@@ -117,7 +117,7 @@ pub async fn error(
 ) -> Response<Body> {
     let body = msg.to_string();
     let headers = HeaderMap::new();
-    let settings = PageSettings::new(title, None, false, Top::GoHome, "");
+    let settings = PageSettings::new(title, None, None, false, Top::GoHome, "");
     let body = format!(
         "
         <div style='text-align: center;'>
@@ -228,7 +228,7 @@ async fn get_posts(
     } else {
         Top::GoHome
     };
-    let settings = PageSettings::new("", is_logged_in, show_about, top, &extra_head);
+    let settings = PageSettings::new("", is_logged_in, None, show_about, top, &extra_head);
     let (has_next, posts) = list_posts(&ctx, current_page).await;
     let prev_link = if current_page == 1 {
         ""
@@ -325,7 +325,14 @@ async fn get_delete(
     };
     let extra_head = &Kv::get_or_empty_string(&ctx.conn(), "extra_head");
     let title = crate::md::extract_html_title(&post);
-    let settings = PageSettings::new(&title, Some(is_logged_in), false, Top::GoHome, extra_head);
+    let settings = PageSettings::new(
+        &title,
+        Some(is_logged_in),
+        None,
+        false,
+        Top::GoHome,
+        extra_head,
+    );
     let delete_button = indoc::formatdoc! {r#"
         <div class='medium-text' style='text-align: center; font-weight: bold;'>
             <p>Are you sure you want to delete this post? This action cannot be undone.</p>
@@ -355,7 +362,14 @@ async fn get_edit(
     let title = format!("Edit '{title}'");
     let body = crate::html::edit_post_form(&post);
     let extra_head = Kv::get_or_empty_string(&ctx.conn(), "extra_head");
-    let settings = PageSettings::new(&title, Some(is_logged_in), false, Top::GoBack, &extra_head);
+    let settings = PageSettings::new(
+        &title,
+        Some(is_logged_in),
+        None,
+        false,
+        Top::GoBack,
+        &extra_head,
+    );
     let body = page(&ctx, &settings, &body).await;
     response::<String>(StatusCode::OK, HeaderMap::new(), body, &ctx)
 }
@@ -396,7 +410,15 @@ async fn get_post_with_slug(
         <link rel='canonical' href='{canonical}'/>
         {}
     "#, &extra_head};
-    let settings = PageSettings::new(&title, Some(is_logged_in), false, Top::GoHome, &extra_head);
+    let description = crate::md::extract_html_description(&post);
+    let settings = PageSettings::new(
+        &title,
+        Some(is_logged_in),
+        Some(&description),
+        false,
+        Top::GoHome,
+        &extra_head,
+    );
     let mut body = wrap_post_content(&post, &slug, false);
     if is_logged_in {
         body = format!("{}\n{body}", crate::html::edit_post_buttons(&ctx, &post));
@@ -463,6 +485,7 @@ pub async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
     let settings = PageSettings::new(
         "not found",
         Some(is_logged_in),
+        None,
         false,
         Top::GoHome,
         &extra_head,
@@ -599,7 +622,7 @@ async fn post_edit(
         return not_found(State(ctx)).await;
     }
     let extra_head = &Kv::get_or_empty_string(&ctx.conn(), "extra_head");
-    let settings = PageSettings::new("", Some(is_logged_in), false, Top::GoBack, extra_head);
+    let settings = PageSettings::new("", Some(is_logged_in), None, false, Top::GoBack, extra_head);
     let (_, body) = req.into_parts();
     let bytes = body
         .collect()
@@ -662,7 +685,7 @@ async fn post_add(
         return not_found(State(ctx)).await;
     }
     let extra_head = &Kv::get_or_empty_string(&ctx.conn(), "extra_head");
-    let settings = PageSettings::new("", Some(is_logged_in), false, Top::GoBack, extra_head);
+    let settings = PageSettings::new("", Some(is_logged_in), None, false, Top::GoBack, extra_head);
     let (_, body) = req.into_parts();
     let bytes = body
         .collect()

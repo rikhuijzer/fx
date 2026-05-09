@@ -231,6 +231,8 @@ pub struct PageSettings {
     ///
     /// None means don't show login/logout buttons.
     is_logged_in: Option<bool>,
+    /// The description of the page, defaults to the site description.
+    description: Option<String>,
     show_about: bool,
     top: Top,
     extra_head: String,
@@ -240,6 +242,7 @@ impl PageSettings {
     pub fn new(
         title: &str,
         is_logged_in: Option<bool>,
+        description: Option<&str>,
         show_about: bool,
         top: Top,
         extra_head: &str,
@@ -247,6 +250,7 @@ impl PageSettings {
         Self {
             title: title.to_string(),
             is_logged_in,
+            description: description.map(|s| s.to_string()),
             show_about,
             top,
             extra_head: extra_head.to_string(),
@@ -590,7 +594,10 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
     let site_name = Kv::get(&ctx.conn(), "site_name").unwrap();
     let site_name = String::from_utf8(site_name).unwrap();
     let site_name = escape_single_quote(&site_name);
-    let site_description = Kv::get_or_empty_string(&ctx.conn(), "site_description");
+    let description = match &settings.description {
+        Some(description) => description.clone(),
+        None => Kv::get_or_empty_string(&ctx.conn(), "site_description"),
+    };
     let full_title = if settings.title.is_empty() {
         site_name.clone()
     } else {
@@ -654,8 +661,8 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
             <link rel='alternate' type='application/rss+xml' href='/feed.xml'>
             <script src='/static/script.js' defer></script>
             <title>{full_title}</title>
-            <meta name='description' content='{site_description}'/>
-            <meta property='og:description' content='{site_description}'/>
+            <meta name='description' content='{description}'/>
+            <meta property='og:description' content='{description}'/>
             <meta property='og:site_name' content='{site_name}'/>
             <meta property='og:title' content='{og_title}'/>
             {katex}
@@ -685,7 +692,8 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
 
 pub async fn login(ctx: &ServerContext, error: Option<&str>) -> String {
     let top = Top::Homepage;
-    let settings = PageSettings::new("Login", None, false, top, "");
+    let description = "Login to the website";
+    let settings = PageSettings::new("Login", None, Some(&description), false, top, "");
     let error = match error {
         Some(error) => format!("<div style='font-style: italic;'>{error}</div>"),
         None => "".to_string(),

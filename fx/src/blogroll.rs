@@ -100,7 +100,14 @@ async fn get_blogroll(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
     let is_logged_in = is_logged_in(&ctx, &jar);
     let extra_head = Kv::get_or_empty_string(&ctx.conn(), "extra_head");
     let title = "Blogroll";
-    let settings = PageSettings::new(title, Some(is_logged_in), false, Top::GoHome, &extra_head);
+    let settings = PageSettings::new(
+        title,
+        Some(is_logged_in),
+        None,
+        false,
+        Top::GoHome,
+        &extra_head,
+    );
 
     let last_update = ctx.blog_cache.lock().await.last_updated;
     let items = &ctx.blog_cache.lock().await.items;

@@ -306,6 +306,59 @@ pub fn extract_html_title(post: &Post) -> String {
     }
 }
 
+/// Description for the meta description and Open Graph description.
+pub fn extract_html_description(post: &Post) -> String {
+    let content = &post.content;
+    // This also would make a post with a single word on the first line have
+    // that as the title which I guess makes sense.
+    let lines = content.lines().collect::<Vec<&str>>();
+    let has_title = lines.first().unwrap().starts_with("# ");
+    let description = if has_title {
+        lines[1..].join("\n")
+    } else {
+        lines.join("\n")
+    };
+    let description = remove_urls(&description);
+    let mut description = description
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("\n", " ")
+        .replace("'", "&apos;")
+        .replace("\"", "&quot;");
+    while description.contains("  ") {
+        description = description.replace("  ", " ");
+    }
+    // Better a bit too long than too short. Google truncates anyway.
+    let max_length = 200;
+    if description.len() <= max_length {
+        description
+    } else {
+        format!("{}...", truncate(&description, max_length))
+    }
+}
+
+#[test]
+fn test_extract_html_description() {
+    let post = Post {
+        id: 0,
+        content: "# Title\nipsum".to_string(),
+        created: chrono::Utc::now(),
+        updated: chrono::Utc::now(),
+    };
+    let description = extract_html_description(&post);
+    assert_eq!(description, "ipsum");
+
+    let post = Post {
+        id: 0,
+        content: "lorem & ipsum".to_string(),
+        created: chrono::Utc::now(),
+        updated: chrono::Utc::now(),
+    };
+    let description = extract_html_description(&post);
+    assert_eq!(description, "lorem &amp; ipsum");
+}
+
 /// Extract a slug (a short URL suffix to clarify the post) from the post.
 ///
 /// For example, a post with the title `Foo Bar` and id `1` would receive the
@@ -349,22 +402,16 @@ fn test_extract_slug() {
     assert_eq!(extract_slug(&post), "lorem--ipsum");
 }
 
-pub fn extract_html_description(post: &Post) -> String {
-    let content = post.content.trim();
-    let title = extract_html_title(post);
-    let title = title.trim_end_matches("...");
-    let description = remove_urls(content);
-    let description = description.trim_start_matches("# ");
-    let description = description.trim_start_matches(title).trim();
-    let description = remove_urls(description);
-    // This allows RSS readers to read the full quote when the page is a
-    // microblog and still truncates to avoid having a too heavy RSS feed.
-    let max_length = 600;
-    if description.len() <= max_length {
-        description
-    } else {
-        format!("{}...", truncate(&description, max_length))
-    }
+/// Used for RSS feed description field.
+///
+/// Many readers expect the description to be the full post, see for example,
+/// <https://stackoverflow.com/a/7369487/5056635>.
+pub fn extract_rss_description(post: &Post) -> String {
+    let mut post = post.clone();
+    // Should not truncate the post, but instead implement feed pages.
+    preview(&mut post, 600);
+    let html = content_to_html(&post.content);
+    html
 }
 
 #[cfg(test)]
@@ -373,7 +420,7 @@ mod test {
     use chrono::Utc;
 
     #[test]
-    fn test_extract_html_title_and_description() {
+    fn test_extract_html_title_and_rss_description() {
         let post = Post {
             id: 0,
             content: "[lorem](https://example.com/lorem) ipsum".to_string(),
@@ -391,7 +438,7 @@ mod test {
         };
         let title = extract_html_title(&post);
         assert_eq!(title, "Title");
-        let description = extract_html_description(&post);
-        assert_eq!(description, "ipsum");
+        let description = extract_rss_description(&post);
+        assert_eq!(description, "<h1>Title</h1>\n<p>ipsum</p>");
     }
 }
