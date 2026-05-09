@@ -349,23 +349,16 @@ fn test_extract_slug() {
     assert_eq!(extract_slug(&post), "lorem--ipsum");
 }
 
-/// Used for RSS feed.
+/// Used for RSS feed description field.
+///
+/// Many readers expect the description to be the full post, see for example,
+/// <https://stackoverflow.com/a/7369487/5056635>.
 pub fn extract_html_description(post: &Post) -> String {
-    let content = post.content.trim();
-    let title = extract_html_title(post);
-    let title = title.trim_end_matches("...");
-    let description = remove_urls(content);
-    let description = description.trim_start_matches("# ");
-    let description = description.trim_start_matches(title).trim();
-    let description = remove_urls(description);
-    // This allows RSS readers to read the full quote when the page is a
-    // microblog and still truncates to avoid having a too heavy RSS feed.
-    let max_length = 600;
-    if description.len() <= max_length {
-        description
-    } else {
-        format!("{}...", truncate(&description, max_length))
-    }
+    let mut post = post.clone();
+    // Should not truncate the post, but instead implement feed pages.
+    preview(&mut post, 600);
+    let html = content_to_html(&post.content);
+    html
 }
 
 #[cfg(test)]
