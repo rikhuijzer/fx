@@ -320,10 +320,12 @@ pub fn extract_html_description(post: &Post) -> String {
     };
     let description = remove_urls(&description);
     let mut description = description
-        .replace("<", "")
-        .replace(">", "")
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
         .replace("\n", " ")
-        .replace("'", "\"");
+        .replace("'", "&apos;")
+        .replace("\"", "&quot;");
     while description.contains("  ") {
         description = description.replace("  ", " ");
     }
