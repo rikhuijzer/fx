@@ -306,6 +306,40 @@ pub fn extract_html_title(post: &Post) -> String {
     }
 }
 
+/// Description for the meta description and Open Graph description.
+pub fn extract_html_description(post: &Post) -> String {
+    let content = &post.content;
+    // This also would make a post with a single word on the first line have
+    // that as the title which I guess makes sense.
+    let first_line = content.split("\n").next().unwrap();
+    let has_title = first_line.starts_with("# ");
+    let description = if has_title {
+        content.trim_start_matches(first_line).trim()
+    } else {
+        content.trim()
+    };
+    let description = remove_urls(description);
+    // Better a bit too long than too short. Google truncates anyway.
+    let max_length = 200;
+    if description.len() <= max_length {
+        description
+    } else {
+        format!("{}...", truncate(&description, max_length))
+    }
+}
+
+#[test]
+fn test_extract_html_description() {
+    let post = Post {
+        id: 0,
+        content: "# Title\nipsum".to_string(),
+        created: chrono::Utc::now(),
+        updated: chrono::Utc::now(),
+    };
+    let description = extract_html_description(&post);
+    assert_eq!(description, "ipsum");
+}
+
 /// Extract a slug (a short URL suffix to clarify the post) from the post.
 ///
 /// For example, a post with the title `Foo Bar` and id `1` would receive the
@@ -353,7 +387,7 @@ fn test_extract_slug() {
 ///
 /// Many readers expect the description to be the full post, see for example,
 /// <https://stackoverflow.com/a/7369487/5056635>.
-pub fn extract_html_description(post: &Post) -> String {
+pub fn extract_rss_description(post: &Post) -> String {
     let mut post = post.clone();
     // Should not truncate the post, but instead implement feed pages.
     preview(&mut post, 600);
@@ -367,7 +401,7 @@ mod test {
     use chrono::Utc;
 
     #[test]
-    fn test_extract_html_title_and_description() {
+    fn test_extract_html_title_and_rss_description() {
         let post = Post {
             id: 0,
             content: "[lorem](https://example.com/lorem) ipsum".to_string(),
@@ -385,7 +419,7 @@ mod test {
         };
         let title = extract_html_title(&post);
         assert_eq!(title, "Title");
-        let description = extract_html_description(&post);
+        let description = extract_rss_description(&post);
         assert_eq!(description, "ipsum");
     }
 }

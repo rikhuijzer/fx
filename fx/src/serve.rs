@@ -410,7 +410,7 @@ async fn get_post_with_slug(
         <link rel='canonical' href='{canonical}'/>
         {}
     "#, &extra_head};
-    let description = "todo";
+    let description = crate::md::extract_html_description(&post);
     let settings = PageSettings::new(
         &title,
         Some(is_logged_in),
