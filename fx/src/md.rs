@@ -351,12 +351,12 @@ fn test_extract_html_description() {
 
     let post = Post {
         id: 0,
-        content: "<example.com> ipsum".to_string(),
+        content: "lorem & ipsum".to_string(),
         created: chrono::Utc::now(),
         updated: chrono::Utc::now(),
     };
     let description = extract_html_description(&post);
-    assert_eq!(description, "example.com ipsum");
+    assert_eq!(description, "lorem &amp; ipsum");
 }
 
 /// Extract a slug (a short URL suffix to clarify the post) from the post.
