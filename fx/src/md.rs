@@ -349,6 +349,7 @@ fn test_extract_slug() {
     assert_eq!(extract_slug(&post), "lorem--ipsum");
 }
 
+/// Used for RSS feed.
 pub fn extract_html_description(post: &Post) -> String {
     let content = post.content.trim();
     let title = extract_html_title(post);
