@@ -125,7 +125,14 @@ async fn get_search(
     content_type(&mut headers, "text/html");
     let title = "Search";
     let extra_head = &Kv::get_or_empty_string(&ctx.conn(), "extra_head");
-    let settings = PageSettings::new(title, Some(is_logged_in), false, Top::GoHome, extra_head);
+    let settings = PageSettings::new(
+        title,
+        Some(is_logged_in),
+        None,
+        false,
+        Top::GoHome,
+        extra_head,
+    );
     let body = page(&ctx, &settings, &body).await;
     response(StatusCode::OK, headers, body, &ctx)
 }
