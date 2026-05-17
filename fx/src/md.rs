@@ -3,6 +3,35 @@ use markdown::Options;
 use markdown::ParseOptions;
 use markdown::mdast::Node;
 use markdown::to_mdast;
+use percent_encoding::AsciiSet;
+use percent_encoding::CONTROLS;
+use percent_encoding::utf8_percent_encode;
+
+/// Percent-encode set for slugs — keeps `extract_slug`'s output from
+/// corrupting URLs. The load-bearing case is `#`: raw in the slug, it
+/// lands in the canonical redirect's `Location`, gets parsed as the
+/// fragment delimiter, and the slug-less target 308s back — an infinite
+/// loop on H2-H6 headings.
+///
+/// Basis: MDN's percent-encoding reserved-character list[^1], minus the
+/// characters that RFC 3986 permits inside a path segment (sub-delims,
+/// `:`, `@`). Plus `<` and `>`, which MDN does not list but which break
+/// `<a href='...'>` when slugs are rendered raw into HTML.
+///
+/// Apply after the length truncation in `extract_slug`, or truncation
+/// could slice a `%XX` triplet.
+///
+/// [^1]: https://developer.mozilla.org/en-US/docs/Glossary/Percent-encoding
+const SLUG_UNSAFE: &AsciiSet = &CONTROLS
+    .add(b' ')
+    .add(b'#')
+    .add(b'/')
+    .add(b'<')
+    .add(b'>')
+    .add(b'?')
+    .add(b'[')
+    .add(b']')
+    .add(b'%');
 
 pub fn markdown_link() -> &'static str {
     "<a href='https://www.markdownguide.org/'>Markdown</a>"
@@ -284,17 +313,37 @@ fn truncate(text: &str, max_length: usize) -> String {
     text.trim().to_string()
 }
 
+/// Strip a leading heading marker (one to six `#` characters followed by
+/// whitespace) and return the heading text only.
+///
+/// Without this, headings like `### Foo` survive into the slug as `###-foo`,
+/// and the raw `#` in the canonical redirect's `Location` header makes
+/// browsers loop (they parse `#` as the fragment delimiter and re-request
+/// the slug-less URL, which 308s back to the same location).
+fn strip_heading_marker(line: &str) -> &str {
+    let after_hashes = line.trim_start_matches('#');
+    let n_hashes = line.len() - after_hashes.len();
+    if (1..=6).contains(&n_hashes) && after_hashes.starts_with(char::is_whitespace) {
+        after_hashes.trim_start()
+    } else {
+        line
+    }
+}
+
+/// Returns whether `line` starts with a heading marker (one to six `#`
+/// characters followed by whitespace).
+fn is_heading(line: &str) -> bool {
+    let after_hashes = line.trim_start_matches('#');
+    let n_hashes = line.len() - after_hashes.len();
+    (1..=6).contains(&n_hashes) && after_hashes.starts_with(char::is_whitespace)
+}
+
 pub fn extract_html_title(post: &Post) -> String {
     let title = &post.content;
     // This also would make a post with a single word on the first line have
     // that as the title which I guess makes sense.
     let title = title.split("\n").next().unwrap();
-    let title = if title.starts_with("# ") {
-        title.trim_start_matches("# ")
-    } else {
-        title
-    };
-    // Remove trailing newlines.
+    let title = strip_heading_marker(title);
     let title = title.trim();
     let title = remove_urls(title);
     // Better a bit too long than too short. Google truncates anyway.
@@ -312,7 +361,7 @@ pub fn extract_html_description(post: &Post) -> String {
     // This also would make a post with a single word on the first line have
     // that as the title which I guess makes sense.
     let lines = content.lines().collect::<Vec<&str>>();
-    let has_title = lines.first().unwrap().starts_with("# ");
+    let has_title = is_heading(lines.first().unwrap());
     let description = if has_title {
         lines[1..].join("\n")
     } else {
@@ -382,11 +431,14 @@ pub fn extract_slug(post: &Post) -> String {
         .replace("/", "-")
         .to_lowercase();
     let max_length = 50;
-    if slug.len() <= max_length {
+    let slug = if slug.len() <= max_length {
         slug
     } else {
         truncate(&slug, max_length)
-    }
+    };
+    // Truncate before percent-encoding so the length budget applies to the
+    // human-readable form and we never split a `%XX` triplet in half.
+    utf8_percent_encode(&slug, SLUG_UNSAFE).to_string()
 }
 
 #[test]
@@ -400,6 +452,55 @@ fn test_extract_slug() {
     assert_eq!(extract_slug(&post), "foo-bar");
     post.content = "Lorem, ipsum".to_string();
     assert_eq!(extract_slug(&post), "lorem--ipsum");
+
+    // Heading markers H2–H6 must be stripped from the slug. Previously only
+    // `# ` was handled, so `### Hello` produced `###-hello` which broke
+    // canonical redirects (the raw `#` in the `Location` header looks like a
+    // fragment delimiter to browsers, triggering an infinite redirect loop).
+    post.content = "### Hello World".to_string();
+    assert_eq!(extract_slug(&post), "hello-world");
+    post.content = "###### Six levels".to_string();
+    assert_eq!(extract_slug(&post), "six-levels");
+
+    // Seven `#` is not a valid heading marker, so it stays as content and
+    // the unsafe-char encoder escapes each `#`.
+    post.content = "####### Seven".to_string();
+    assert_eq!(
+        extract_slug(&post),
+        "%23%23%23%23%23%23%23-seven"
+    );
+
+    // A `#` inside the heading text (not as a marker) gets percent-encoded
+    // rather than dropped, preserving the original token.
+    post.content = "## C# tricks".to_string();
+    assert_eq!(extract_slug(&post), "c%23-tricks");
+
+    // `[` and `]` are reserved per MDN's list and not pchar-legal per
+    // RFC 3986, so they're encoded rather than left raw in the path.
+    post.content = "## Hello [world]".to_string();
+    assert_eq!(extract_slug(&post), "hello-%5Bworld%5D");
+}
+
+#[test]
+fn test_extract_html_title_heading_levels() {
+    let mut post = Post {
+        id: 0,
+        content: String::new(),
+        created: chrono::Utc::now(),
+        updated: chrono::Utc::now(),
+    };
+    post.content = "# H1 title".to_string();
+    assert_eq!(extract_html_title(&post), "H1 title");
+    post.content = "### H3 title".to_string();
+    assert_eq!(extract_html_title(&post), "H3 title");
+    post.content = "###### H6 title".to_string();
+    assert_eq!(extract_html_title(&post), "H6 title");
+    // More than six `#` is not a valid heading marker; keep as-is.
+    post.content = "####### not a heading".to_string();
+    assert_eq!(extract_html_title(&post), "####### not a heading");
+    // No space after the marker is not a valid heading either.
+    post.content = "##nope".to_string();
+    assert_eq!(extract_html_title(&post), "##nope");
 }
 
 /// Used for RSS feed description field.
