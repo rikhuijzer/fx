@@ -279,6 +279,13 @@ async fn test_allow_filename_suffix() {
 }
 
 #[tokio::test]
+async fn test_allow_filename_suffix_after_forward_slash() {
+    let url = "/files/69b83ddf8f65695f/example.txt";
+    let (status, _body) = request_body(url).await;
+    assert_eq!(status, StatusCode::OK);
+}
+
+#[tokio::test]
 async fn test_sitemap() {
     let (status, body) = request_body("/sitemap.xml").await;
     assert_eq!(status, StatusCode::OK);
@@ -289,6 +296,7 @@ async fn test_sitemap() {
     assert!(body.contains("<loc>/posts/1</loc>"));
     assert!(body.contains("<loc>/posts/2</loc>"));
     assert!(body.contains("<lastmod>"));
+    assert!(body.contains("<loc>/files/69b83ddf8f65695f/example.txt</loc>"));
 }
 
 #[tokio::test]

@@ -1,5 +1,6 @@
 //! Discovery protocols such as sitemap.xml, rss and robots.
 use crate::data::Post;
+use crate::files::File;
 use crate::serve::ServerContext;
 use crate::serve::content_type;
 use crate::serve::response;
@@ -118,13 +119,25 @@ fn sitemap(ctx: &ServerContext, posts: &[Post]) -> String {
     let base = ctx.base_url();
     body.push_str(&format!("<url><loc>{base}/</loc></url>\n"));
     for post in posts {
-        let url = format!("{}/posts/{}", base, post.id);
+        let url = format!("{base}/posts/{}", post.id);
         let updated = w3_datetime(&post.updated);
         let entry = format!(
             "
             <url>
             <loc>{url}</loc>
             <lastmod>{updated}</lastmod>
+            </url>
+            "
+        );
+        body.push_str(&entry);
+    }
+    let files = File::list(&ctx.conn()).unwrap();
+    for file in files {
+        let url = format!("{base}/files/{}/{}", file.sha, file.filename);
+        let entry = format!(
+            "
+            <url>
+            <loc>{url}</loc>
             </url>
             "
         );

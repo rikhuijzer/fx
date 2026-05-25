@@ -142,7 +142,7 @@ impl File {
     }
 }
 
-fn file_ext(file: &File) -> String {
+pub fn file_ext(file: &File) -> String {
     let filename = &file.filename;
     if file.mime_type.starts_with("image/") {
         // For images, the extension is not important since the download link
@@ -160,13 +160,12 @@ fn file_ext(file: &File) -> String {
 }
 
 fn md_link(file: &File) -> String {
-    let filename = &file.filename;
-    let ext = file_ext(file);
     let sha = &file.sha;
+    let filename = &file.filename;
     if file.mime_type.starts_with("image/") {
         format!("![{filename}](/files/{sha})")
     } else {
-        format!("[{filename}](/files/{sha}{ext})")
+        format!("[{filename}](/files/{sha}/{filename})")
     }
 }
 
@@ -243,6 +242,13 @@ async fn get_files(State(ctx): State<ServerContext>, jar: CookieJar) -> Response
                 <br>
             </form>
         </div>
+        <div style='font-size: 0.8rem; padding: 6px; padding-bottom: 10px;'>
+            Each file will get an unique SHA identifier, such as <code>69b83ddf8f65695f</code>.
+            To link to the file, you can use
+            <code>/files/69b83ddf8f65695f</code>,
+            <code>/files/69b83ddf8f65695f/example.txt</code>, or
+            <code>/files/69b83ddf8f65695f/something.txt</code>.
+        </div>
         <div>
             {files}
         </div>
@@ -258,7 +264,8 @@ async fn get_files(State(ctx): State<ServerContext>, jar: CookieJar) -> Response
 async fn get_file(State(ctx): State<ServerContext>, Path(sha): Path<String>) -> Response<Body> {
     // Anything after the sha is allowed. This allows anyone to decide the
     // filename. For security purposes, this should be okay since the only
-    // person that can upload files is the site owner.
+    // person that can upload files is the site owner. The benefit of this is
+    // that files can be renamed without breaking links.
     let trim_len = 16;
     let name = if trim_len < sha.len() {
         sha[..trim_len].to_string()
@@ -282,6 +289,13 @@ async fn get_file(State(ctx): State<ServerContext>, Path(sha): Path<String>) -> 
     crate::serve::enable_caching(&mut headers, max_age);
     tracing::info!("\"GET /files/{sha} HTTP/1.1\" 200");
     response(StatusCode::OK, headers, file.data, &ctx)
+}
+
+async fn get_file_with_filename(
+    State(ctx): State<ServerContext>,
+    Path((sha, _filename)): Path<(String, String)>,
+) -> Response<Body> {
+    get_file(State(ctx), Path(sha)).await
 }
 
 async fn post_file(
@@ -454,6 +468,7 @@ pub fn routes(router: &Router<ServerContext>) -> Router<ServerContext> {
         .clone()
         .route("/files", get(get_files))
         .route("/files/{sha}", get(get_file))
+        .route("/files/{sha}/{filename}", get(get_file_with_filename))
         .route("/files/add", post(post_file))
         .route("/files/delete/{sha}", get(get_delete))
         .route("/files/delete/{sha}", post(post_delete))
