@@ -16,3 +16,6 @@ http = "1"
 regex = "1.11"
 reqwest = "0.13"
 rss = "2.0.11"
+
+[lints.clippy]
+unnecessary_sort_by = "allow"

@@ -693,7 +693,7 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
 pub async fn login(ctx: &ServerContext, error: Option<&str>) -> String {
     let top = Top::Homepage;
     let description = "Login to the website";
-    let settings = PageSettings::new("Login", None, Some(&description), false, top, "");
+    let settings = PageSettings::new("Login", None, Some(description), false, top, "");
     let error = match error {
         Some(error) => format!("<div style='font-style: italic;'>{error}</div>"),
         None => "".to_string(),

@@ -133,7 +133,9 @@ fn sitemap(ctx: &ServerContext, posts: &[Post]) -> String {
     }
     let files = File::list(&ctx.conn()).unwrap();
     for file in files {
-        let url = format!("{base}/files/{}/{}", file.sha, file.filename);
+        let sha = &file.sha;
+        let filename = file.filename_without_prefix();
+        let url = format!("{base}/files/{sha}/{filename}");
         let entry = format!(
             "
             <url>

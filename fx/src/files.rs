@@ -140,6 +140,19 @@ impl File {
         let sql = "UPDATE files SET filename = ? WHERE sha = ?";
         conn.execute(sql, [filename, sha])
     }
+    // If the filename contains a forward slash, return the part after the
+    // forward slash; otherwise, return the filename. When the prefix would be
+    // kept, the forward slash would turn the url into
+    // /files/sha/prefix/filename, which is not an endpoint that exists since
+    // only /files/sha and /files/sha/filename are valid.
+    pub fn filename_without_prefix(&self) -> String {
+        let filename = &self.filename;
+        if let Some(index) = filename.find('/') {
+            filename[index + 1..].to_string()
+        } else {
+            filename.to_string()
+        }
+    }
 }
 
 pub fn file_ext(file: &File) -> String {
@@ -165,6 +178,7 @@ fn md_link(file: &File) -> String {
     if file.mime_type.starts_with("image/") {
         format!("![{filename}](/files/{sha})")
     } else {
+        let filename = file.filename_without_prefix();
         format!("[{filename}](/files/{sha}/{filename})")
     }
 }

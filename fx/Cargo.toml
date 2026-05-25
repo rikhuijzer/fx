@@ -51,3 +51,6 @@ features = ["ansi", "fmt"]
 
 [dev-dependencies]
 pretty_assertions = "1"
+
+[lints.clippy]
+unnecessary_sort_by = "allow"
