@@ -819,7 +819,7 @@ dependencies = [
 
 [[package]]
 name = "fx"
-version = "1.5.2"
+version = "1.6.0"
 dependencies = [
  "axum",
  "axum-extra",
@@ -857,7 +857,7 @@ dependencies = [
 
 [[package]]
 name = "fx-auth"
-version = "1.5.2"
+version = "1.6.0"
 dependencies = [
  "aes-gcm-siv",
  "argon2",
@@ -872,7 +872,7 @@ dependencies = [
 
 [[package]]
 name = "fx-rss"
-version = "1.5.2"
+version = "1.6.0"
 dependencies = [
  "atom_syndication",
  "chrono",
