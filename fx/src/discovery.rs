@@ -120,6 +120,7 @@ fn sitemap(ctx: &ServerContext, posts: &[Post]) -> String {
     body.push_str(&format!("<url><loc>{base}/</loc></url>\n"));
     for post in posts {
         let url = format!("{base}/posts/{}", post.id);
+        let url = crate::html::url_encode(&url);
         let updated = w3_datetime(&post.updated);
         let entry = format!(
             "
@@ -135,6 +136,7 @@ fn sitemap(ctx: &ServerContext, posts: &[Post]) -> String {
     for file in files {
         let sha = &file.sha;
         let filename = file.filename_without_prefix();
+        let filename = crate::html::url_encode(&filename);
         let url = format!("{base}/files/{sha}/{filename}");
         let entry = format!(
             "

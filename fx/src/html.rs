@@ -4,6 +4,27 @@ use crate::serve::ServerContext;
 use chrono::DateTime;
 use chrono::Duration;
 
+/// https://url.spec.whatwg.org/#fragment-percent-encode-set
+const FRAGMENT: &percent_encoding::AsciiSet = &percent_encoding::CONTROLS
+    .add(b' ')
+    .add(b'"')
+    .add(b'<')
+    .add(b'>')
+    .add(b'`');
+
+/// Encode a string for use in a URL fragment.
+/// For example, "file a.pdf" becomes "file%20a.pdf".
+pub fn url_encode(s: &str) -> String {
+    percent_encoding::utf8_percent_encode(s, FRAGMENT).to_string()
+}
+
+#[test]
+fn test_url_encode() {
+    let s = "file a.pdf";
+    let encoded = url_encode(s);
+    assert_eq!(encoded, "file%20a.pdf");
+}
+
 fn border_style(width: u64) -> String {
     format!(
         "border-bottom: {}px solid var(--border); border-radius: 0px;",

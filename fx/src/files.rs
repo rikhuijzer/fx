@@ -179,6 +179,7 @@ fn md_link(file: &File) -> String {
         format!("![{filename}](/files/{sha})")
     } else {
         let filename = file.filename_without_prefix();
+        let filename = crate::html::url_encode(&filename);
         format!("[{filename}](/files/{sha}/{filename})")
     }
 }
@@ -186,12 +187,13 @@ fn md_link(file: &File) -> String {
 fn show_file(file: &File) -> String {
     let sha = &file.sha;
     let link = md_link(file);
-    let ext = file_ext(file);
+    let filename = file.filename_without_prefix();
+    let filename = crate::html::url_encode(&filename);
     format!(
         "
         <div style='padding: 6px; padding-bottom: 0px; padding-top: 12px; \
           border-bottom: 1px solid var(--border); font-size: 0.8rem;'>
-            <a href='/files/{sha}{ext}'>{}</a>&nbsp;&nbsp;
+            <a href='/files/{sha}/{filename}'>{}</a>&nbsp;&nbsp;
             <a class='unstyled-link' href='/files/rename/{sha}' \
               style='font-size: 0.8rem; padding-top: 0.1rem;'>
                 ✏️ Rename
@@ -261,7 +263,7 @@ async fn get_files(State(ctx): State<ServerContext>, jar: CookieJar) -> Response
             To link to the file, you can use
             <code>/files/69b83ddf8f65695f</code>,
             <code>/files/69b83ddf8f65695f/example.txt</code>, or
-            <code>/files/69b83ddf8f65695f/something.txt</code>.
+            <code>/files/69b83ddf8f65695f/something-else.txt</code>.
         </div>
         <div>
             {files}
