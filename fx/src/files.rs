@@ -179,6 +179,7 @@ fn md_link(file: &File) -> String {
         format!("![{filename}](/files/{sha})")
     } else {
         let filename = file.filename_without_prefix();
+        let filename = crate::html::url_encode(&filename);
         format!("[{filename}](/files/{sha}/{filename})")
     }
 }
