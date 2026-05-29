@@ -675,6 +675,25 @@ pub struct AddPostForm {
     pub content: String,
 }
 
+/// H2-H6 headings (for example, `## Heading`) cause problems since the hash
+/// ends up into the Location header and handled incorrectly by the browser.  To
+/// solve, we just replace multiple hashes at the start of the string with a
+/// single hash.
+fn fix_invalid_heading_issue_179(content: &str) -> String {
+    let number_of_hashes = content.chars().take_while(|c| *c == '#').count();
+    if number_of_hashes == 0 {
+        content.to_string();
+    }
+    format!("#{}", &content[number_of_hashes..])
+}
+
+#[test]
+fn test_fix_invalid_heading_issue_179() {
+    let content = "### Heading";
+    let fixed = fix_invalid_heading_issue_179(content);
+    assert_eq!(fixed, "# Heading");
+}
+
 async fn post_add(
     State(ctx): State<ServerContext>,
     jar: CookieJar,
@@ -706,6 +725,7 @@ async fn post_add(
     if publish {
         let now = Utc::now();
         let content = trim_newline_suffix(&form.content);
+        let content = fix_invalid_heading_issue_179(&content);
         let post_id = Post::insert(&ctx.conn(), now, now, &content);
         if let Err(_e) = post_id {
             return response(

@@ -155,23 +155,6 @@ impl File {
     }
 }
 
-pub fn file_ext(file: &File) -> String {
-    let filename = &file.filename;
-    if file.mime_type.starts_with("image/") {
-        // For images, the extension is not important since the download link
-        // will automatically add the extension based on the mime type.
-        "".to_string()
-    } else {
-        // For other files, the extension is important since the browser cannot
-        // guess the extension based on the mime type.
-        if let Some(ext) = filename.split('.').next_back() {
-            format!(".{ext}")
-        } else {
-            "".to_string()
-        }
-    }
-}
-
 fn md_link(file: &File) -> String {
     let sha = &file.sha;
     let filename = &file.filename;
