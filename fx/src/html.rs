@@ -96,7 +96,11 @@ fn set_header_id(html: &str) -> String {
                     }
                 };
                 let title = line[title_start..title_end].to_string();
-                let id = title.to_lowercase().replace(' ', "-");
+                let id_text = regex::Regex::new(r"<[^>]*>")
+                    .unwrap()
+                    .replace_all(&title, "")
+                    .into_owned();
+                let id = id_text.to_lowercase().replace(' ', "-").replace('\'', "");
                 format!("<h{level} id='{id}'>{title}</h{level}>")
             } else {
                 line.to_string()
@@ -140,6 +144,11 @@ fn test_set_header_id() {
         "#}
     .trim();
     assert!(!set_header_id(html).is_empty());
+
+    // Apostrophe + inline code must not break the id attribute.
+    let html = "<h1>heading's <code>code</code> rest</h1>";
+    let actual = set_header_id(html);
+    assert_eq!(actual, "<h1 id='headings-code-rest'>heading's <code>code</code> rest</h1>");
 }
 
 /// Generate a post link with given slug.
