@@ -76,6 +76,7 @@ fn set_header_id(html: &str) -> String {
         .map(|line| {
             if line.trim().starts_with("<h") {
                 if line.contains(" id=") {
+                    // Do nothing.
                     return line.to_string();
                 }
                 if line.contains("<a href=") {
@@ -96,7 +97,16 @@ fn set_header_id(html: &str) -> String {
                     }
                 };
                 let title = line[title_start..title_end].to_string();
-                let id = title.to_lowercase().replace(' ', "-");
+                // Replace special characters because ' will break HTML and other characters may
+                // make it hard to refer to the id from Markdown.
+                let id = title
+                    .to_lowercase()
+                    .replace(' ', "-")
+                    .replace("'", "-")
+                    .replace("<code>", "")
+                    .replace("</code>", "")
+                    .replace("<", "")
+                    .replace(">", "");
                 format!("<h{level} id='{id}'>{title}</h{level}>")
             } else {
                 line.to_string()
@@ -140,6 +150,11 @@ fn test_set_header_id() {
         "#}
     .trim();
     assert!(!set_header_id(html).is_empty());
+
+    // Apostrophe must not break the id attribute.
+    let html = "<h1>John's heading</h1>";
+    let actual = set_header_id(html);
+    assert_eq!(actual, "<h1 id='john-s-heading'>John's heading</h1>");
 }
 
 /// Generate a post link with given slug.
