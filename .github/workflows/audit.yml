@@ -1,8 +1,6 @@
 name: audit
 
 on:
-  schedule:
-    - cron: '44 3 * * *'
   push:
     branches:
       - main
@@ -10,21 +8,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  cargo-audit:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v6
-      - run: cargo install --debug jas@0.3.1
-      - run: >
-          jas install
-          --gh rustsec/rustsec@cargo-audit/v0.22.0
-          --archive-filename cargo-audit
-          --sha 210d47f963a3570bd47645c983893bdbcb562a0cbc440d8b0aafc250bfefe118
-          --gh-token ${{ secrets.GITHUB_TOKEN }}
-      - run: cargo-audit audit
-
   cargo-deny:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'

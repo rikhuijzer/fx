@@ -22,10 +22,10 @@ indoc = "2"
 markdown = { version = "1.0.0-alpha.23", features = ["serde"] }
 percent-encoding = "2.3"
 r2d2 = "0.8"
-r2d2_sqlite = "0.33"
+r2d2_sqlite = "0.35"
 regex = "1.11"
 reqwest = "0.13"
-rusqlite = { version = "0.39", features = ["bundled"] }
+rusqlite = { version = "0.40", features = ["bundled"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_urlencoded = "0.7"
