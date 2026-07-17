@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.1] - 2026-07-17
+
+### Fixed
+
+- Escape apostrophe in headings for determining header id ([#192](https://github.com/rikhuijzer/fx/pull/192))
+- h2-h6 headings causing infinite redirect loop
+- Escape filenames in URLs ([#184](https://github.com/rikhuijzer/fx/pull/184))
+
 ## [1.6.0] - 2026-05-26
 
 ### Added
@@ -190,6 +198,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix `\n` instead of newline in rss ([#65](https://github.com/rikhuijzer/fx/pull/65))
 
+[1.6.1]: https://github.com/rikhuijzer/fx/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/rikhuijzer/fx/compare/v1.5.2...v1.6.0
 [1.5.2]: https://github.com/rikhuijzer/fx/compare/v1.5.1...v1.5.2
 [1.5.1]: https://github.com/rikhuijzer/fx/compare/v1.5.0...v1.5.1
