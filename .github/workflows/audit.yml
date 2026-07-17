@@ -1,0 +1,23 @@
+name: audit
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  cargo-deny:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - run: cargo install --debug jas@0.3.1
+      - run: >
+          jas install
+          --gh EmbarkStudios/cargo-deny@0.19.0
+          --sha 0e8c2aa59128612c90d9e09c02204e912f29a5b8d9a64671b94608cbe09e064f
+          --gh-token ${{ secrets.GITHUB_TOKEN }}
+      - run: cargo-deny check advisories
