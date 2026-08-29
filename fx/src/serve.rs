@@ -680,16 +680,11 @@ pub struct AddPostForm {
 /// solve, we just replace multiple hashes at the start of the string with a
 /// single hash.
 fn fix_invalid_heading_issue_179(content: &str) -> String {
-    let has_hash = content.starts_with('#');
     let number_of_hashes = content.chars().take_while(|c| *c == '#').count();
     if number_of_hashes == 0 {
-        content.to_string();
+        return content.to_string();
     }
-    if has_hash {
-        format!("#{}", &content[number_of_hashes..])
-    } else {
-        content.to_string()
-    }
+    format!("#{}", &content[number_of_hashes..])
 }
 
 #[test]
