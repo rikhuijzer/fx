@@ -680,18 +680,30 @@ pub struct AddPostForm {
 /// solve, we just replace multiple hashes at the start of the string with a
 /// single hash.
 fn fix_invalid_heading_issue_179(content: &str) -> String {
+    let has_hash = content.starts_with('#');
     let number_of_hashes = content.chars().take_while(|c| *c == '#').count();
     if number_of_hashes == 0 {
         content.to_string();
     }
-    format!("#{}", &content[number_of_hashes..])
+    if has_hash {
+        format!("#{}", &content[number_of_hashes..])
+    } else {
+        content.to_string()
+    }
 }
 
 #[test]
-fn test_fix_invalid_heading_issue_179() {
+fn test_fix_invalid_heading_issue_179_reduces() {
     let content = "### Heading";
     let fixed = fix_invalid_heading_issue_179(content);
     assert_eq!(fixed, "# Heading");
+}
+
+#[test]
+fn test_fix_invalid_heading_issue_179_does_not_always_add_hash() {
+    let content = "Heading";
+    let fixed = fix_invalid_heading_issue_179(content);
+    assert_eq!(fixed, "Heading");
 }
 
 async fn post_add(
