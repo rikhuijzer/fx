@@ -32,11 +32,20 @@ function disable_form_submit_if_empty(textarea) {
 function disable_form_submit_on_start() {
     const textareas = document.getElementsByTagName('textarea');
     for (let i = 0; i < textareas.length; i++) {
-        // Check to avoid incorrectly disabling save button on the settings page.
-        if (textareas[i].hasAttribute('required')) {
-            disable_form_submit_if_empty(textareas[i]);
+        const textarea = textareas[i];
+        const form = textarea.closest('form');
+        // Limit this to post forms so that an empty settings textarea does not
+        // disable the settings save button.
+        const isPostForm = textarea.hasAttribute('required') ||
+            form.querySelector('input[name="preview"]') !== null;
+        if (isPostForm) {
+            disable_form_submit_if_empty(textarea);
         }
     }
 }
 
 disable_form_submit_on_start();
+
+// Chromium can restore disabled submit buttons from the back-forward cache
+// after showing a post preview. Recalculate them from the restored textarea.
+window.addEventListener('pageshow', disable_form_submit_on_start);
