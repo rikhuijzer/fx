@@ -389,7 +389,7 @@ async fn get_post_with_slug(
         Ok(post) => post,
         Err(_) => return not_found(State(ctx)).await,
     };
-    if post.content == "<DELETED>" {
+    if post.is_deleted() {
         return not_found(State(ctx)).await;
     }
     let title = crate::md::extract_html_title(&post);
@@ -443,7 +443,7 @@ async fn get_post(
         Ok(post) => post,
         Err(_) => return not_found(State(ctx)).await,
     };
-    if post.content == "<DELETED>" {
+    if post.is_deleted() {
         return not_found(State(ctx)).await;
     }
     let slug = crate::md::extract_slug(&post);
