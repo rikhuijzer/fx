@@ -40,6 +40,40 @@ fn test_escape_xml() {
     assert_eq!(escape_xml("foo&bar"), "foo&amp;bar");
 }
 
+fn rss_item(post: &Post, base: &str) -> Option<String> {
+    if post.is_deleted() {
+        return None;
+    }
+
+    let title = escape_xml(&crate::md::extract_html_title(post));
+    let description = &crate::md::extract_rss_description(post);
+    let url = format!("{base}/posts/{}", post.id);
+    let created = rfc822_datetime(&post.created);
+    Some(format!(
+        "
+        <item>
+        <title>{title}</title>
+        <link>{url}</link>
+        <guid>{url}</guid>
+        <pubDate>{created}</pubDate>
+        <description><![CDATA[{description}]]</description>
+        </item>
+        "
+    ))
+}
+
+#[test]
+fn test_deleted_post_is_excluded_from_rss() {
+    let now = chrono::Utc::now();
+    let post = Post {
+        id: 1,
+        created: now,
+        updated: now,
+        content: "<DELETED>".to_string(),
+    };
+    assert_eq!(rss_item(&post, "https://example.com"), None);
+}
+
 async fn rss(ctx: &ServerContext, posts: &[Post]) -> String {
     let settings = Settings::from_db(&ctx.conn()).unwrap();
     let site_name = escape_xml(&settings.site_name);
@@ -60,22 +94,9 @@ async fn rss(ctx: &ServerContext, posts: &[Post]) -> String {
       type=\"application/rss+xml\"/>\n"
     ));
     for post in posts {
-        let title = escape_xml(&crate::md::extract_html_title(post));
-        let description = &crate::md::extract_rss_description(post);
-        let url = format!("{base}/posts/{}", post.id);
-        let created = rfc822_datetime(&post.created);
-        let entry = format!(
-            "
-            <item>
-            <title>{title}</title>
-            <link>{url}</link>
-            <guid>{url}</guid>
-            <pubDate>{created}</pubDate>
-            <description><![CDATA[{description}]]</description>
-            </item>
-            "
-        );
-        body.push_str(&entry);
+        if let Some(entry) = rss_item(post, &base) {
+            body.push_str(&entry);
+        }
     }
     body.push_str("</channel>\n");
     body.push_str("</rss>\n");
