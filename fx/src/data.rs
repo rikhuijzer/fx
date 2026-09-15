@@ -110,7 +110,6 @@ impl Post {
     pub fn is_deleted(&self) -> bool {
         self.content == "<DELETED>"
     }
-
     fn create_table(conn: &Connection) -> Result<usize> {
         let stmt = "
             CREATE TABLE IF NOT EXISTS posts (
