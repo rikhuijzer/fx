@@ -9,7 +9,7 @@ use aes_gcm_siv::aead::Generate;
 use aes_gcm_siv::aead::KeyInit;
 use aes_gcm_siv::aead::array::Array;
 use argon2::Argon2;
-use argon2::password_hash::SaltString;
+use argon2::password_hash::phc::SaltString;
 use axum_extra::extract::CookieJar;
 use axum_extra::extract::cookie::Cookie;
 use chrono::NaiveDate;
@@ -151,11 +151,9 @@ pub fn is_logged_in(salt: &Salt, login: &Login, jar: &CookieJar) -> bool {
 }
 
 pub fn generate_salt() -> Salt {
-    SaltString::generate()
-        .as_str()
-        .as_bytes()
-        .try_into()
-        .unwrap()
+    let salt = SaltString::generate();
+    let salt: &str = salt.as_ref();
+    salt.as_bytes().try_into().unwrap()
 }
 
 pub fn handle_login(
