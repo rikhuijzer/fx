@@ -93,7 +93,10 @@ jobs:
           --sha ${{ steps.just-sha.outputs.SHA }}
           --gh-token ${{ secrets.GITHUB_TOKEN }}
       - run: sudo timedatectl set-timezone Europe/Amsterdam
-      - run: date +'%Y-%m-%d %H:%M' > fx/src/version.txt
+      - if: github.ref_type != 'tag'
+        run: date +'%Y-%m-%d %H:%M' > fx/src/version.txt
+      - if: github.ref_type == 'tag'
+        run: printf '%s\n' "$GITHUB_REF_NAME" > fx/src/version.txt
       - run: just release
       - uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
         if: github.event_name != 'pull_request' # Also run on tag.
