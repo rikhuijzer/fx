@@ -28,7 +28,6 @@ pub struct Settings {
     pub about: String,
     pub dark_mode: Option<String>,
     pub extra_head: String,
-    pub blogroll_feeds: String,
 }
 
 impl Settings {
@@ -45,7 +44,6 @@ impl Settings {
             None
         };
         let extra_head = Kv::get_or_empty_string(conn, "extra_head");
-        let blogroll_feeds = Kv::get(conn, crate::data::BLOGROLL_SETTINGS_KEY)?;
         Ok(Self {
             site_name: String::from_utf8(site_name).unwrap(),
             site_description: String::from_utf8(site_description).unwrap(),
@@ -53,7 +51,6 @@ impl Settings {
             about: String::from_utf8(about).unwrap(),
             dark_mode,
             extra_head,
-            blogroll_feeds: String::from_utf8(blogroll_feeds).unwrap(),
         })
     }
     pub fn set_about(conn: &Connection, about: &str) -> rusqlite::Result<()> {
@@ -156,7 +153,6 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
             {}
             {}
             {}
-            {}
             <input style='margin-left: 0;' type='submit' value='Save'/>
         </form>
         ",
@@ -212,28 +208,11 @@ async fn get_settings(State(ctx): State<ServerContext>, jar: CookieJar) -> Respo
             extra_head_description,
             false,
         ),
-        text_input(
-            InputType::Textarea,
-            "blogroll_feeds",
-            "Blogroll Feeds (optional)",
-            &settings.blogroll_feeds,
-            "Feeds that are shown on the blogroll page. One feed per line. For example,
-            <pre><code>https://simonwillison.net/atom/everything/</code></pre>
-            The list will be sorted alphabetically upon save.
-            ",
-            false,
-        )
     );
     let page_settings =
         PageSettings::new("Settings", Some(is_logged_in), None, false, Top::GoHome, "");
     let body = page(&ctx, &page_settings, &body).await;
     response(StatusCode::OK, HeaderMap::new(), body, &ctx)
-}
-
-async fn update_feeds(ctx: &ServerContext) {
-    let blog_cache = ctx.blog_cache.clone();
-    let mut blog_cache = blog_cache.lock().await;
-    blog_cache.update(ctx).await;
 }
 
 async fn post_settings(
@@ -265,21 +244,7 @@ async fn post_settings(
         Kv::insert(&conn, "about", about.as_bytes()).unwrap();
         let extra_head = cleanup_content(&form.extra_head);
         Kv::insert(&conn, "extra_head", extra_head.as_bytes()).unwrap();
-
-        let key = crate::data::BLOGROLL_SETTINGS_KEY;
-        let mut feeds = form
-            .blogroll_feeds
-            .split("\n")
-            .map(|line| line.trim())
-            .collect::<Vec<_>>();
-        feeds.sort();
-        let feeds = feeds.join("\n");
-        Kv::insert(&conn, key, feeds.trim().as_bytes()).unwrap();
     }
-    let ctx_clone = ctx.clone();
-    tokio::task::spawn_blocking(async move || {
-        update_feeds(&ctx_clone).await;
-    });
     crate::trigger::trigger_github_backup(&ctx).await;
     crate::serve::see_other(&ctx, "/")
 }
