@@ -77,6 +77,7 @@ jobs:
           key: ${{ runner.os }}-${{ runner.arch }}-jas-0.3.1-${{ steps.rust-version.outputs.version }}
       - if: steps.jas-cache.outputs.cache-hit != 'true'
         run: cargo install --debug --locked jas@0.3.1
+      - run: echo "$HOME/.jas/bin" >> "$GITHUB_PATH"
       - id: just-sha
         run: |
           SHA=""
