@@ -5,16 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.0.0] - 2026-10-01
 
 ### Fixed
 
-- Escape search queries in the search form to prevent reflected XSS.
-- Enforce two-week session expiry on the server. Existing date-only cookies require a new login.
+- Sessions not expiring after two weeks ([#209](https://github.com/rikhuijzer/fx/pull/209)).
+- Search XSS ([#208](https://github.com/rikhuijzer/fx/pull/208)).
 
 ### Removed
 
-- Blogroll, including feed subscriptions and background feed fetching.
+- Blogroll ([#206](https://github.com/rikhuijzer/fx/pull/206)).
 
 ## [1.6.3] - 2026-09-15
 
