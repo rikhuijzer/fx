@@ -10,6 +10,28 @@ use http_body_util::BodyExt;
 use tower::util::ServiceExt;
 
 #[tokio::test]
+async fn test_search_escapes_query_in_form() {
+    // Double quotes make this a valid FTS phrase while the apostrophe would
+    // otherwise break out of the form's single-quoted value attribute.
+    let query = "\"'><img src=x onerror=alert(1)>&amp;\"";
+    let query = serde_urlencoded::to_string([("q", query)]).unwrap();
+    let (status, body) = request_body(&format!("/search?{query}")).await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(
+        body.contains("value='&quot;&#39;&gt;&lt;img src=x onerror=alert(1)&gt;&amp;amp;&quot;'")
+    );
+    assert!(!body.contains("<img src=x onerror=alert(1)>"));
+}
+
+#[tokio::test]
+async fn test_search_still_returns_matches() {
+    let (status, body) = request_body("/search?q=Lorem").await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(body.contains("value='Lorem'"));
+    assert!(body.contains("/posts/1"));
+}
+
+#[tokio::test]
 async fn test_home() {
     let (status, body) = request_body("/").await;
     assert_eq!(status, StatusCode::OK);

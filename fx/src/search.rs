@@ -29,6 +29,13 @@ pub struct SearchForm {
 }
 
 fn search_form(q: &str) -> String {
+    // Escape only the displayed value; the database receives the original query.
+    let q = q
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;");
     format!(
         "
         <form action='/search' method='get'>

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Escape search queries in the search form to prevent reflected XSS.
+
 ### Removed
 
 - Blogroll, including feed subscriptions and background feed fetching.
