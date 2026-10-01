@@ -259,7 +259,7 @@ pub fn enable_caching(headers: &mut HeaderMap, max_age: u32) {
     // `must-revalidate` avoids stale responses when disconnected.
     let src = format!("public, max-age={max_age}, must-revalidate");
     let val = HeaderValue::from_str(&src).unwrap();
-    headers.insert(hyper::header::CACHE_CONTROL, val);
+    headers.insert(axum::http::header::CACHE_CONTROL, val);
 }
 
 async fn get_style(State(ctx): State<ServerContext>) -> Response<Body> {
