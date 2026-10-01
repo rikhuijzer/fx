@@ -2,15 +2,12 @@ use axum::body::Body;
 use axum::extract::Request;
 use axum::http::StatusCode;
 use fx::ServeArgs;
-use fx::blogroll::BlogCache;
 use fx::data;
 use fx::data::DbPool;
 use fx::serve::LoginForm;
 use fx::serve::ServerContext;
 use fx::serve::app;
 use http_body_util::BodyExt;
-use std::sync::Arc;
-use tokio::sync::Mutex;
 use tower::util::ServiceExt;
 
 pub trait TestDefault {
@@ -51,9 +48,7 @@ pub async fn server_context() -> ServerContext {
     let args = ServeArgs::test_default();
     let conn = DbPool::test_default();
     let salt = fx_auth::generate_salt();
-    let blog_cache = BlogCache::new(vec![]).await;
-    let blog_cache = Arc::new(Mutex::new(blog_cache));
-    ServerContext::new(args, conn, salt, blog_cache).await
+    ServerContext::new(args, conn, salt).await
 }
 
 pub async fn request_body(uri: &str) -> (StatusCode, String) {

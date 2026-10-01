@@ -238,7 +238,6 @@ fn init_tables(conn: &Connection) {
     File::create_table(conn).expect("Failed to create files table");
 }
 
-pub const BLOGROLL_SETTINGS_KEY: &str = "blogroll_settings";
 pub const SITE_NAME_KEY: &str = "site_name";
 
 fn init_kv_data(conn: &Connection, key: &str, value: &[u8]) {
@@ -267,7 +266,6 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
 
     let domain = if args.production { "" } else { "localhost" };
     init_kv_data(conn, "domain", domain.as_bytes());
-    init_kv_data(conn, BLOGROLL_SETTINGS_KEY, b"");
 
     if !args.production {
         let now = chrono::Utc::now();
@@ -319,9 +317,6 @@ fn init_data(args: &ServeArgs, conn: &Connection) {
             data: Bytes::from_static(b"example"),
         };
         File::insert(conn, &file).unwrap();
-
-        let feeds = "https://susam.net/feed.xml";
-        Kv::insert(conn, BLOGROLL_SETTINGS_KEY, feeds.as_bytes()).unwrap();
     }
 }
 
