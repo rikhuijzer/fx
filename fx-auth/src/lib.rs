@@ -12,7 +12,7 @@ use argon2::Argon2;
 use argon2::password_hash::phc::SaltString;
 use axum_extra::extract::CookieJar;
 use axum_extra::extract::cookie::Cookie;
-use chrono::NaiveDate;
+use chrono::DateTime;
 use chrono::Utc;
 use serde::Deserialize;
 use serde::Serialize;
@@ -67,17 +67,12 @@ struct Ciphertext {
     ciphertext: Vec<u8>,
 }
 
-fn today() -> NaiveDate {
-    Utc::now().date_naive()
-}
-
 fn encrypt_login(salt: &Salt, password: &str) -> Ciphertext {
-    let plaintext = today();
+    let plaintext = Utc::now().to_rfc3339();
     let key = FxKey::new(salt, password);
     // Nonce should be unique per message.
     // let nonce = Aes256GcmSiv::generate_nonce().unwrap();
     let nonce = Nonce::generate();
-    let plaintext = plaintext.to_string();
     let ciphertext = key.key.encrypt(&nonce, plaintext.as_bytes()).unwrap();
     Ciphertext {
         nonce: nonce.into(),
@@ -105,10 +100,12 @@ fn decrypt_login(salt: &Salt, password: &str, auth: &Ciphertext) -> Option<Strin
 fn encryption_roundtrip() {
     let salt = b"nblVMlxYtvt0rxo3BML3zw";
     let password = "password";
+    let before = Utc::now();
     let auth = encrypt_login(salt, password);
     let plaintext = decrypt_login(salt, password, &auth).unwrap();
-    let today = today().to_string();
-    assert_eq!(plaintext, today);
+    let issued = DateTime::parse_from_rfc3339(&plaintext).unwrap();
+    assert!(before <= issued && issued <= Utc::now());
+    assert!(session_is_valid(&plaintext, Utc::now()));
 }
 
 pub fn handle_logout(jar: CookieJar) -> CookieJar {
@@ -116,6 +113,48 @@ pub fn handle_logout(jar: CookieJar) -> CookieJar {
 }
 
 const MAX_AGE_SEC: i64 = 2 * 60 * 60 * 24 * 7; // 2 weeks.
+
+fn session_is_valid(plaintext: &str, now: DateTime<Utc>) -> bool {
+    let Ok(issued) = DateTime::parse_from_rfc3339(plaintext) else {
+        return false;
+    };
+    let age = now.signed_duration_since(issued);
+    chrono::Duration::zero() <= age && age < chrono::Duration::seconds(MAX_AGE_SEC)
+}
+
+#[test]
+fn session_expiry_boundaries() {
+    let issued = DateTime::parse_from_rfc3339("2026-09-01T12:34:56Z")
+        .unwrap()
+        .with_timezone(&Utc);
+    let plaintext = issued.to_rfc3339();
+    let lifetime = chrono::Duration::seconds(MAX_AGE_SEC);
+    assert!(session_is_valid(&plaintext, issued));
+    assert!(session_is_valid(
+        &plaintext,
+        issued + lifetime - chrono::Duration::seconds(1)
+    ));
+    assert!(!session_is_valid(&plaintext, issued + lifetime));
+    assert!(!session_is_valid(
+        &plaintext,
+        issued + lifetime + chrono::Duration::seconds(1)
+    ));
+    assert!(!session_is_valid(
+        &plaintext,
+        issued - chrono::Duration::seconds(1)
+    ));
+    assert!(!session_is_valid("invalid", issued));
+}
+
+#[test]
+fn rejects_date_only_cookies() {
+    // Old cookies stored only the login date. Reject that format so users must
+    // log in again and receive a timestamped cookie with two-week expiry.
+    let now = DateTime::parse_from_rfc3339("2026-09-01T12:34:56Z")
+        .unwrap()
+        .with_timezone(&Utc);
+    assert!(!session_is_valid("2026-09-01", now));
+}
 
 pub fn is_logged_in(salt: &Salt, login: &Login, jar: &CookieJar) -> bool {
     let cookie = jar.get("auth");
@@ -143,8 +182,7 @@ pub fn is_logged_in(salt: &Salt, login: &Login, jar: &CookieJar) -> bool {
                     return false;
                 }
             };
-            let date = NaiveDate::parse_from_str(&plaintext, "%Y-%m-%d").unwrap();
-            today() <= date + chrono::Duration::days(MAX_AGE_SEC)
+            session_is_valid(&plaintext, Utc::now())
         }
         None => false,
     }
