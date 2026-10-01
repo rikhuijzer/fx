@@ -1,8 +1,8 @@
 //! Trigger GitHub Actions.
 use crate::serve::ServerContext;
-use hyper::HeaderMap;
-use hyper::header;
-use hyper::header::HeaderValue;
+use axum::http::HeaderMap;
+use axum::http::header;
+use axum::http::header::HeaderValue;
 
 struct TriggerArgs {
     pub trigger_token: Option<String>,
