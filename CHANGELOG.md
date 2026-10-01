@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.0.0] - 2026-10-01
 
+### Changed
+
+- Show version tag in footer on tagged builds ([#211](https://github.com/rikhuijzer/fx/pull/211)).
+
 ### Fixed
 
 - Sessions not expiring after two weeks ([#209](https://github.com/rikhuijzer/fx/pull/209)).
