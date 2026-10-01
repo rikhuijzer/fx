@@ -49,10 +49,10 @@ release:
 
     if [[ $ARCH == "x86_64" && $OS == "Linux" ]]; then
         TARGET="x86_64-unknown-linux-musl"
-        cargo build -p fx --release --target="$TARGET"
+        cargo build -p fx --release --locked --target="$TARGET"
         cp --verbose "target/$TARGET/release/fx" "public/"
     else
-        cargo build -p fx --release
+        cargo build -p fx --release --locked
         cp --verbose "target/release/fx" "public/"
     fi
 
