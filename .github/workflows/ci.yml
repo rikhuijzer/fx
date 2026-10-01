@@ -15,6 +15,11 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
+      - run: rustup toolchain install stable --profile minimal
+      - run: rustup default stable
+      - name: Record Rust version for caching
+        id: rust-version
+        run: echo "version=$(rustc --version)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@v5
         with:
           path: |
@@ -22,10 +27,11 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-test-${{ hashFiles('**/Cargo.toml') }}
-      - run: rustup update stable
-      - run: rustup default stable
-      - run: cargo test
+          key: ${{ runner.os }}-${{ runner.arch }}-test-${{ steps.rust-version.outputs.version }}-${{ hashFiles('**/Cargo.toml', 'Cargo.lock') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-test-${{ steps.rust-version.outputs.version }}-${{ hashFiles('**/Cargo.toml', 'Cargo.lock') }}-
+            ${{ runner.os }}-${{ runner.arch }}-test-${{ steps.rust-version.outputs.version }}-
+      - run: cargo test --locked
 
   # Based on https://docs.docker.com/build/ci/github-actions/multi-platform/.
   build:
@@ -37,11 +43,17 @@ jobs:
           - ubuntu-24.04
           - ubuntu-24.04-arm
     concurrency:
-      group: ${{ github.workflow }}-${{ matrix.os }}
+      group: ${{ github.workflow }}-build-${{ github.ref }}-${{ matrix.os }}
+      cancel-in-progress: true
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
+      - run: rustup toolchain install stable --profile minimal
+      - run: rustup default stable
+      - name: Record Rust version for caching
+        id: rust-version
+        run: echo "version=$(rustc --version)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@v5
         with:
           path: |
@@ -49,26 +61,22 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-build-${{ hashFiles('**/Cargo.toml') }}
-      - uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
-        if: github.event_name != 'pull_request' # Also run on tag.
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Extract metadata (tags, labels) for Docker
-        if: github.event_name != 'pull_request' # Also run on tag.
-        id: meta
-        uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804
-        with:
-          images: ${{ env.REGISTRY_IMAGE }}
-      - run: rustup update stable
-      - run: rustup default stable
+          key: ${{ runner.os }}-${{ runner.arch }}-build-${{ matrix.os }}-${{ steps.rust-version.outputs.version }}-${{ hashFiles('**/Cargo.toml', 'Cargo.lock') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-build-${{ matrix.os }}-${{ steps.rust-version.outputs.version }}-${{ hashFiles('**/Cargo.toml', 'Cargo.lock') }}-
+            ${{ runner.os }}-${{ runner.arch }}-build-${{ matrix.os }}-${{ steps.rust-version.outputs.version }}-
       - name: setup x86 musl dependencies
         if: ${{ matrix.os == 'ubuntu-24.04' }}
         run: |
           rustup target add x86_64-unknown-linux-musl
           sudo apt-get install -y musl-tools
-      - run: cargo install --debug jas@0.3.1
+      - uses: actions/cache@v5
+        id: jas-cache
+        with:
+          path: ~/.cargo/bin/jas
+          key: ${{ runner.os }}-${{ runner.arch }}-jas-0.3.1-${{ steps.rust-version.outputs.version }}
+      - if: steps.jas-cache.outputs.cache-hit != 'true'
+        run: cargo install --debug --locked jas@0.3.1
       - id: just-sha
         run: |
           SHA=""
@@ -86,6 +94,17 @@ jobs:
       - run: sudo timedatectl set-timezone Europe/Amsterdam
       - run: date +'%Y-%m-%d %H:%M' > fx/src/version.txt
       - run: just release
+      - uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        if: github.event_name != 'pull_request' # Also run on tag.
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Extract metadata (tags, labels) for Docker
+        if: github.event_name != 'pull_request' # Also run on tag.
+        id: meta
+        uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804
+        with:
+          images: ${{ env.REGISTRY_IMAGE }}
       - uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
         if: github.event_name != 'pull_request' # Also run on tag.
       - id: platform
