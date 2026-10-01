@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Escape search queries in the search form to prevent reflected XSS.
+- Enforce two-week session expiry on the server. Existing date-only cookies require a new login.
 
 ### Removed
 
