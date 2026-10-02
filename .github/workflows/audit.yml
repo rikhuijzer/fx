@@ -27,8 +27,6 @@ jobs:
           printf '%s  jas\n' "$sha" | "${hash[@]}" -c -
           chmod +x jas
           printf '%s\n' "$dir" >> "$GITHUB_PATH"
-      - name: Check jas installation
-        run: jas --version
       - run: >
           jas install
           --gh EmbarkStudios/cargo-deny@0.19.0
