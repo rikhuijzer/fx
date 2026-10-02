@@ -14,7 +14,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
-      - name: Install jas v0.4.0
+      - name: Install jas
         run: |
           mkdir -p "$RUNNER_TEMP/jas"
           cd "$RUNNER_TEMP/jas"

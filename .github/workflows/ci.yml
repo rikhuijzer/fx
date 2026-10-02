@@ -70,7 +70,7 @@ jobs:
         run: |
           rustup target add x86_64-unknown-linux-musl
           sudo apt-get install -y musl-tools
-      - name: Install jas v0.4.0
+      - name: Install jas
         run: |
           mkdir -p "$RUNNER_TEMP/jas"
           cd "$RUNNER_TEMP/jas"
