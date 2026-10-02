@@ -85,7 +85,6 @@ jobs:
           printf '%s\n' "$dir" >> "$GITHUB_PATH"
       - name: Check jas installation
         run: jas --version
-      - run: echo "$HOME/.jas/bin" >> "$GITHUB_PATH"
       - id: just-sha
         run: |
           SHA=""

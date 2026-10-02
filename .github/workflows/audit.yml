@@ -29,7 +29,6 @@ jobs:
           printf '%s\n' "$dir" >> "$GITHUB_PATH"
       - name: Check jas installation
         run: jas --version
-      - run: echo "$HOME/.jas/bin" >> "$GITHUB_PATH"
       - run: >
           jas install
           --gh EmbarkStudios/cargo-deny@0.19.0
