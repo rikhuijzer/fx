@@ -70,13 +70,21 @@ jobs:
         run: |
           rustup target add x86_64-unknown-linux-musl
           sudo apt-get install -y musl-tools
-      - uses: actions/cache@v5
-        id: jas-cache
-        with:
-          path: ~/.cargo/bin/jas
-          key: ${{ runner.os }}-${{ runner.arch }}-jas-0.3.1-${{ steps.rust-version.outputs.version }}
-      - if: steps.jas-cache.outputs.cache-hit != 'true'
-        run: cargo install --debug --locked jas@0.3.1
+      - name: Install jas v0.4.0
+        run: |
+          dir="$RUNNER_TEMP/jas-bin"
+          mkdir -p "$dir"
+          cd "$dir"
+          curl --fail --location --retry 2 \
+            https://github.com/rikhuijzer/jas/releases/download/v0.4.0/jas -o jas
+          sha="437b2988dbc58d5867b908bb67366b766b9bcd3ed4b266a129f8d96d75301f6e"
+          hash=(sha256sum)
+          command -v sha256sum >/dev/null 2>&1 || hash=(shasum -a 256)
+          printf '%s  jas\n' "$sha" | "${hash[@]}" -c -
+          chmod +x jas
+          printf '%s\n' "$dir" >> "$GITHUB_PATH"
+      - name: Check jas installation
+        run: jas --version
       - run: echo "$HOME/.jas/bin" >> "$GITHUB_PATH"
       - id: just-sha
         run: |
