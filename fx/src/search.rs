@@ -46,14 +46,13 @@ fn search_form(q: &str) -> String {
     )
 }
 
-async fn search(ctx: &ServerContext, q: &str) -> Vec<Post> {
+async fn search(ctx: &ServerContext, q: &str) -> Result<Vec<Post>> {
     if q.is_empty() {
-        return vec![];
+        return Ok(vec![]);
     }
-    let conn = ctx.conn();
-
-    let stmt = "BEGIN TRANSACTION";
-    conn.execute(stmt, []).unwrap();
+    let mut conn = ctx.conn();
+    // Dropping the transaction rolls back both the index and any failed query.
+    let tx = conn.transaction()?;
 
     // Creating a virtual table on each query to avoid having to manually keep
     // track of updates to the fts table. For small sites, creating the index on
@@ -69,17 +68,15 @@ async fn search(ctx: &ServerContext, q: &str) -> Vec<Post> {
             tokenize=trigram
         );
         ";
-    conn.execute(stmt, []).unwrap();
+    tx.execute(stmt, [])?;
 
     let stmt = "
         INSERT INTO posts_fts (id, created, content)
         SELECT id, created, content FROM posts;
     ";
-    conn.execute(stmt, []).unwrap();
+    tx.execute(stmt, [])?;
 
-    let mut results = conn
-        .prepare("SELECT * FROM posts_fts WHERE posts_fts MATCH ?")
-        .unwrap();
+    let mut results = tx.prepare("SELECT * FROM posts_fts WHERE posts_fts MATCH ?")?;
     let results = results
         .query_map([q], |row| {
             let id: i64 = row.get("id")?;
@@ -92,15 +89,10 @@ async fn search(ctx: &ServerContext, q: &str) -> Vec<Post> {
                 content,
             };
             Ok(post)
-        })
-        .unwrap()
-        .collect::<Result<Vec<_>, _>>()
-        .unwrap();
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
 
-    let stmt = "ROLLBACK";
-    conn.execute(stmt, []).unwrap();
-
-    results
+    Ok(results)
 }
 
 async fn get_search(
@@ -111,7 +103,28 @@ async fn get_search(
     let is_logged_in = is_logged_in(&ctx, &jar);
     let q = search_query.q.clone().unwrap_or_default();
     let search_form = search_form(&q);
-    let mut results = search(&ctx, &q).await;
+    let (status, message, mut results) = match search(&ctx, &q).await {
+        Ok(results) => (StatusCode::OK, "", results),
+        Err(rusqlite::Error::SqliteFailure(_, Some(ref message)))
+            if message == "unterminated string"
+                || message.starts_with("fts5: syntax error")
+                || message.starts_with("no such column:") =>
+        {
+            (
+                StatusCode::BAD_REQUEST,
+                "Invalid search query syntax.",
+                vec![],
+            )
+        }
+        Err(error) => {
+            tracing::error!(%error, "Search failed");
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Search is temporarily unavailable.",
+                vec![],
+            )
+        }
+    };
     let results = results
         .iter_mut()
         .map(|p| {
@@ -122,9 +135,15 @@ async fn get_search(
         })
         .collect::<Vec<_>>();
     let results = results.join("\n");
+    let message = if message.is_empty() {
+        String::new()
+    } else {
+        format!("<p>{message}</p>")
+    };
     let body = format!(
         "
         {search_form}
+        {message}
         {results}
         "
     );
@@ -141,7 +160,7 @@ async fn get_search(
         extra_head,
     );
     let body = page(&ctx, &settings, &body).await;
-    response(StatusCode::OK, headers, body, &ctx)
+    response(status, headers, body, &ctx)
 }
 
 pub fn routes(router: &Router<ServerContext>) -> Router<ServerContext> {

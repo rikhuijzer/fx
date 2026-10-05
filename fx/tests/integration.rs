@@ -32,6 +32,73 @@ async fn test_search_still_returns_matches() {
 }
 
 #[tokio::test]
+async fn test_search_rejects_malformed_queries_and_recovers() {
+    let mut ctx = server_context().await;
+    // Reuse the same connection to verify that failed requests clean it up.
+    ctx.pool = r2d2::Pool::builder()
+        .max_size(1)
+        .build(r2d2_sqlite::SqliteConnectionManager::memory())
+        .unwrap();
+    fx::data::init(&ctx.args, &ctx.conn());
+    let router = app(ctx.clone());
+    for query in ["\"", "Lorem OR", "(Lorem", "unknown:Lorem"] {
+        let query = serde_urlencoded::to_string([("q", query)]).unwrap();
+        let req = Request::builder()
+            .uri(format!("/search?{query}"))
+            .body(Body::empty())
+            .unwrap();
+        let response = router.clone().oneshot(req).await.unwrap();
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let body = String::from_utf8(body.to_vec()).unwrap();
+        assert!(body.contains("Invalid search query syntax."));
+        assert!(body.contains("<form action='/search'"));
+
+        let conn = ctx.conn();
+        assert!(conn.is_autocommit());
+        let tables: i64 = conn
+            .query_row(
+                "SELECT count(*) FROM sqlite_master WHERE name = 'posts_fts'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(tables, 0);
+        drop(conn);
+
+        let req = Request::builder()
+            .uri("/search?q=Lorem")
+            .body(Body::empty())
+            .unwrap();
+        let response = router.clone().oneshot(req).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        assert!(
+            String::from_utf8(body.to_vec())
+                .unwrap()
+                .contains("/posts/1")
+        );
+    }
+}
+
+#[tokio::test]
+async fn test_search_database_failure_returns_server_error() {
+    let ctx = server_context().await;
+    ctx.conn().execute("DROP TABLE posts", []).unwrap();
+    let req = Request::builder()
+        .uri("/search?q=Lorem")
+        .body(Body::empty())
+        .unwrap();
+    let response = app(ctx.clone()).oneshot(req).await.unwrap();
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let body = String::from_utf8(body.to_vec()).unwrap();
+    assert!(body.contains("Search is temporarily unavailable."));
+    assert!(!body.contains("no such table"));
+    assert!(ctx.conn().is_autocommit());
+}
+
+#[tokio::test]
 async fn test_home() {
     let (status, body) = request_body("/").await;
     assert_eq!(status, StatusCode::OK);
