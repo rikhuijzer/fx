@@ -117,6 +117,65 @@ async fn test_home() {
 }
 
 #[tokio::test]
+async fn test_home_invalid_pages() {
+    for page in [0, 2, usize::MAX / 10 + 1, usize::MAX / 10 + 2, usize::MAX] {
+        let (status, _) = request_body(&format!("/?page={page}")).await;
+        assert_eq!(status, StatusCode::NOT_FOUND, "page={page}");
+    }
+    let (status, body) = request_body("/?page=1").await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(body.contains("Lorem"));
+}
+
+#[tokio::test]
+async fn test_home_pagination_and_stale_page() {
+    let ctx = server_context().await;
+    ctx.conn().execute("DELETE FROM posts", []).unwrap();
+    let now = chrono::Utc::now();
+    for index in 0..11 {
+        fx::data::Post::insert(&ctx.conn(), now, now, &format!("Pagination post {index}")).unwrap();
+    }
+    let router = app(ctx.clone());
+    for (uri, expected_count, has_next) in [("/", 10, true), ("/?page=2", 1, false)] {
+        let req = Request::builder().uri(uri).body(Body::empty()).unwrap();
+        let response = router.clone().oneshot(req).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let body = String::from_utf8(body.to_vec()).unwrap();
+        assert_eq!(body.matches("Pagination post").count(), expected_count);
+        assert_eq!(body.contains("▶ next"), has_next);
+    }
+    ctx.conn()
+        .execute(
+            "DELETE FROM posts WHERE id = (SELECT max(id) FROM posts)",
+            [],
+        )
+        .unwrap();
+    let req = Request::builder()
+        .uri("/?page=2")
+        .body(Body::empty())
+        .unwrap();
+    let response = router.oneshot(req).await.unwrap();
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn test_home_empty_database() {
+    let ctx = server_context().await;
+    ctx.conn().execute("DELETE FROM posts", []).unwrap();
+    let router = app(ctx);
+    for (uri, status) in [
+        ("/", StatusCode::OK),
+        ("/?page=1", StatusCode::OK),
+        ("/?page=2", StatusCode::NOT_FOUND),
+    ] {
+        let req = Request::builder().uri(uri).body(Body::empty()).unwrap();
+        let response = router.clone().oneshot(req).await.unwrap();
+        assert_eq!(response.status(), status, "{uri}");
+    }
+}
+
+#[tokio::test]
 async fn test_get_post() {
     let (status, body) = request_body("/posts/2/code").await;
     assert_eq!(status, StatusCode::OK);

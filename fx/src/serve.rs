@@ -160,15 +160,19 @@ pub fn is_logged_in(ctx: &ServerContext, jar: &CookieJar) -> bool {
     fx_auth::is_logged_in(&ctx.salt, &login, jar)
 }
 
-async fn list_posts(ctx: &ServerContext, page: usize) -> (bool, String) {
+async fn list_posts(ctx: &ServerContext, page: usize) -> Option<(bool, String)> {
     let posts = match Post::list(&ctx.conn()) {
         Ok(posts) => posts,
-        Err(_) => return (false, "Database error".to_string()),
+        Err(_) => return Some((false, "Database error".to_string())),
     };
     // Set this to 1 to test the logic locally.
     let results_per_page = 10;
-    let start = (page - 1) * results_per_page;
-    let end = start + results_per_page;
+    let start = page.checked_sub(1)?.checked_mul(results_per_page)?;
+    // The first page remains valid even when there are no posts.
+    if page > 1 && start >= posts.len() {
+        return None;
+    }
+    let end = start.checked_add(results_per_page)?;
     let has_next = end < posts.len();
     let end = std::cmp::min(end, posts.len());
     let mut posts = posts[start..end].to_vec();
@@ -180,7 +184,7 @@ async fn list_posts(ctx: &ServerContext, page: usize) -> (bool, String) {
             wrap_post_content(post, &slug, true)
         })
         .collect::<Vec<String>>();
-    (has_next, posts.join("\n"))
+    Some((has_next, posts.join("\n")))
 }
 
 #[derive(Debug, Deserialize)]
@@ -214,7 +218,9 @@ async fn get_posts(
         Top::GoHome
     };
     let settings = PageSettings::new("", is_logged_in, None, show_about, top, &extra_head);
-    let (has_next, posts) = list_posts(&ctx, current_page).await;
+    let Some((has_next, posts)) = list_posts(&ctx, current_page).await else {
+        return not_found(State(ctx)).await;
+    };
     let prev_link = if current_page == 1 {
         ""
     } else {
