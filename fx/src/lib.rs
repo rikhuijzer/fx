@@ -4,6 +4,7 @@ pub mod data;
 mod discovery;
 mod files;
 pub mod health;
+mod highlight;
 pub mod html;
 mod md;
 mod search;
