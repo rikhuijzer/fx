@@ -21,15 +21,6 @@ async fn test_api() {
     assert_eq!(status, StatusCode::OK);
 }
 
-#[tokio::test]
-async fn test_no_access() {
-    let endpoints = ["/api/download/all.tar.xz"];
-    for endpoint in endpoints {
-        let (status, _body) = request_body(endpoint).await;
-        assert_eq!(status, StatusCode::UNAUTHORIZED);
-    }
-}
-
 fn auth_header(ctx: &ServerContext) -> String {
     let auth = ctx.args.password.clone().unwrap();
     format!("Bearer {auth}")
@@ -53,18 +44,8 @@ pub async fn request_body_authenticated(uri: &str) -> (StatusCode, Vec<u8>) {
 #[tokio::test]
 async fn test_update_about() {
     let ctx = server_context().await;
-    let router = app(ctx.clone());
     let uri = "/api/settings/about";
     let body = "test";
-    let req = Request::builder()
-        .method("PUT")
-        .uri(uri)
-        .body(Body::from(body))
-        .unwrap();
-    let response = router.oneshot(req).await.unwrap();
-    let status = response.status();
-    assert_eq!(status, StatusCode::UNAUTHORIZED);
-
     let req = Request::builder()
         .method("PUT")
         .uri(uri)

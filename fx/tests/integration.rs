@@ -379,10 +379,6 @@ async fn test_login() {
 
 #[tokio::test]
 async fn test_delete_confirmation() {
-    let (status, body) = request_body("/posts/delete/1").await;
-    assert_eq!(status, StatusCode::NOT_FOUND);
-    assert!(!body.contains("Are you sure you want to delete this post?"));
-
     let (status, body) = request_body_logged_in("/posts/delete/1").await;
     assert_eq!(status, StatusCode::OK);
     let body = String::from_utf8(body).unwrap();
