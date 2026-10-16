@@ -1,0 +1,39 @@
+/* GitHub palette from Highlight.js 11.11.1's github and github-dark themes:
+   https://github.com/highlightjs/highlight.js/tree/11.11.1/src/styles
+   Map the palette to Syntect's scopes so highlighting stays server-side. */
+.syntax-code {
+    --syntax-text: #24292e;
+    --syntax-keyword: #d73a49;
+    --syntax-entity: #6f42c1;
+    --syntax-constant: #005cc5;
+    --syntax-string: #032f62;
+    --syntax-builtin: #e36209;
+    --syntax-comment: #6a737d;
+    --syntax-tag: #22863a;
+    color: var(--syntax-text);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) .syntax-code {
+        --syntax-text: #c9d1d9;
+        --syntax-keyword: #ff7b72;
+        --syntax-entity: #d2a8ff;
+        --syntax-constant: #79c0ff;
+        --syntax-string: #a5d6ff;
+        --syntax-builtin: #ffa657;
+        --syntax-comment: #8b949e;
+        --syntax-tag: #7ee787;
+    }
+}
+
+.syntax-keyword, .syntax-storage { color: var(--syntax-keyword); }
+.syntax-entity.syntax-name { color: var(--syntax-entity); }
+.syntax-constant, .syntax-variable, .syntax-entity.syntax-other.syntax-attribute-name,
+.syntax-keyword.syntax-operator { color: var(--syntax-constant); }
+.syntax-string { color: var(--syntax-string); }
+.syntax-support { color: var(--syntax-builtin); }
+.syntax-entity.syntax-name.syntax-tag { color: var(--syntax-tag); }
+.syntax-comment { color: var(--syntax-comment); }
+
+/* Nested punctuation and escapes inherit their enclosing string/comment color. */
+.syntax-string *, .syntax-comment * { color: inherit; }

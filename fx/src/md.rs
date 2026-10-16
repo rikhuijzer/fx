@@ -31,7 +31,7 @@ fn node_to_html(node: &Node) -> String {
                 "
                 <pre><code {class}>{}</code></pre>
                 ",
-                code.value
+                crate::highlight::escape(&code.value)
             );
             preview.push_str(&html);
         }
@@ -176,7 +176,7 @@ fn to_html_options() -> Options {
 
 pub fn content_to_html(content: &str) -> String {
     let options = to_html_options();
-    markdown::to_html_with_options(content, &options).unwrap()
+    crate::highlight::html(&markdown::to_html_with_options(content, &options).unwrap())
 }
 
 /// Prepare post to be shown as preview.
@@ -203,7 +203,7 @@ pub fn preview(post: &mut Post, max_length: usize) {
         }
         preview.push_str(&node_to_html(node));
     }
-    post.content = preview;
+    post.content = crate::highlight::html(&preview);
 }
 
 #[test]

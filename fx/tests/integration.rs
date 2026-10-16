@@ -159,7 +159,7 @@ async fn test_home() {
     assert!(body.contains("<meta property='og:type' content='website'/>"));
     assert!(body.contains("<meta property='og:title' content='John&#39;s Weblog'/>"));
     // Assumes that the "Code" post shows a code block in the preview.
-    assert!(body.contains("highlight.js"));
+    assert!(body.contains("/static/highlight.css"));
     // Assumes that math is shown in one of the previews.
     assert!(body.contains("katex"));
 }
@@ -254,7 +254,15 @@ async fn test_front_page_preview() {
         find . -iname "*.tex" -o -iname "*.bib" | entr latexmk -pdf</code></pre>
         "#
     };
-    assert!(body.contains(code_area.trim()));
+    let plain = regex::Regex::new(r"<[^>]+>")
+        .unwrap()
+        .replace_all(&body, "");
+    let code_area = code_area.replace('"', "&quot;");
+    let expected = regex::Regex::new(r"<[^>]+>")
+        .unwrap()
+        .replace_all(code_area.trim(), "");
+    assert!(plain.contains(expected.as_ref()));
+    assert!(body.contains("syntax-source"));
     assert!(body.contains("Show more"));
 }
 
@@ -515,4 +523,18 @@ async fn test_rss() {
 async fn test_invalid_post_request() {
     let (status, _body) = request_body("/posts/foo").await;
     assert_eq!(status, StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn test_highlight_stylesheet() {
+    let (status, css) = request_body("/static/highlight.css").await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(css.contains(".syntax-code"));
+    assert!(css.contains("prefers-color-scheme: dark"));
+    assert!(css.contains(":root:not([data-theme='light'])"));
+    let (_, body) = request_body("/posts/2/code").await;
+    assert!(body.contains("syntax-code"));
+    assert!(!body.contains("hljs"));
+    assert!(!body.contains("highlight.min.js"));
+    assert!(!body.contains("cdnjs.cloudflare.com"));
 }

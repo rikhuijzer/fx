@@ -380,14 +380,16 @@ pub fn minify(page: &str) -> String {
             lines.push(trimmed);
             continue;
         }
-        // Don't minify code blocks.
-        if trimmed.starts_with("<pre><code") {
-            inside_code = true;
-            lines.push(trimmed);
+        // Highlighted code has attributes on <pre> and spans inside <code>.
+        if inside_code {
+            lines.push(line);
+            if line.contains("</pre>") {
+                inside_code = false;
+            }
             continue;
         }
-        if trimmed.starts_with("</code></pre>") {
-            inside_code = false;
+        if trimmed.starts_with("<pre>") || trimmed.starts_with("<pre ") {
+            inside_code = !trimmed.contains("</pre>");
             lines.push(trimmed);
             continue;
         }
@@ -428,6 +430,17 @@ fn test_minify() {
     </textarea>
     "#};
     assert!(minify(page).contains("x = 1;\n\nprintln!"));
+}
+
+#[test]
+fn test_minify_preserves_highlighted_code() {
+    let code = "<pre class=\"syntax-code\"><code><span>fn</span> main() {\n    println!();\n\n}</code></pre>";
+    let page = format!("  {code}\n   <p>After</p>\n\n");
+    assert_eq!(minify(&page), format!("{code}\n<p>After</p>"));
+    assert_eq!(
+        minify("<pre><code>x</code></pre>\n\n   <p>After</p>"),
+        "<pre><code>x</code></pre>\n<p>After</p>"
+    );
 }
 
 async fn about(ctx: &ServerContext, settings: &PageSettings) -> String {
@@ -509,88 +522,11 @@ fn katex_head(body: &str) -> String {
     }
 }
 
-fn has_code(body: &str) -> bool {
-    let re = r#"<code class="language-[^"]*""#;
-    let rx = regex::Regex::new(re).unwrap();
-    for cap in rx.captures_iter(body) {
-        let (text, []) = cap.extract();
-        if !text.contains("math") {
-            return true;
-        }
-    }
-    false
-}
-
-#[test]
-fn test_has_code() {
-    let body = indoc::indoc! {r#"
-        <code class="language-math">
-        x = 1
-        </code>
-        "#};
-    assert!(!has_code(body));
-    let body = indoc::indoc! {r#"
-        <code class="language-rust">
-        x = 1
-        </code>
-        "#};
-    assert!(has_code(body));
-}
-
-fn contains_language(body: &str, language: &str) -> bool {
-    let text = format!(r#"<code class="language-{language}""#);
-    body.contains(&text)
-}
-
-async fn highlight_head(ctx: &ServerContext, body: &str) -> String {
-    let prefix = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1";
-    let julia = if contains_language(body, "julia") {
-        format!(
-            "
-            <script src='{prefix}/languages/julia.min.js' defer></script>
-            "
-        )
+fn highlight_head(body: &str) -> &'static str {
+    if body.contains("syntax-code") {
+        "<link rel='stylesheet' href='/static/highlight.css'>"
     } else {
-        "".to_string()
-    };
-    if has_code(body) {
-        let dark_mode = Kv::get(&ctx.conn(), "dark_mode").unwrap();
-        let dark_mode = String::from_utf8(dark_mode).unwrap();
-        let dark_stylesheet = if dark_mode == "on" {
-            format!(
-                "
-            <link rel='stylesheet' href='{prefix}/styles/github.min.css' \
-            media='(prefers-color-scheme: light)'>
-            <link rel='stylesheet' href='{prefix}/styles/github-dark.min.css' \
-            media='(prefers-color-scheme: dark)'>
-            "
-            )
-        } else {
-            format!(
-                "
-            <link rel='stylesheet' href='{prefix}/styles/github.min.css'>
-            "
-            )
-        };
-        format!(
-            "
-            {dark_stylesheet}
-            <script src='{prefix}/highlight.min.js' defer></script>
-            {julia}
-            <script defer>
-                document.addEventListener('DOMContentLoaded', function() {{
-                    document.querySelectorAll('pre code').forEach((el) => {{
-                        if (el.classList.contains('language-math')) {{
-                            return;
-                        }}
-                        hljs.highlightElement(el);
-                    }});
-                }});
-            </script>
-            "
-        )
-    } else {
-        "".to_string()
+        ""
     }
 }
 
@@ -640,7 +576,7 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
     let html_lang = &ctx.args.html_lang;
     let extra_head = &settings.extra_head;
     let version = include_str!("version.txt").trim();
-    let highlight = highlight_head(ctx, body).await;
+    let highlight = highlight_head(body);
     let katex = katex_head(body);
     let og_title = if settings.title.is_empty() {
         &site_name

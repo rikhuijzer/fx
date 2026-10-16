@@ -1,0 +1,8 @@
+[advisories]
+# Syntect 5.3 uses bincode to load two-face's compile-time embedded syntax
+# definitions. User-submitted code is parsed as text, not deserialized by bincode.
+# This advisory concerns maintenance status, not a reported vulnerability, and
+# has no patched release. Remove this exception when Syntect replaces bincode.
+ignore = [
+    { id = "RUSTSEC-2025-0141", reason = "Syntect loads only bundled syntax definitions with bincode; no patched upstream release is available." },
+]
