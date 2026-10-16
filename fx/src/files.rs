@@ -174,7 +174,7 @@ fn show_file(file: &File) -> String {
     let filename = crate::html::url_encode(&filename);
     format!(
         "
-        <div style='padding: 6px; padding-bottom: 0px; padding-top: 12px; \
+        <div id='file-{sha}' style='padding: 6px; padding-bottom: 0px; padding-top: 12px; \
           border-bottom: 1px solid var(--border); font-size: 0.8rem;'>
             <a href='/files/{sha}/{filename}'>{}</a>&nbsp;&nbsp;
             <a class='unstyled-link' href='/files/rename/{sha}' \
@@ -219,7 +219,7 @@ async fn get_files(State(ctx): State<ServerContext>, jar: CookieJar) -> Response
               style='margin-top: 5vh; width: 80%;'>
                 <div>
                     <label for='file'>Choose file(s) to upload (max 15 MB)</label><br>
-                    <input type='file' id='file' name='file' multiple />
+                    <input type='file' id='file' name='file' multiple required />
                 </div>
                 <br>
                 <div>
@@ -331,6 +331,12 @@ async fn post_file(
         }
     }
 
+    // The prefix is shared by the batch, so filename order matches the list.
+    let redirect = received_files
+        .iter()
+        .min_by(|a, b| a.filename.cmp(&b.filename))
+        .map(|file| format!("/files#file-{}", file.sha))
+        .unwrap_or_else(|| "/files".to_string());
     for file in received_files {
         let filename = if !prefix.is_empty() {
             format!("{}{}", prefix, file.filename)
@@ -342,7 +348,7 @@ async fn post_file(
     }
 
     crate::trigger::trigger_github_backup(&ctx).await;
-    crate::serve::see_other(&ctx, "/files")
+    crate::serve::see_other(&ctx, &redirect)
 }
 
 async fn get_delete(

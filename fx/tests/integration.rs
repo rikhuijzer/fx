@@ -7,7 +7,55 @@ use common::*;
 use fx::serve::LoginForm;
 use fx::serve::app;
 use http_body_util::BodyExt;
+use sha2::Digest;
 use tower::util::ServiceExt;
+
+#[tokio::test]
+async fn test_upload_jumps_to_alphabetically_first_file() {
+    let (mut ctx, auth) = request_cookie().await;
+    ctx.args.trigger_token = None;
+    let router = app(ctx.clone());
+    // Include a duplicate upload.
+    for filenames in [
+        vec!["z.txt"],
+        vec!["z.txt", "a.txt"],
+        vec!["a.txt", "z.txt"],
+        vec!["a.txt"],
+    ] {
+        let mut multipart = String::new();
+        for filename in &filenames {
+            multipart.push_str(&format!(
+                "--boundary\r\nContent-Disposition: form-data; name=\"file\"; filename=\"{filename}\"\r\nContent-Type: text/plain\r\n\r\n{filename}\r\n"
+            ));
+        }
+        multipart.push_str(
+            "--boundary\r\nContent-Disposition: form-data; name=\"prefix\"\r\n\r\nexample/\r\n--boundary--\r\n",
+        );
+        let req = Request::builder()
+            .method("POST")
+            .uri("/files/add")
+            .header("Cookie", format!("auth={auth}"))
+            .header("Content-Type", "multipart/form-data; boundary=boundary")
+            .body(Body::from(multipart))
+            .unwrap();
+        let response = router.clone().oneshot(req).await.unwrap();
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
+        let filename = filenames.iter().min().unwrap();
+        let sha = hex::encode(&sha2::Sha256::digest(filename.as_bytes())[..8]);
+        assert_eq!(response.headers()["Location"], format!("/files#file-{sha}"));
+        let req = Request::builder()
+            .uri("/files")
+            .header("Cookie", format!("auth={auth}"))
+            .body(Body::empty())
+            .unwrap();
+        let response = router.clone().oneshot(req).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let body = String::from_utf8(body.to_vec()).unwrap();
+        assert!(body.contains(&format!("<div id='file-{sha}'")));
+        assert!(body.contains(&format!("example/{filename}")));
+    }
+}
 
 #[tokio::test]
 async fn test_search_escapes_query_in_form() {
