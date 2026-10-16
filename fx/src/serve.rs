@@ -464,8 +464,6 @@ async fn get_post(
 }
 
 pub async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
-    // Should probably not show the login button at all on 404 pages.
-    let is_logged_in = false;
     let body = indoc::indoc! {"
         <div style='text-align: center; margin-top: 100px;'>
             <h1>Not found</h1>
@@ -473,14 +471,7 @@ pub async fn not_found(State(ctx): State<ServerContext>) -> Response<Body> {
         </div>
     "};
     let extra_head = Kv::get_or_empty_string(&ctx.conn(), "extra_head");
-    let settings = PageSettings::new(
-        "not found",
-        Some(is_logged_in),
-        None,
-        false,
-        Top::GoHome,
-        &extra_head,
-    );
+    let settings = PageSettings::new("not found", None, None, false, Top::GoHome, &extra_head);
     let body = page(&ctx, &settings, body).await;
     response::<String>(StatusCode::NOT_FOUND, HeaderMap::new(), body, &ctx)
 }

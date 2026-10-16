@@ -273,12 +273,7 @@ async fn get_file(State(ctx): State<ServerContext>, Path(sha): Path<String>) -> 
     };
     let file = match File::get(&ctx.conn(), &name) {
         Ok(file) => file,
-        Err(_) => {
-            return {
-                let body = "not found";
-                response(StatusCode::NOT_FOUND, HeaderMap::new(), body, &ctx)
-            };
-        }
+        Err(_) => return not_found(State(ctx)).await,
     };
     let mut headers = HeaderMap::new();
     crate::serve::content_type(&mut headers, &file.mime_type);
