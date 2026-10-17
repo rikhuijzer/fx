@@ -18,73 +18,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Rename fx to bloglite, including the binary and Rust packages.
 - **Breaking:** replace all `FX_` environment variables with `BLOGLITE_` for both the server and health checks. Update deployment configuration and backup scripts before upgrading.
-- **Breaking:** move container images from `rikhuijzer/fx` to `zot.huijzer.xyz/bloglite`. Use `/bloglite` for container health checks.
+- **Breaking:** move container images from `rikhuijzer/bloglite` to `zot.huijzer.xyz/bloglite`. Use `/bloglite` for container health checks.
 - Publish multi-platform Linux amd64 and arm64 images to Zot using authenticated registry writes.
 
 ## [2.1.0] - 2026-10-16
 
 ### Added
 
-- Jump to file after upload ([#50](https://github.com/rikhuijzer/fx/issues/50)).
+- Jump to file after upload ([#50](https://github.com/rikhuijzer/bloglite/issues/50)).
 
 ### Changed
 
-- Run syntax highlighting server-side ([#217](https://github.com/rikhuijzer/fx/pull/217)).
+- Run syntax highlighting server-side ([#217](https://github.com/rikhuijzer/bloglite/pull/217)).
 
 ## [2.0.1] - 2026-10-05
 
 ### Fixed
 
-- Handle malformed search queries without panic ([#215](https://github.com/rikhuijzer/fx/pull/215)).
-- Handle out-of-range page numbers without panic ([#216](https://github.com/rikhuijzer/fx/pull/216)).
+- Handle malformed search queries without panic ([#215](https://github.com/rikhuijzer/bloglite/pull/215)).
+- Handle out-of-range page numbers without panic ([#216](https://github.com/rikhuijzer/bloglite/pull/216)).
 
 ## [2.0.0] - 2026-10-01
 
 ### Changed
 
-- Show version tag in footer on tagged builds ([#211](https://github.com/rikhuijzer/fx/pull/211)).
+- Show version tag in footer on tagged builds ([#211](https://github.com/rikhuijzer/bloglite/pull/211)).
 
 ### Fixed
 
-- Sessions not expiring after two weeks ([#209](https://github.com/rikhuijzer/fx/pull/209)).
-- Search XSS ([#208](https://github.com/rikhuijzer/fx/pull/208)).
+- Sessions not expiring after two weeks ([#209](https://github.com/rikhuijzer/bloglite/pull/209)).
+- Search XSS ([#208](https://github.com/rikhuijzer/bloglite/pull/208)).
 
 ### Removed
 
-- Blogroll ([#206](https://github.com/rikhuijzer/fx/pull/206)).
+- Blogroll ([#206](https://github.com/rikhuijzer/bloglite/pull/206)).
 
 ## [1.6.3] - 2026-09-15
 
 ### Fixed
 
-- Hide deleted posts from the RSS feed ([#203](https://github.com/rikhuijzer/fx/pull/203)).
-- Preview breaks publish button in Chromium-based browsers ([#204](https://github.com/rikhuijzer/fx/pull/204)).
+- Hide deleted posts from the RSS feed ([#203](https://github.com/rikhuijzer/bloglite/pull/203)).
+- Preview breaks publish button in Chromium-based browsers ([#204](https://github.com/rikhuijzer/bloglite/pull/204)).
 
 ## [1.6.2] - 2026-08-29
 
 ### Fixed
 
-- Avoid adding hash when there is none ([#196](https://github.com/rikhuijzer/fx/pull/196)).
+- Avoid adding hash when there is none ([#196](https://github.com/rikhuijzer/bloglite/pull/196)).
 
 ## [1.6.1] - 2026-07-17
 
 ### Fixed
 
-- Escape apostrophe in headings for determining header id ([#192](https://github.com/rikhuijzer/fx/pull/192))
+- Escape apostrophe in headings for determining header id ([#192](https://github.com/rikhuijzer/bloglite/pull/192))
 - h2-h6 headings causing infinite redirect loop
-- Escape filenames in URLs ([#184](https://github.com/rikhuijzer/fx/pull/184))
+- Escape filenames in URLs ([#184](https://github.com/rikhuijzer/bloglite/pull/184))
 
 ## [1.6.0] - 2026-05-26
 
 ### Added
 
-- Show PDFs and other files in the sitemap ([#181](https://github.com/rikhuijzer/fx/pull/181)).
+- Show PDFs and other files in the sitemap ([#181](https://github.com/rikhuijzer/bloglite/pull/181)).
 
 ## [1.5.2] - 2026-05-12
 
 ### Fixed
 
-- Derive post description from post content ([#178](https://github.com/rikhuijzer/fx/pull/178)).
+- Derive post description from post content ([#178](https://github.com/rikhuijzer/bloglite/pull/178)).
 - Reduce memory usage.
 - Disable various `default-features` in dependencies.
 
@@ -98,8 +98,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Allow setting log level ([#161](https://github.com/rikhuijzer/fx/pull/161)).
-- Log main `GET` routes ([#160](https://github.com/rikhuijzer/fx/pull/160)).
+- Allow setting log level ([#161](https://github.com/rikhuijzer/bloglite/pull/161)).
+- Log main `GET` routes ([#160](https://github.com/rikhuijzer/bloglite/pull/160)).
 
 ### Changed
 
@@ -109,8 +109,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Avoid `href` in header causing invalid HTML in preview ([#156](https://github.com/rikhuijzer/fx/pull/156)).
-- Show insecure login warning when not using HTTPS ([#149](https://github.com/rikhuijzer/fx/pull/149)).
+- Avoid `href` in header causing invalid HTML in preview ([#156](https://github.com/rikhuijzer/bloglite/pull/156)).
+- Show insecure login warning when not using HTTPS ([#149](https://github.com/rikhuijzer/bloglite/pull/149)).
 
 ## [1.4.0] - 2026-02-27
 
@@ -121,41 +121,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Support healthcheck ([#145](https://github.com/rikhuijzer/fx/pull/145)).
+- Support healthcheck ([#145](https://github.com/rikhuijzer/bloglite/pull/145)).
 
 ## [1.3.2] - 2026-02-16
 
 ### Fixed
 
-- Avoid unresponsive server during backup ([#109](https://github.com/rikhuijzer/fx/issues/109)).
+- Avoid unresponsive server during backup ([#109](https://github.com/rikhuijzer/bloglite/issues/109)).
 
 ## [1.3.1] - 2026-02-04
 
 ### Fixed
 
-- Avoid empty slug causing 404 error ([#136](https://github.com/rikhuijzer/fx/pull/136)).
-- Mitigate API timing attacks ([#135](https://github.com/rikhuijzer/fx/pull/135)).
+- Avoid empty slug causing 404 error ([#136](https://github.com/rikhuijzer/bloglite/pull/136)).
+- Mitigate API timing attacks ([#135](https://github.com/rikhuijzer/bloglite/pull/135)).
 - Mitigate SQL injection for `Kv` database.
-- Improve cookie security ([#133](https://github.com/rikhuijzer/fx/pull/133)).
+- Improve cookie security ([#133](https://github.com/rikhuijzer/bloglite/pull/133)).
 - Disallow framing the page in an iframe.
-- Avoid infinite redirect on empty slug ([#137](https://github.com/rikhuijzer/fx/pull/137)).
+- Avoid infinite redirect on empty slug ([#137](https://github.com/rikhuijzer/bloglite/pull/137)).
 
 ### Changed
 
 - Updated dependencies
-- Moved from Debian 12 to 13 ([#134](https://github.com/rikhuijzer/fx/pull/134)).
+- Moved from Debian 12 to 13 ([#134](https://github.com/rikhuijzer/bloglite/pull/134)).
 
 ## [1.3.0] - 2025-11-14
 
 ### Added
 
-- Allow setting site description via settings ([#123](https://github.com/rikhuijzer/fx/pull/123)).
-- Support triggering Forgejo instances for backups ([#116](https://github.com/rikhuijzer/fx/pull/116)).
+- Allow setting site description via settings ([#123](https://github.com/rikhuijzer/bloglite/pull/123)).
+- Support triggering Forgejo instances for backups ([#116](https://github.com/rikhuijzer/bloglite/pull/116)).
 
 ### Changed
 
-- Set extra HTML head via settings instead of environment variable ([#122](https://github.com/rikhuijzer/fx/pull/122)).
-- Removed RSS button and button text when not having blogroll ([#118](https://github.com/rikhuijzer/fx/pull/118)).
+- Set extra HTML head via settings instead of environment variable ([#122](https://github.com/rikhuijzer/bloglite/pull/122)).
+- Removed RSS button and button text when not having blogroll ([#118](https://github.com/rikhuijzer/bloglite/pull/118)).
 
 ## [1.2.1] - 2025-10-24
 
@@ -167,31 +167,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Avoid server getting stuck on requesting a backup ([#98](https://github.com/rikhuijzer/fx/pull/97)).
-- Avoid post deletion causes the search to break ([#100](https://github.com/rikhuijzer/fx/pull/100)).
-- Let the URL with slug be the canonical URL ([#103](https://github.com/rikhuijzer/fx/pull/103)).
+- Avoid server getting stuck on requesting a backup ([#98](https://github.com/rikhuijzer/bloglite/pull/97)).
+- Avoid post deletion causes the search to break ([#100](https://github.com/rikhuijzer/bloglite/pull/100)).
+- Let the URL with slug be the canonical URL ([#103](https://github.com/rikhuijzer/bloglite/pull/103)).
 
 ### Changed
 
-- Allow admin to disable dark mode ([#101](https://github.com/rikhuijzer/fx/pull/101)).
+- Allow admin to disable dark mode ([#101](https://github.com/rikhuijzer/bloglite/pull/101)).
 
 ## [1.1.4] - 2025-08-05
 
 ### Fixed
 
-- Do not disable form submit button on empty settings fields ([#89](https://github.com/rikhuijzer/fx/pull/89)).
+- Do not disable form submit button on empty settings fields ([#89](https://github.com/rikhuijzer/bloglite/pull/89)).
 
 ## [1.1.3] - 2025-07-28
 
 ### Changed
 
-- Updated dependencies ([#84](https://github.com/rikhuijzer/fx/pull/84)).
+- Updated dependencies ([#84](https://github.com/rikhuijzer/bloglite/pull/84)).
 
 ## [1.1.2] - 2025-06-18
 
 ### Fixed
 
-- Disable form submit button if textarea is empty ([#78](https://github.com/rikhuijzer/fx/issues/78)).
+- Disable form submit button if textarea is empty ([#78](https://github.com/rikhuijzer/bloglite/issues/78)).
 
 ### Changed
 
@@ -232,7 +232,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add copy slug button below posts ([#68](https://github.com/rikhuijzer/fx/pull/68))
+- Add copy slug button below posts ([#68](https://github.com/rikhuijzer/bloglite/pull/68))
 - Allow slug behind URL (for example, `/posts/1/my-post`)
 
 ### Fixed
@@ -253,37 +253,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Blogroll ([#63](https://github.com/rikhuijzer/fx/pull/63))
+- Blogroll ([#63](https://github.com/rikhuijzer/bloglite/pull/63))
 
 ### Fixed
 
-- Fix `\n` instead of newline in rss ([#65](https://github.com/rikhuijzer/fx/pull/65))
+- Fix `\n` instead of newline in rss ([#65](https://github.com/rikhuijzer/bloglite/pull/65))
 
-[3.0.0]: https://github.com/rikhuijzer/fx/compare/v2.1.0...v3.0.0
-[2.1.0]: https://github.com/rikhuijzer/fx/compare/v2.0.1...v2.1.0
-[2.0.1]: https://github.com/rikhuijzer/fx/compare/v2.0.0...v2.0.1
-[2.0.0]: https://github.com/rikhuijzer/fx/compare/v1.6.3...v2.0.0
-[1.6.3]: https://github.com/rikhuijzer/fx/compare/v1.6.2...v1.6.3
-[1.6.2]: https://github.com/rikhuijzer/fx/compare/v1.6.1...v1.6.2
-[1.6.1]: https://github.com/rikhuijzer/fx/compare/v1.6.0...v1.6.1
-[1.6.0]: https://github.com/rikhuijzer/fx/compare/v1.5.2...v1.6.0
-[1.5.2]: https://github.com/rikhuijzer/fx/compare/v1.5.1...v1.5.2
-[1.5.1]: https://github.com/rikhuijzer/fx/compare/v1.5.0...v1.5.1
-[1.5.0]: https://github.com/rikhuijzer/fx/compare/v1.4.1...v1.5.0
-[1.4.1]: https://github.com/rikhuijzer/fx/compare/v1.4.0...v1.4.1
-[1.4.0]: https://github.com/rikhuijzer/fx/compare/v1.3.2...v1.4.0
-[1.3.2]: https://github.com/rikhuijzer/fx/compare/v1.3.1...v1.3.2
-[1.3.1]: https://github.com/rikhuijzer/fx/compare/v1.3.0...v1.3.1
-[1.3.0]: https://github.com/rikhuijzer/fx/compare/v1.2.1...v1.3.0
-[1.2.1]: https://github.com/rikhuijzer/fx/compare/v1.2.0...v1.2.1
-[1.2.0]: https://github.com/rikhuijzer/fx/compare/v1.1.4...v1.2.0
-[1.1.4]: https://github.com/rikhuijzer/fx/compare/v1.1.3...v1.1.4
-[1.1.3]: https://github.com/rikhuijzer/fx/compare/v1.1.2...v1.1.3
-[1.1.2]: https://github.com/rikhuijzer/fx/compare/v1.1.1...v1.1.2
-[1.1.1]: https://github.com/rikhuijzer/fx/compare/v1.1.0...v1.1.1
-[1.1.0]: https://github.com/rikhuijzer/fx/compare/v1.0.4...v1.1.0
-[1.0.4]: https://github.com/rikhuijzer/fx/compare/v1.0.3...v1.0.4
-[1.0.3]: https://github.com/rikhuijzer/fx/compare/v1.0.2...v1.0.3
-[1.0.2]: https://github.com/rikhuijzer/fx/compare/v1.0.1...v1.0.2
-[1.0.1]: https://github.com/rikhuijzer/fx/compare/v1.0.0...v1.0.1
-[1.0.0]: https://github.com/rikhuijzer/fx/releases/tag/v1.0.0
+[3.0.0]: https://github.com/rikhuijzer/bloglite/compare/v2.1.0...v3.0.0
+[2.1.0]: https://github.com/rikhuijzer/bloglite/compare/v2.0.1...v2.1.0
+[2.0.1]: https://github.com/rikhuijzer/bloglite/compare/v2.0.0...v2.0.1
+[2.0.0]: https://github.com/rikhuijzer/bloglite/compare/v1.6.3...v2.0.0
+[1.6.3]: https://github.com/rikhuijzer/bloglite/compare/v1.6.2...v1.6.3
+[1.6.2]: https://github.com/rikhuijzer/bloglite/compare/v1.6.1...v1.6.2
+[1.6.1]: https://github.com/rikhuijzer/bloglite/compare/v1.6.0...v1.6.1
+[1.6.0]: https://github.com/rikhuijzer/bloglite/compare/v1.5.2...v1.6.0
+[1.5.2]: https://github.com/rikhuijzer/bloglite/compare/v1.5.1...v1.5.2
+[1.5.1]: https://github.com/rikhuijzer/bloglite/compare/v1.5.0...v1.5.1
+[1.5.0]: https://github.com/rikhuijzer/bloglite/compare/v1.4.1...v1.5.0
+[1.4.1]: https://github.com/rikhuijzer/bloglite/compare/v1.4.0...v1.4.1
+[1.4.0]: https://github.com/rikhuijzer/bloglite/compare/v1.3.2...v1.4.0
+[1.3.2]: https://github.com/rikhuijzer/bloglite/compare/v1.3.1...v1.3.2
+[1.3.1]: https://github.com/rikhuijzer/bloglite/compare/v1.3.0...v1.3.1
+[1.3.0]: https://github.com/rikhuijzer/bloglite/compare/v1.2.1...v1.3.0
+[1.2.1]: https://github.com/rikhuijzer/bloglite/compare/v1.2.0...v1.2.1
+[1.2.0]: https://github.com/rikhuijzer/bloglite/compare/v1.1.4...v1.2.0
+[1.1.4]: https://github.com/rikhuijzer/bloglite/compare/v1.1.3...v1.1.4
+[1.1.3]: https://github.com/rikhuijzer/bloglite/compare/v1.1.2...v1.1.3
+[1.1.2]: https://github.com/rikhuijzer/bloglite/compare/v1.1.1...v1.1.2
+[1.1.1]: https://github.com/rikhuijzer/bloglite/compare/v1.1.0...v1.1.1
+[1.1.0]: https://github.com/rikhuijzer/bloglite/compare/v1.0.4...v1.1.0
+[1.0.4]: https://github.com/rikhuijzer/bloglite/compare/v1.0.3...v1.0.4
+[1.0.3]: https://github.com/rikhuijzer/bloglite/compare/v1.0.2...v1.0.3
+[1.0.2]: https://github.com/rikhuijzer/bloglite/compare/v1.0.1...v1.0.2
+[1.0.1]: https://github.com/rikhuijzer/bloglite/compare/v1.0.0...v1.0.1
+[1.0.0]: https://github.com/rikhuijzer/bloglite/releases/tag/v1.0.0

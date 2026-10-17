@@ -189,7 +189,6 @@ jobs:
 ```
 
 This will backup your site at least once per day.
-An example backup repository is [here](https://github.com/rikhuijzer/fx-backup).
 
 To trigger a backup for each change to the website, you can set the following environment variables:
 
