@@ -822,6 +822,29 @@ fn obtain_salt(args: &ServeArgs, conn: &Connection) -> Salt {
     }
 }
 
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        tokio::signal::ctrl_c()
+            .await
+            .expect("Failed to install Ctrl-C handler");
+    };
+    #[cfg(unix)]
+    let terminate = async {
+        tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+            .expect("Failed to install SIGTERM handler")
+            .recv()
+            .await;
+    };
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        () = ctrl_c => {},
+        () = terminate => {},
+    }
+    tracing::info!("Shutdown signal received; finishing active requests");
+}
+
 pub async fn run(args: &ServeArgs) {
     let pool = data::connect(args).unwrap();
     let conn = pool.get().unwrap();
@@ -837,5 +860,8 @@ pub async fn run(args: &ServeArgs) {
     let addr = addr.parse::<std::net::SocketAddr>().unwrap();
     tracing::info!("Listening on {addr}");
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await
+        .unwrap();
 }
