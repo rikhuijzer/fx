@@ -138,7 +138,9 @@ jobs:
         with:
           context: './public'
           platforms: ${{ steps.platform.outputs.PLATFORM }}
-          labels: ${{ steps.meta.outputs.labels }}
+          labels: |
+            ${{ steps.meta.outputs.labels }}
+            org.opencontainers.image.vendor=Rik
           tags: ${{ env.REGISTRY_IMAGE }}
           outputs: type=image,push-by-digest=true,name-canonical=true,push=true
       - name: Export digest
@@ -198,7 +200,9 @@ jobs:
         id: image
         working-directory: ${{ runner.temp }}/digests
         run: |
-          docker buildx imagetools create --metadata-file "$RUNNER_TEMP/image-metadata.json" $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+          docker buildx imagetools create --metadata-file "$RUNNER_TEMP/image-metadata.json" \
+            --annotation "index:org.opencontainers.image.vendor=Rik" \
+            $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
             $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
 
           digest="$(jq -er '."containerimage.descriptor".digest' "$RUNNER_TEMP/image-metadata.json")"
