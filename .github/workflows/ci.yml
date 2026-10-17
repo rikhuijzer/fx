@@ -65,11 +65,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ runner.arch }}-build-${{ matrix.os }}-${{ steps.rust-version.outputs.version }}-${{ hashFiles('**/Cargo.toml', 'Cargo.lock') }}-
             ${{ runner.os }}-${{ runner.arch }}-build-${{ matrix.os }}-${{ steps.rust-version.outputs.version }}-
-      - name: setup x86 musl dependencies
-        if: ${{ matrix.os == 'ubuntu-24.04' }}
+      - name: Set up native musl dependencies
         run: |
-          rustup target add x86_64-unknown-linux-musl
-          sudo apt-get install -y musl-tools
+          case "$(uname -m)" in
+            x86_64) rustup target add x86_64-unknown-linux-musl ;;
+            aarch64) rustup target add aarch64-unknown-linux-musl ;;
+            *) echo "Unsupported architecture" >&2; exit 1 ;;
+          esac
+          sudo apt-get update
+          sudo apt-get install -y musl-tools binutils
       - name: Install jas
         run: |
           mkdir -p "$RUNNER_TEMP/jas"

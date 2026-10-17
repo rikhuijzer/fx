@@ -47,17 +47,30 @@ release:
     OS="$(uname -s)"
     echo "OS: $OS"
 
-    if [[ $ARCH == "x86_64" && $OS == "Linux" ]]; then
-        TARGET="x86_64-unknown-linux-musl"
-        cargo build -p bloglite --release --locked --target="$TARGET"
-        cp --verbose "target/$TARGET/release/bloglite" "public/"
-    else
-        cargo build -p bloglite --release --locked
-        cp --verbose "target/release/bloglite" "public/"
+    case "$OS/$ARCH" in
+        Linux/x86_64) TARGET="x86_64-unknown-linux-musl" ;;
+        Linux/aarch64|Linux/arm64) TARGET="aarch64-unknown-linux-musl" ;;
+        *) echo "Container releases require Linux on amd64 or arm64" >&2; exit 1 ;;
+    esac
+
+    # Both CI runners build natively. Use musl for Rust linking and native dependencies.
+    TARGET_ENV="${TARGET//-/_}"
+    export "CC_${TARGET_ENV}=musl-gcc"
+    export "CARGO_TARGET_${TARGET_ENV^^}_LINKER=musl-gcc"
+    cargo build -p bloglite --release --locked --target="$TARGET"
+    cp --verbose "target/$TARGET/release/bloglite" "public/"
+
+    # The static runtime has no dynamic loader or shared libraries.
+    readelf --program-headers public/bloglite > public/program-headers.txt
+    readelf --dynamic public/bloglite > public/dynamic.txt
+    if grep -q 'INTERP' public/program-headers.txt || grep -q '(NEEDED)' public/dynamic.txt; then
+        echo "Release binary must be statically linked" >&2
+        exit 1
     fi
+    rm public/program-headers.txt public/dynamic.txt
 
     cat > public/Dockerfile << EOF
-    FROM gcr.io/distroless/cc-debian13
+    FROM gcr.io/distroless/static-debian13
     ENV BLOGLITE_PRODUCTION="true"
     COPY bloglite /
     CMD ["/bloglite", "serve"]
