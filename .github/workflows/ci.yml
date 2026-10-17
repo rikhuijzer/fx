@@ -245,3 +245,5 @@ jobs:
         with:
           body: |
             Notable changes since the last release are documented in the [CHANGELOG.md](https://github.com/rikhuijzer/bloglite/blob/main/CHANGELOG.md) file.
+
+            Container images are available at [zot.huijzer.xyz/image/bloglite](https://zot.huijzer.xyz/image/bloglite).
