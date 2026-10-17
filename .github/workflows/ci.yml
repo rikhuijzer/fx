@@ -8,7 +8,7 @@ on:
   pull_request:
   workflow_dispatch:
 env:
-  REGISTRY_IMAGE: rikhuijzer/fx
+  REGISTRY_IMAGE: zot.huijzer.xyz/bloglite
 jobs:
   test:
     runs-on: ubuntu-24.04-arm
@@ -103,8 +103,9 @@ jobs:
       - uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
         if: github.event_name != 'pull_request' # Also run on tag.
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: zot.huijzer.xyz
+          username: ${{ secrets.ZOT_USERNAME }}
+          password: ${{ secrets.ZOT_PASSWORD }}
       - name: Extract metadata (tags, labels) for Docker
         if: github.event_name != 'pull_request' # Also run on tag.
         id: meta
@@ -163,11 +164,12 @@ jobs:
           pattern: digests-*
           merge-multiple: true
 
-      - name: Login to Docker Hub
+      - name: Login to Zot
         uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: zot.huijzer.xyz
+          username: ${{ secrets.ZOT_USERNAME }}
+          password: ${{ secrets.ZOT_PASSWORD }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
