@@ -67,11 +67,15 @@ jobs:
             ${{ runner.os }}-${{ runner.arch }}-build-${{ matrix.os }}-${{ steps.rust-version.outputs.version }}-
       - name: Set up native musl dependencies
         run: |
-          case "$(uname -m)" in
-            x86_64) rustup target add x86_64-unknown-linux-musl ;;
-            aarch64) rustup target add aarch64-unknown-linux-musl ;;
-            *) echo "Unsupported architecture" >&2; exit 1 ;;
-          esac
+          ARCH="$(uname -m)"
+          if [[ $ARCH == "x86_64" ]]; then
+            rustup target add x86_64-unknown-linux-musl
+          elif [[ $ARCH == "aarch64" ]]; then
+            rustup target add aarch64-unknown-linux-musl
+          else
+            echo "Unsupported architecture" >&2
+            exit 1
+          fi
           sudo apt-get update
           sudo apt-get install -y musl-tools binutils
       - name: Install jas

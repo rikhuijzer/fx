@@ -47,11 +47,14 @@ release:
     OS="$(uname -s)"
     echo "OS: $OS"
 
-    case "$OS/$ARCH" in
-        Linux/x86_64) TARGET="x86_64-unknown-linux-musl" ;;
-        Linux/aarch64|Linux/arm64) TARGET="aarch64-unknown-linux-musl" ;;
-        *) echo "Container releases require Linux on amd64 or arm64" >&2; exit 1 ;;
-    esac
+    if [[ $OS == "Linux" && $ARCH == "x86_64" ]]; then
+        TARGET="x86_64-unknown-linux-musl"
+    elif [[ $OS == "Linux" && ( $ARCH == "aarch64" || $ARCH == "arm64" ) ]]; then
+        TARGET="aarch64-unknown-linux-musl"
+    else
+        echo "Container releases require Linux on amd64 or arm64" >&2
+        exit 1
+    fi
 
     # Both CI runners build natively. Use musl for Rust linking and native dependencies.
     TARGET_ENV="${TARGET//-/_}"
