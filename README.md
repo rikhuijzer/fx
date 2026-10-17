@@ -1,9 +1,8 @@
-# fx
+# bloglite
 
-[build status]: https://img.shields.io/github/actions/workflow/status/rikhuijzer/fx/ci.yml?branch=main
-[actions]: https://github.com/rikhuijzer/fx/actions?query=branch%3Amain
-[docker svg]: https://img.shields.io/badge/docker-%230db7ed.svg?logo=docker&logoColor=white
-[docker]: https://hub.docker.com/repository/docker/rikhuijzer/fx
+[build status]: https://img.shields.io/github/actions/workflow/status/rikhuijzer/bloglite/ci.yml?branch=main
+[actions]: https://github.com/rikhuijzer/bloglite/actions?query=branch%3Amain
+[container images]: https://zot.huijzer.xyz
 
 A Twitter/Bluesky-like (micro)blogging service that you can self-host.
 
@@ -22,7 +21,7 @@ A Twitter/Bluesky-like (micro)blogging service that you can self-host.
 There is a demo site where you can log in and create posts at <https://fx-demo.huijzer.xyz>.
 The demo site resets every hour.
 
-Other sites that are running fx:
+Other sites that are running bloglite:
 
 - <https://huijzer.xyz/>
 - <https://hoekmanmilieuadvies.nl/>
@@ -58,22 +57,22 @@ Via Docker Compose (if you're not used to managing Linux servers, [here is a how
 
 ```yml
 services:
-  fx:
-    image: 'rikhuijzer/fx:1'
-    container_name: 'fx'
+  bloglite:
+    image: 'zot.huijzer.xyz/bloglite:3'
+    container_name: 'bloglite'
     environment:
-      FX_USERNAME: 'john'
-      FX_DOMAIN: 'example.com'
+      BLOGLITE_USERNAME: 'john'
+      BLOGLITE_DOMAIN: 'example.com'
     env_file:
-      # Contains `FX_PASSWORD="<PASSWORD>"`.
-      - 'FX_PASSWORD.env'
+      # Contains `BLOGLITE_PASSWORD="<PASSWORD>"`.
+      - 'BLOGLITE_PASSWORD.env'
     ports:
       - '3000:3000'
     volumes:
       # Stores the SQLite database.
       - './data:/data:rw'
     healthcheck:
-      test: ['CMD', '/fx', 'check-health']
+      test: ['CMD', '/bloglite', 'check-health']
     logging:
       driver: 'json-file'
       options:
@@ -82,9 +81,16 @@ services:
     restart: 'unless-stopped'
 ```
 
-For the full list of `FX_` environment variables, see [fx/src/lib.rs](https://github.com/rikhuijzer/fx/blob/main/fx/src/lib.rs).
+For the full list of `BLOGLITE_` environment variables, see [bloglite/src/lib.rs](https://github.com/rikhuijzer/bloglite/blob/main/bloglite/src/lib.rs).
 Regarding the health check, Docker Compose does not restart containers when it fails.
 To make that happen, you can write your own CRON job script to check for failures, or use [autoheal](https://github.com/willfarrell/docker-autoheal).
+
+### Upgrading from v2
+
+Version 3 renames fx to bloglite and moves container images to Zot.
+Change the image to `zot.huijzer.xyz/bloglite:3` (or pin `:3.0.0`), rename all `FX_` environment variables and backup secrets to `BLOGLITE_`, and change health checks from `/fx` to `/bloglite`.
+Keep your existing `/data` volume mounted to preserve posts, files, and settings.
+See the [changelog](CHANGELOG.md#300---2026-10-17) for the release notes.
 
 ## Syndication
 
@@ -117,7 +123,7 @@ cleanup() {
 download() {
   ARCHIVE_PATH="all.tar.xz"
   curl --proto "=https" --tlsv1.2 -sSf \
-    -H "Authorization: Bearer $FX_PASSWORD" \
+    -H "Authorization: Bearer $BLOGLITE_PASSWORD" \
     https://$DOMAIN/api/download/all.tar.xz > "$ARCHIVE_PATH"
 
   tar --verbose -xf "$ARCHIVE_PATH"
@@ -144,7 +150,7 @@ elif [[ "$1" == "commit" ]]; then
 fi
 ```
 
-where `$FX_PASSWORD` is the admin password (as set via the `FX_PASSWORD` environment variable) and `$DOMAIN` is the domain of your site.
+where `$BLOGLITE_PASSWORD` is the admin password (as set via the `BLOGLITE_PASSWORD` environment variable) and `$DOMAIN` is the domain of your site.
 
 Assuming this file is named `backup.sh` and executable (`chmod +x backup.sh`), you can run a backup in a GitHub Actions workflow with the following YAML:
 
@@ -177,7 +183,7 @@ jobs:
       - run: ./backup.sh cleanup
       - run: ./backup.sh download
         env:
-          FX_PASSWORD: ${{ secrets.FX_PASSWORD }}
+          BLOGLITE_PASSWORD: ${{ secrets.BLOGLITE_PASSWORD }}
       - if: github.event_name != 'pull_request'
         run: ./backup.sh commit
 ```
@@ -188,18 +194,18 @@ An example backup repository is [here](https://github.com/rikhuijzer/fx-backup).
 To trigger a backup for each change to the website, you can set the following environment variables:
 
 ```yml
-FX_TRIGGER_TOKEN: 'github_pat_...'
-FX_TRIGGER_OWNER_REPO: 'johndoe/fx-backup'
-FX_TRIGGER_HOST: 'https://github.com' # Optional.
-FX_TRIGGER_BRANCH: 'main' # Optional.
-FX_TRIGGER_WORKFLOW_ID: 'backup.yml' # Optional.
+BLOGLITE_TRIGGER_TOKEN: 'github_pat_...'
+BLOGLITE_TRIGGER_OWNER_REPO: 'johndoe/bloglite-backup'
+BLOGLITE_TRIGGER_HOST: 'https://github.com' # Optional.
+BLOGLITE_TRIGGER_BRANCH: 'main' # Optional.
+BLOGLITE_TRIGGER_WORKFLOW_ID: 'backup.yml' # Optional.
 ```
 
 To obtain the GitHub token, you can use the following steps:
 
 1. Go to <https://github.com/settings/personal-access-tokens/new>.
-1. Set name: `fx-backup-trigger`.
-1. Set description: `Used by fx to trigger a backup`.
+1. Set name: `bloglite-backup-trigger`.
+1. Set description: `Used by bloglite to trigger a backup`.
 1. Set repository access: `Only select repositories: <OWNER>/<REPO>`.
 1. Set permissions: `Actions` (Read and write).
 1. Copy the token.
@@ -207,11 +213,11 @@ To obtain the GitHub token, you can use the following steps:
 See the [GitHub documentation](https://docs.github.com/en/rest/actions/workflows?apiVersion=2022-11-28#create-a-workflow-dispatch-event) for more information.
 
 It also supports triggering a workflow in a Forgejo instance.
-For that use set `FX_TRIGGER_HOST` to the URL of the Forgejo instance.
+For that use set `BLOGLITE_TRIGGER_HOST` to the URL of the Forgejo instance.
 To obtain the Forgejo token, use:
 
 1. Go to `https://<DOMAIN>/user/settings/applications`.
-1. Set name: `fx-backup-trigger`.
+1. Set name: `bloglite-backup-trigger`.
 1. Set repository access to `Public only` or `All (public, private, and limited)` depending on your needs.
 1. Set permissions: `repository` (Read and write).
 1. Copy the token.
@@ -223,7 +229,7 @@ You can update the `about` text via the API:
 ```bash
 curl \
   -X PUT \
-  -H "Authorization: Bearer $FX_PASSWORD" \
+  -H "Authorization: Bearer $BLOGLITE_PASSWORD" \
   https://$DOMAIN/api/settings/about \
   -d "Some text"
 ```

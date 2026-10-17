@@ -1,7 +1,7 @@
 # Contributing
 
-Issues can be submitted at <https://github.com/rikhuijzer/fx/issues>.
-Pull requests can be submitted at <https://github.com/rikhuijzer/fx/pulls>.
+Issues can be submitted at <https://github.com/rikhuijzer/bloglite/issues>.
+Pull requests can be submitted at <https://github.com/rikhuijzer/bloglite/pulls>.
 
 ## Commit Messages
 

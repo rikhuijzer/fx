@@ -9,7 +9,7 @@ members = [
 version = "3.0.0"
 edition = "2024"
 license = "MIT"
-repository = "https://github.com/rikhuijzer/fx"
+repository = "https://github.com/rikhuijzer/bloglite"
 
 [profile.dev]
 debug = 0

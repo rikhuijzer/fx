@@ -618,7 +618,7 @@ pub async fn page(ctx: &ServerContext, settings: &PageSettings, body: &str) -> S
                     </div>
                     {body}
                     <div class='bottom'>
-                        <a class='unstyled-link menu-space' href='https://github.com/rikhuijzer/fx'><u>Running bloglite</u> version: {version}</a>
+                        <a class='unstyled-link menu-space' href='https://github.com/rikhuijzer/bloglite'><u>Running bloglite</u> version: {version}</a>
                         {loginout}
                     </div>
                 </div>

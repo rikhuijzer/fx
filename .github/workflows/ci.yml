@@ -240,4 +240,4 @@ jobs:
         if: github.ref_type == 'tag'
         with:
           body: |
-            Notable changes since the last release are documented in the [CHANGELOG.md](https://github.com/rikhuijzer/fx/blob/main/CHANGELOG.md) file.
+            Notable changes since the last release are documented in the [CHANGELOG.md](https://github.com/rikhuijzer/bloglite/blob/main/CHANGELOG.md) file.
