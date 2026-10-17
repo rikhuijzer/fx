@@ -2,11 +2,11 @@ use clap::Parser;
 
 #[derive(Clone, Debug, Parser)]
 pub struct HealthArgs {
-    #[arg(long, env = "FX_PORT", default_value = "3000")]
+    #[arg(long, env = "BLOGLITE_PORT", default_value = "3000")]
     pub port: u16,
 }
 
-/// Check the health of the fx service running at `args.port`.
+/// Check the health of the bloglite service running at `args.port`.
 ///
 /// This function essentially allows testing the service in environments where
 /// `curl` or `wget` is not available. It exists with an error code when the

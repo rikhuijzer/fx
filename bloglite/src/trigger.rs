@@ -42,7 +42,9 @@ async fn trigger_github_backup_workload(args: TriggerArgs) -> Option<()> {
     );
     headers.insert(
         header::USER_AGENT,
-        format!("fx/{}", env!("CARGO_PKG_VERSION")).parse().unwrap(),
+        format!("bloglite/{}", env!("CARGO_PKG_VERSION"))
+            .parse()
+            .unwrap(),
     );
     let body = format!(r#"{{"ref":"{branch}"}}"#);
     let response = client.post(url).headers(headers).body(body).send().await;
@@ -88,7 +90,9 @@ async fn trigger_forgejo_backup_workload(args: TriggerArgs) -> Option<()> {
     headers.insert(header::CONTENT_TYPE, "application/json".parse().unwrap());
     headers.insert(
         header::USER_AGENT,
-        format!("fx/{}", env!("CARGO_PKG_VERSION")).parse().unwrap(),
+        format!("bloglite/{}", env!("CARGO_PKG_VERSION"))
+            .parse()
+            .unwrap(),
     );
     let body = format!(r#"{{"ref":"{branch}"}}"#);
     let response = client.post(url).headers(headers).body(body).send().await;

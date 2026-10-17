@@ -24,9 +24,9 @@ use axum::response::Redirect;
 use axum::routing::get;
 use axum::routing::post;
 use axum_extra::extract::CookieJar;
+use bloglite_auth::Login;
+use bloglite_auth::Salt;
 use chrono::Utc;
-use fx_auth::Login;
-use fx_auth::Salt;
 use http_body_util::BodyExt;
 use r2d2::PooledConnection;
 use r2d2_sqlite::SqliteConnectionManager;
@@ -157,7 +157,7 @@ pub fn is_logged_in(ctx: &ServerContext, jar: &CookieJar) -> bool {
         username: Some(ctx.args.username.clone()),
         password: Some(password.clone()),
     };
-    fx_auth::is_logged_in(&ctx.salt, &login, jar)
+    bloglite_auth::is_logged_in(&ctx.salt, &login, jar)
 }
 
 async fn list_posts(ctx: &ServerContext, page: usize) -> Option<(bool, String)> {
@@ -540,7 +540,7 @@ async fn post_login(
         username: Some(form.username),
         password: Some(form.password),
     };
-    let new_jar = fx_auth::handle_login(&ctx.salt, &actual, &received, jar.clone());
+    let new_jar = bloglite_auth::handle_login(&ctx.salt, &actual, &received, jar.clone());
     match new_jar {
         Some(jar) => {
             tracing::info!("\"POST /login HTTP/1.1\" 200");
@@ -560,7 +560,7 @@ async fn post_login(
 }
 
 async fn get_logout(State(_ctx): State<ServerContext>, jar: CookieJar) -> (CookieJar, Redirect) {
-    let updated_jar = fx_auth::handle_logout(jar.clone());
+    let updated_jar = bloglite_auth::handle_logout(jar.clone());
     tracing::info!("\"GET /logout HTTP/1.1\" 200");
     (updated_jar, Redirect::to("/"))
 }
@@ -811,7 +811,7 @@ fn obtain_salt(args: &ServeArgs, conn: &Connection) -> Salt {
         match salt {
             Ok(salt) => salt.try_into().unwrap(),
             Err(_) => {
-                let salt = fx_auth::generate_salt();
+                let salt = bloglite_auth::generate_salt();
                 data::Kv::insert(conn, "salt", &salt).unwrap();
                 salt
             }

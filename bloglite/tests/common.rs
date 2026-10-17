@@ -1,12 +1,12 @@
 use axum::body::Body;
 use axum::extract::Request;
 use axum::http::StatusCode;
-use fx::ServeArgs;
-use fx::data;
-use fx::data::DbPool;
-use fx::serve::LoginForm;
-use fx::serve::ServerContext;
-use fx::serve::app;
+use bloglite::ServeArgs;
+use bloglite::data;
+use bloglite::data::DbPool;
+use bloglite::serve::LoginForm;
+use bloglite::serve::ServerContext;
+use bloglite::serve::app;
 use http_body_util::BodyExt;
 use tower::util::ServiceExt;
 
@@ -47,7 +47,7 @@ impl TestDefault for DbPool {
 pub async fn server_context() -> ServerContext {
     let args = ServeArgs::test_default();
     let conn = DbPool::test_default();
-    let salt = fx_auth::generate_salt();
+    let salt = bloglite_auth::generate_salt();
     ServerContext::new(args, conn, salt).await
 }
 

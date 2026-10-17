@@ -1,5 +1,5 @@
 [package]
-name = "fx"
+name = "bloglite"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -12,7 +12,7 @@ axum-extra = { version = "0.12", features = ["cookie"] }
 bytes = { version = "1", features = ["serde"] }
 chrono = { version = "0.4.40", default-features = false, features = ["clock", "serde"] }
 clap = { version = "4.6", features = ["derive", "env"] }
-fx-auth = { path = "../fx-auth" }
+bloglite-auth = { path = "../bloglite-auth" }
 hex = "0.4.3"
 http-body-util = "0.1.3"
 indoc = "2"

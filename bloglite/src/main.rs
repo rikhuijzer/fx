@@ -1,6 +1,6 @@
+use bloglite::ServeArgs;
+use bloglite::health::HealthArgs;
 use clap::Parser;
-use fx::ServeArgs;
-use fx::health::HealthArgs;
 use tracing::Level;
 use tracing::subscriber::SetGlobalDefaultError;
 
@@ -47,7 +47,7 @@ async fn main() {
 
     match &args.task {
         Task::CheckHealth(args) => {
-            fx::health::check_health(args).await;
+            bloglite::health::check_health(args).await;
         }
         Task::License => {
             let license_content = include_str!("../../LICENSE");
@@ -62,7 +62,7 @@ async fn main() {
                 _ => Level::INFO,
             };
             init_subscriber(log_level, args.ansi.unwrap_or(true)).unwrap();
-            fx::serve::run(serve_args).await;
+            bloglite::serve::run(serve_args).await;
         }
     }
 }

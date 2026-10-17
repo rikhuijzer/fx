@@ -40,13 +40,13 @@ fn verify_login(actual: &Login, received: &Login) -> bool {
     username_eq && password_eq
 }
 
-struct FxKey {
+struct BlogliteKey {
     key: Aes256GcmSiv,
 }
 
 pub type Salt = [u8; 22];
 
-impl FxKey {
+impl BlogliteKey {
     fn new(salt: &Salt, password: &str) -> Self {
         // Salt can be public because it does not help the attacker.
         // It is only used to defend against rainbow tables.
@@ -55,7 +55,7 @@ impl FxKey {
         argon2
             .hash_password_into(password.as_bytes(), salt, &mut key)
             .unwrap();
-        FxKey {
+        BlogliteKey {
             key: Aes256GcmSiv::new_from_slice(&key).unwrap(),
         }
     }
@@ -69,7 +69,7 @@ struct Ciphertext {
 
 fn encrypt_login(salt: &Salt, password: &str) -> Ciphertext {
     let plaintext = Utc::now().to_rfc3339();
-    let key = FxKey::new(salt, password);
+    let key = BlogliteKey::new(salt, password);
     // Nonce should be unique per message.
     // let nonce = Aes256GcmSiv::generate_nonce().unwrap();
     let nonce = Nonce::generate();
@@ -81,7 +81,7 @@ fn encrypt_login(salt: &Salt, password: &str) -> Ciphertext {
 }
 
 fn decrypt_login(salt: &Salt, password: &str, auth: &Ciphertext) -> Option<String> {
-    let key = FxKey::new(salt, password);
+    let key = BlogliteKey::new(salt, password);
     let nonce: aead::Nonce<Aes256GcmSiv> = Array(auth.nonce);
     let ciphertext = auth.ciphertext.as_slice();
     let plaintext = match key.key.decrypt(&nonce, ciphertext) {

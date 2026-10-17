@@ -299,6 +299,56 @@ dependencies = [
 ]
 
 [[package]]
+name = "bloglite"
+version = "3.0.0"
+dependencies = [
+ "axum",
+ "axum-extra",
+ "bloglite-auth",
+ "bytes",
+ "chrono",
+ "clap",
+ "hex",
+ "http-body-util",
+ "indoc",
+ "markdown",
+ "percent-encoding",
+ "r2d2",
+ "r2d2_sqlite",
+ "regex",
+ "reqwest",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "serde_urlencoded",
+ "sha2",
+ "subtle",
+ "syntect",
+ "tar",
+ "tokio",
+ "toml",
+ "tower",
+ "tracing",
+ "tracing-subscriber",
+ "two-face",
+ "xz2",
+]
+
+[[package]]
+name = "bloglite-auth"
+version = "3.0.0"
+dependencies = [
+ "aes-gcm-siv",
+ "argon2",
+ "axum-extra",
+ "chrono",
+ "serde",
+ "serde_json",
+ "subtle",
+ "tracing",
+]
+
+[[package]]
 name = "bumpalo"
 version = "3.20.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -724,56 +774,6 @@ dependencies = [
  "futures-task",
  "pin-project-lite",
  "slab",
-]
-
-[[package]]
-name = "fx"
-version = "2.1.0"
-dependencies = [
- "axum",
- "axum-extra",
- "bytes",
- "chrono",
- "clap",
- "fx-auth",
- "hex",
- "http-body-util",
- "indoc",
- "markdown",
- "percent-encoding",
- "r2d2",
- "r2d2_sqlite",
- "regex",
- "reqwest",
- "rusqlite",
- "serde",
- "serde_json",
- "serde_urlencoded",
- "sha2",
- "subtle",
- "syntect",
- "tar",
- "tokio",
- "toml",
- "tower",
- "tracing",
- "tracing-subscriber",
- "two-face",
- "xz2",
-]
-
-[[package]]
-name = "fx-auth"
-version = "2.1.0"
-dependencies = [
- "aes-gcm-siv",
- "argon2",
- "axum-extra",
- "chrono",
- "serde",
- "serde_json",
- "subtle",
- "tracing",
 ]
 
 [[package]]

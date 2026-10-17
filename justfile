@@ -49,18 +49,18 @@ release:
 
     if [[ $ARCH == "x86_64" && $OS == "Linux" ]]; then
         TARGET="x86_64-unknown-linux-musl"
-        cargo build -p fx --release --locked --target="$TARGET"
-        cp --verbose "target/$TARGET/release/fx" "public/"
+        cargo build -p bloglite --release --locked --target="$TARGET"
+        cp --verbose "target/$TARGET/release/bloglite" "public/"
     else
-        cargo build -p fx --release --locked
-        cp --verbose "target/release/fx" "public/"
+        cargo build -p bloglite --release --locked
+        cp --verbose "target/release/bloglite" "public/"
     fi
 
     cat > public/Dockerfile << EOF
     FROM gcr.io/distroless/cc-debian13
-    ENV FX_PRODUCTION="true"
-    COPY fx /
-    CMD ["/fx", "serve"]
+    ENV BLOGLITE_PRODUCTION="true"
+    COPY bloglite /
+    CMD ["/bloglite", "serve"]
     EOF
 
     cat public/Dockerfile

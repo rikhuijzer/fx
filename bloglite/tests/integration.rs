@@ -3,9 +3,9 @@ mod common;
 use axum::body::Body;
 use axum::extract::Request;
 use axum::http::StatusCode;
+use bloglite::serve::LoginForm;
+use bloglite::serve::app;
 use common::*;
-use fx::serve::LoginForm;
-use fx::serve::app;
 use http_body_util::BodyExt;
 use sha2::Digest;
 use tower::util::ServiceExt;
@@ -87,7 +87,7 @@ async fn test_search_rejects_malformed_queries_and_recovers() {
         .max_size(1)
         .build(r2d2_sqlite::SqliteConnectionManager::memory())
         .unwrap();
-    fx::data::init(&ctx.args, &ctx.conn());
+    bloglite::data::init(&ctx.args, &ctx.conn());
     let router = app(ctx.clone());
     for query in ["\"", "Lorem OR", "(Lorem", "unknown:Lorem"] {
         let query = serde_urlencoded::to_string([("q", query)]).unwrap();
@@ -181,7 +181,8 @@ async fn test_home_pagination_and_stale_page() {
     ctx.conn().execute("DELETE FROM posts", []).unwrap();
     let now = chrono::Utc::now();
     for index in 0..11 {
-        fx::data::Post::insert(&ctx.conn(), now, now, &format!("Pagination post {index}")).unwrap();
+        bloglite::data::Post::insert(&ctx.conn(), now, now, &format!("Pagination post {index}"))
+            .unwrap();
     }
     let router = app(ctx.clone());
     for (uri, expected_count, has_next) in [("/", 10, true), ("/?page=2", 1, false)] {
@@ -242,7 +243,7 @@ async fn test_get_post() {
 async fn test_front_page_preview() {
     let (status, body) = request_body("/").await;
     assert_eq!(status, StatusCode::OK);
-    let body = fx::html::minify(&body);
+    let body = bloglite::html::minify(&body);
     println!("body:\n{body}");
     let code_area = indoc::indoc! {
         r#"
@@ -397,7 +398,7 @@ async fn test_delete_confirmation() {
 #[tokio::test]
 async fn test_post_add() {
     let (ctx, auth) = request_cookie().await;
-    let form = fx::serve::AddPostForm {
+    let form = bloglite::serve::AddPostForm {
         content: "Lorem https://example.com".to_string(),
     };
     let form_data = serde_urlencoded::to_string(&form).unwrap();
@@ -440,7 +441,7 @@ async fn test_get_edit() {
 #[tokio::test]
 async fn test_post_edit() {
     let (ctx, auth) = request_cookie().await;
-    let form = fx::serve::EditPostForm {
+    let form = bloglite::serve::EditPostForm {
         content: "Lorem https://example.com".to_string(),
     };
     let form_data = serde_urlencoded::to_string(&form).unwrap();
