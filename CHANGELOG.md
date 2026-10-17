@@ -19,7 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rename fx to bloglite, including the binary and Rust packages.
 - **Breaking:** replace all `FX_` environment variables with `BLOGLITE_` for both the server and health checks. Update deployment configuration and backup scripts before upgrading.
 - **Breaking:** move container images from `rikhuijzer/bloglite` to `zot.huijzer.xyz/bloglite`. Use `/bloglite` for container health checks.
-- Publish multi-platform Linux amd64 and arm64 images to Zot using authenticated registry writes.
 
 ## [2.1.0] - 2026-10-16
 

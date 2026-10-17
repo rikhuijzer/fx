@@ -85,13 +85,6 @@ For the full list of `BLOGLITE_` environment variables, see [bloglite/src/lib.rs
 Regarding the health check, Docker Compose does not restart containers when it fails.
 To make that happen, you can write your own CRON job script to check for failures, or use [autoheal](https://github.com/willfarrell/docker-autoheal).
 
-### Upgrading from v2
-
-Version 3 renames fx to bloglite and moves container images to Zot.
-Change the image to `zot.huijzer.xyz/bloglite:3` (or pin `:3.0.0`), rename all `FX_` environment variables and backup secrets to `BLOGLITE_`, and change health checks from `/fx` to `/bloglite`.
-Keep your existing `/data` volume mounted to preserve posts, files, and settings.
-See the [changelog](CHANGELOG.md#300---2026-10-17) for the release notes.
-
 ## Syndication
 
 To share a post, you can either get the URL from the navigation bar or you can copy the longer link that is available below each post.
@@ -220,15 +213,3 @@ To obtain the Forgejo token, use:
 1. Set repository access to `Public only` or `All (public, private, and limited)` depending on your needs.
 1. Set permissions: `repository` (Read and write).
 1. Copy the token.
-
-### Update
-
-You can update the `about` text via the API:
-
-```bash
-curl \
-  -X PUT \
-  -H "Authorization: Bearer $BLOGLITE_PASSWORD" \
-  https://$DOMAIN/api/settings/about \
-  -d "Some text"
-```
