@@ -32,6 +32,9 @@ pub fn html(html: &str) -> String {
             .replace("&gt;", ">")
             .replace("&quot;", "\"")
             .replace("&amp;", "&");
+        // Keep CRLF together before syntax spans can split it into two HTML
+        // line breaks.
+        let code = code.replace("\r\n", "\n");
         let mut generator = ClassedHTMLGenerator::new_with_class_style(syntax, &SYNTAXES, STYLE);
         for line in LinesWithEndings::from(&code) {
             if generator
@@ -77,6 +80,23 @@ mod tests {
             assert!(result.contains("syntax-code"), "{language}: {result}");
             assert!(result.contains("<span"));
             assert_eq!(text(&result).trim_end(), code.trim_end());
+        }
+    }
+
+    #[test]
+    fn csv_crlf_does_not_add_blank_lines() {
+        let expected = "fruit,height,width\napple,9.33,6.5\npear,12.45,8.4\n";
+        for ending in ["\n", "\r\n"] {
+            let code = expected.replace('\n', ending);
+            let source = format!("```csv{ending}{code}```");
+            let html = crate::md::content_to_html(&source);
+            assert!(html.contains("syntax-code"));
+
+            // HTML input preprocessing normalizes CRLF and lone CR before
+            // parsing tags. Normalize before stripping tags: Syntect can put
+            // spans between CR and LF, making them two visible line breaks.
+            let browser_html = html.replace("\r\n", "\n").replace('\r', "\n");
+            assert_eq!(text(&browser_html), expected, "line ending: {ending:?}");
         }
     }
 
